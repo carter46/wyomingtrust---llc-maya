@@ -894,11 +894,35 @@ function trust_services_has_unique_service_key(PDO $db): bool {
     return count(trust_services_unique_service_key_indexes($db)) > 0;
 }
 
+function trust_services_has_lookup_index(PDO $db): bool {
+    try {
+        $stmt = $db->query(
+            "SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS
+             WHERE TABLE_SCHEMA = DATABASE()
+               AND TABLE_NAME = 'trust_services'
+               AND INDEX_NAME = 'idx_service_key'"
+        );
+        return ((int) $stmt->fetchColumn()) > 0;
+    } catch (Exception $e) {
+        return false;
+    }
+}
+
 function get_trust_services_schema_diagnostics(PDO $db): array {
     $uniqueIndexes = trust_services_unique_service_key_indexes($db);
+    $hasLookupIndex = trust_services_has_lookup_index($db);
     return [
         'allows_multiple_per_category' => count($uniqueIndexes) === 0,
         'unique_service_key_indexes' => $uniqueIndexes,
+        'has_lookup_index' => $hasLookupIndex,
+        'fix_sql' => [
+            'drop_unique' => array_map(function ($name) {
+                return 'ALTER TABLE trust_services DROP INDEX `' . str_replace('`', '', $name) . '`;';
+            }, $uniqueIndexes),
+            'add_lookup' => $hasLookupIndex
+                ? []
+                : ['ALTER TABLE trust_services ADD KEY idx_service_key (service_key);'],
+        ],
         'columns' => [
             'asset_types' => trust_services_has_asset_types_column($db),
             'asset_category_config' => trust_services_has_asset_category_config_column($db),
@@ -932,7 +956,10 @@ function format_trust_service_db_error(Throwable $e, PDO $db = null): array {
                 $drops = array_map(function ($name) {
                     return 'ALTER TABLE trust_services DROP INDEX `' . str_replace('`', '', $name) . '`;';
                 }, $uniqueIndexes);
-                $message = 'Insert blocked by unique index on trust_services.service_key (' . implode(', ', $uniqueIndexes) . '). Run: ' . implode(' ', $drops) . ' Then recreate lookup index: ALTER TABLE trust_services ADD KEY idx_service_key (service_key);';
+                $message = 'Insert blocked by unique index on trust_services.service_key (' . implode(', ', $uniqueIndexes) . '). Run: ' . implode(' ', $drops);
+                if ($db instanceof PDO && !trust_services_has_lookup_index($db)) {
+                    $message .= ' Then add lookup index: ALTER TABLE trust_services ADD KEY idx_service_key (service_key);';
+                }
             } else {
                 $message = 'Insert failed with a duplicate-key error: ' . $details;
             }

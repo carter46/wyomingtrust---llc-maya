@@ -68,13 +68,22 @@ function renderSchemaDiagnostics(diagnostics) {
     const indexes = Array.isArray(diagnostics.unique_service_key_indexes)
         ? diagnostics.unique_service_key_indexes
         : [];
-    const dropSql = indexes.map(name => `ALTER TABLE trust_services DROP INDEX \`${name}\`;`).join(' ');
+    const dropSql = (diagnostics.fix_sql && Array.isArray(diagnostics.fix_sql.drop_unique) && diagnostics.fix_sql.drop_unique.length)
+        ? diagnostics.fix_sql.drop_unique.join(' ')
+        : indexes.map(name => `ALTER TABLE trust_services DROP INDEX \`${name}\`;`).join(' ');
+    const addLookup = diagnostics.fix_sql && Array.isArray(diagnostics.fix_sql.add_lookup) && diagnostics.fix_sql.add_lookup.length
+        ? diagnostics.fix_sql.add_lookup[0]
+        : '';
     container.innerHTML = `
         <div class="rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-700 px-4 py-3 text-sm text-amber-900 dark:text-amber-200">
             <p class="font-semibold mb-1">Database still limits one row per trust category</p>
             <p class="mb-2">Unique index(es) on <code>service_key</code>: ${escapeHtml(indexes.join(', ') || 'unknown')}</p>
+            <p class="font-semibold mt-2">Step 1 — run this only:</p>
             <p class="text-xs break-all">${escapeHtml(dropSql || 'SHOW INDEX FROM trust_services;')}</p>
-            <p class="text-xs mt-2">After dropping, recreate lookup index: <code>ALTER TABLE trust_services ADD KEY idx_service_key (service_key);</code></p>
+            ${addLookup
+                ? `<p class="font-semibold mt-3">Step 2 — then run:</p><p class="text-xs break-all">${escapeHtml(addLookup)}</p>`
+                : `<p class="text-xs mt-3">Step 2 — not needed. <code>idx_service_key</code> already exists on your database.</p>`
+            }
         </div>
     `;
 }
