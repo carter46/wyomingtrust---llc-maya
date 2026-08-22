@@ -866,45 +866,93 @@ function trust_services_has_liquidation_fee_column(PDO $db): bool {
     return $cache;
 }
 
-function trust_services_has_unique_service_key(PDO $db): bool {
-    static $cache = null;
-    if ($cache !== null) {
-        return $cache;
-    }
+function trust_services_unique_service_key_indexes(PDO $db): array {
     try {
-        $stmt = $db->query("SHOW INDEX FROM trust_services WHERE Column_name = 'service_key' AND Non_unique = 0");
-        $cache = (bool) $stmt->fetch();
+        $stmt = $db->query(
+            "SELECT DISTINCT INDEX_NAME
+             FROM INFORMATION_SCHEMA.STATISTICS
+             WHERE TABLE_SCHEMA = DATABASE()
+               AND TABLE_NAME = 'trust_services'
+               AND COLUMN_NAME = 'service_key'
+               AND NON_UNIQUE = 0
+               AND INDEX_NAME <> 'PRIMARY'"
+        );
+        $names = [];
+        while ($row = $stmt->fetch()) {
+            $name = (string) ($row['INDEX_NAME'] ?? '');
+            if ($name !== '') {
+                $names[] = $name;
+            }
+        }
+        return $names;
     } catch (Exception $e) {
-        $cache = false;
+        return [];
     }
-    return $cache;
 }
 
-function format_trust_service_db_error(Throwable $e): array {
+function trust_services_has_unique_service_key(PDO $db): bool {
+    return count(trust_services_unique_service_key_indexes($db)) > 0;
+}
+
+function get_trust_services_schema_diagnostics(PDO $db): array {
+    $uniqueIndexes = trust_services_unique_service_key_indexes($db);
+    return [
+        'allows_multiple_per_category' => count($uniqueIndexes) === 0,
+        'unique_service_key_indexes' => $uniqueIndexes,
+        'columns' => [
+            'asset_types' => trust_services_has_asset_types_column($db),
+            'asset_category_config' => trust_services_has_asset_category_config_column($db),
+            'liquidation_fee' => trust_services_has_liquidation_fee_column($db),
+        ],
+    ];
+}
+
+function format_trust_service_db_error(Throwable $e, PDO $db = null): array {
     $message = 'Failed to create trust service';
     $status = 500;
+    $details = trim($e->getMessage());
 
     if ($e instanceof PDOException) {
         $driverCode = (int) ($e->errorInfo[1] ?? 0);
         $sqlState = (string) ($e->errorInfo[0] ?? '');
-        $raw = strtolower($e->getMessage());
+        $raw = strtolower($details);
 
         if ($driverCode === 1062 || $sqlState === '23000' || strpos($raw, 'duplicate entry') !== false) {
-            return [
-                'message' => 'This trust category already exists in the database. Run the latest migration (database/migrations/migration.sql) or execute: ALTER TABLE trust_services DROP INDEX service_key; — then you can add multiple offerings per category.',
-                'status' => 409,
-            ];
+            $indexHint = '';
+            if (preg_match("/for key '([^']+)'/i", $details, $matches)) {
+                $indexHint = (string) $matches[1];
+            }
+
+            $uniqueIndexes = $db instanceof PDO ? trust_services_unique_service_key_indexes($db) : [];
+            if ($indexHint !== '' && !in_array($indexHint, $uniqueIndexes, true)) {
+                $uniqueIndexes[] = $indexHint;
+            }
+
+            if (!empty($uniqueIndexes)) {
+                $drops = array_map(function ($name) {
+                    return 'ALTER TABLE trust_services DROP INDEX `' . str_replace('`', '', $name) . '`;';
+                }, $uniqueIndexes);
+                $message = 'Insert blocked by unique index on trust_services.service_key (' . implode(', ', $uniqueIndexes) . '). Run: ' . implode(' ', $drops) . ' Then recreate lookup index: ALTER TABLE trust_services ADD KEY idx_service_key (service_key);';
+            } else {
+                $message = 'Insert failed with a duplicate-key error: ' . $details;
+            }
+            return ['message' => $message, 'status' => 409, 'details' => $details];
         }
 
         if ($driverCode === 1054 || strpos($raw, 'unknown column') !== false) {
             return [
                 'message' => 'The trust_services table is missing required columns. Run database/migrations/migration.sql on this database, then try again.',
                 'status' => 500,
+                'details' => $details,
             ];
         }
     }
 
-    return ['message' => $message, 'status' => $status];
+    if ($details !== '') {
+        $message .= ': ' . $details;
+    }
+
+    return ['message' => $message, 'status' => $status, 'details' => $details];
 }
 
 function coins_has_liquidation_fee_column(PDO $db): bool {

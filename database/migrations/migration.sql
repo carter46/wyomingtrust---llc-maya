@@ -321,6 +321,8 @@ DEALLOCATE PREPARE alterIfNotExistsTxCoinId;
 -- ============================================================================
 
 SET @tablename = 'trust_services';
+
+-- Drop unique index named service_key (legacy installs)
 SET @indexname = 'service_key';
 SET @preparedStatement = (SELECT IF(
   (
@@ -336,6 +338,38 @@ SET @preparedStatement = (SELECT IF(
 PREPARE dropTrustServiceKeyUnique FROM @preparedStatement;
 EXECUTE dropTrustServiceKeyUnique;
 DEALLOCATE PREPARE dropTrustServiceKeyUnique;
+
+-- Some hosts created the unique constraint as idx_service_key instead
+SET @indexname = 'idx_service_key';
+SET @preparedStatement = (SELECT IF(
+  (
+    SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS
+    WHERE TABLE_SCHEMA = @dbname
+      AND TABLE_NAME = @tablename
+      AND INDEX_NAME = @indexname
+      AND NON_UNIQUE = 0
+  ) > 0,
+  CONCAT('ALTER TABLE ', @tablename, ' DROP INDEX ', @indexname),
+  'SELECT 1'
+));
+PREPARE dropTrustServiceIdxUnique FROM @preparedStatement;
+EXECUTE dropTrustServiceIdxUnique;
+DEALLOCATE PREPARE dropTrustServiceIdxUnique;
+
+-- Ensure a non-unique lookup index on service_key exists
+SET @preparedStatement = (SELECT IF(
+  (
+    SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS
+    WHERE TABLE_SCHEMA = @dbname
+      AND TABLE_NAME = @tablename
+      AND INDEX_NAME = 'idx_service_key'
+  ) = 0,
+  CONCAT('ALTER TABLE ', @tablename, ' ADD KEY idx_service_key (service_key)'),
+  'SELECT 1'
+));
+PREPARE addTrustServiceKeyIndex FROM @preparedStatement;
+EXECUTE addTrustServiceKeyIndex;
+DEALLOCATE PREPARE addTrustServiceKeyIndex;
 
 -- ============================================================================
 -- Migration Complete

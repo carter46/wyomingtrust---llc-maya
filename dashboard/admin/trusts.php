@@ -45,6 +45,7 @@ async function loadTrusts() {
             allTrusts = data.trusts;
             trustTypeOptions = data.trust_type_options || {};
             assetCategoryCatalog = data.asset_category_catalog || {};
+            renderSchemaDiagnostics(data.schema_diagnostics);
             renderTrusts(data.trusts);
         } else {
             document.getElementById('trustsContainer').innerHTML = '<div class="text-center py-10 text-red-500">Failed to load trust services</div>';
@@ -53,6 +54,29 @@ async function loadTrusts() {
         console.error('Error loading trusts:', error);
         document.getElementById('trustsContainer').innerHTML = '<div class="text-center py-10 text-red-500">Error loading trust services</div>';
     }
+}
+
+function renderSchemaDiagnostics(diagnostics) {
+    const container = document.getElementById('messageContainer');
+    if (!container || !diagnostics) return;
+
+    if (diagnostics.allows_multiple_per_category) {
+        container.innerHTML = '';
+        return;
+    }
+
+    const indexes = Array.isArray(diagnostics.unique_service_key_indexes)
+        ? diagnostics.unique_service_key_indexes
+        : [];
+    const dropSql = indexes.map(name => `ALTER TABLE trust_services DROP INDEX \`${name}\`;`).join(' ');
+    container.innerHTML = `
+        <div class="rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-700 px-4 py-3 text-sm text-amber-900 dark:text-amber-200">
+            <p class="font-semibold mb-1">Database still limits one row per trust category</p>
+            <p class="mb-2">Unique index(es) on <code>service_key</code>: ${escapeHtml(indexes.join(', ') || 'unknown')}</p>
+            <p class="text-xs break-all">${escapeHtml(dropSql || 'SHOW INDEX FROM trust_services;')}</p>
+            <p class="text-xs mt-2">After dropping, recreate lookup index: <code>ALTER TABLE trust_services ADD KEY idx_service_key (service_key);</code></p>
+        </div>
+    `;
 }
 
 function renderTrusts(trusts) {
@@ -344,7 +368,11 @@ async function createTrust(payload) {
             showToast('Trust service created successfully', 'success');
             loadTrusts();
         } else {
+            console.error('Create trust failed:', data);
             showToast(data.message || 'Failed to create trust service', 'error');
+            if (data.schema_diagnostics) {
+                renderSchemaDiagnostics(data.schema_diagnostics);
+            }
         }
     } catch (error) {
         console.error('Error creating trust:', error);
