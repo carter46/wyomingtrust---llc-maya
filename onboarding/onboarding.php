@@ -1252,9 +1252,51 @@ function validateTrustTypeStepAndNext() {
     void nextStep();
 }
 
+function shouldHideExtraBeneficiaries() {
+    const myself = onboardingData.beneficiaries.find(b => b.is_myself);
+    if (!myself) return false;
+    const alloc = parseFloat(myself.allocation);
+    if (Number.isNaN(alloc)) return false;
+    return Math.abs(alloc - 100) < 0.01;
+}
+
+function syncBeneficiaryVisibility() {
+    const hideExtras = shouldHideExtraBeneficiaries();
+
+    if (hideExtras) {
+        onboardingData.beneficiaries.forEach(b => {
+            if (!b.is_myself) {
+                b.allocation = 0;
+            }
+        });
+        saveOnboardingToStorage();
+    }
+
+    document.querySelectorAll('.beneficiary-card[data-beneficiary-extra="1"]').forEach(el => {
+        el.classList.toggle('hidden', hideExtras);
+    });
+    const addBtn = document.getElementById('addBeneficiaryBtn');
+    if (addBtn) {
+        addBtn.classList.toggle('hidden', hideExtras);
+    }
+
+    if (hideExtras) {
+        updateAllocationDisplay();
+    }
+}
+
+function getActiveBeneficiaries() {
+    if (shouldHideExtraBeneficiaries()) {
+        return onboardingData.beneficiaries.filter(b => b.is_myself);
+    }
+    return onboardingData.beneficiaries.slice();
+}
+
 function renderBeneficiariesStep() {
     const showCryptoWallet = isSmartContractTrustSelected();
-    const totalAllocation = onboardingData.beneficiaries.reduce((sum, ben) => sum + (parseFloat(ben.allocation) || 0), 0);
+    const hideExtras = shouldHideExtraBeneficiaries();
+    const activeBeneficiaries = getActiveBeneficiaries();
+    const totalAllocation = activeBeneficiaries.reduce((sum, ben) => sum + (parseFloat(ben.allocation) || 0), 0);
     const isValid = Math.abs(totalAllocation - 100) < 0.01;
     const hasMyself = onboardingData.beneficiaries.some(b => b.is_myself);
     
@@ -1281,7 +1323,7 @@ function renderBeneficiariesStep() {
                     </div>
                 ` : ''}
                 ${onboardingData.beneficiaries.map((ben, idx) => `
-                    <div class="bg-surface-container-lowest border border-outline-variant/30 rounded-xl p-6 shadow-sm">
+                    <div class="beneficiary-card bg-surface-container-lowest border border-outline-variant/30 rounded-xl p-6 shadow-sm${!ben.is_myself && hideExtras ? ' hidden' : ''}" data-beneficiary-extra="${ben.is_myself ? '0' : '1'}">
                         <div class="flex justify-between items-start mb-4">
                             <h3 class="text-lg font-bold text-primary">Beneficiary #${idx + 1}${ben.is_myself ? ' <span class="text-sm text-secondary">(Myself)</span>' : ''}</h3>
                             ${ben.is_myself ? '' : `<button onclick="removeBeneficiary(${idx})" class="text-red-600 hover:text-red-700 font-medium">Remove</button>`}
@@ -1322,7 +1364,7 @@ function renderBeneficiariesStep() {
                 `).join('')}
             </div>
             
-            <button onclick="addNewBeneficiary()" class="w-full py-3 border-2 border-dashed border-outline-variant rounded-lg text-on-surface-variant hover:border-secondary hover:text-primary transition-colors mb-6">
+            <button id="addBeneficiaryBtn" onclick="addNewBeneficiary()" class="w-full py-3 border-2 border-dashed border-outline-variant rounded-lg text-on-surface-variant hover:border-secondary hover:text-primary transition-colors mb-6${hideExtras ? ' hidden' : ''}">
                 + Add Another Beneficiary
             </button>
             
@@ -2159,15 +2201,16 @@ function updateBeneficiary(index, field, value) {
         onboardingData.beneficiaries[index][field] = value;
         if (field === 'allocation') {
             onboardingData.beneficiaries[index].allocation = parseFloat(value) || 0;
-            // Update the total allocation display without full reload
             updateAllocationDisplay();
+            syncBeneficiaryVisibility();
         }
         saveOnboardingToStorage();
     }
 }
 
 function updateAllocationDisplay() {
-    const totalAllocation = onboardingData.beneficiaries.reduce((sum, ben) => sum + (parseFloat(ben.allocation) || 0), 0);
+    const activeBeneficiaries = getActiveBeneficiaries();
+    const totalAllocation = activeBeneficiaries.reduce((sum, ben) => sum + (parseFloat(ben.allocation) || 0), 0);
     const isValid = Math.abs(totalAllocation - 100) < 0.01;
     const statusEl = document.getElementById('allocationStatus');
     const nextBtn = document.querySelector('button[onclick="validateAndNext()"]');
@@ -2239,6 +2282,7 @@ function setupBeneficiariesStep() {
     
     // Update allocation display on load
     updateAllocationDisplay();
+    syncBeneficiaryVisibility();
 }
 
 function ensureDefaultBeneficiary() {
@@ -2258,15 +2302,15 @@ function ensureDefaultBeneficiary() {
 }
 
 function validateAndNext() {
-    const totalAllocation = onboardingData.beneficiaries.reduce((sum, ben) => sum + (parseFloat(ben.allocation) || 0), 0);
+    const activeBeneficiaries = getActiveBeneficiaries();
+    const totalAllocation = activeBeneficiaries.reduce((sum, ben) => sum + (parseFloat(ben.allocation) || 0), 0);
     if (Math.abs(totalAllocation - 100) > 0.01) {
         alert('Total allocation must equal 100%. Current total: ' + totalAllocation.toFixed(2) + '%');
         return;
     }
-    // Validate required fields
-    for (let i = 0; i < onboardingData.beneficiaries.length; i++) {
-        const ben = onboardingData.beneficiaries[i];
-        if (!ben.name || !ben.relationship || !ben.allocation) {
+    for (let i = 0; i < activeBeneficiaries.length; i++) {
+        const ben = activeBeneficiaries[i];
+        if (!ben.name || !ben.relationship || ben.allocation === '' || ben.allocation === null || ben.allocation === undefined) {
             alert('Please fill in all required fields for Beneficiary #' + (i + 1));
             return;
         }
@@ -2766,13 +2810,14 @@ async function createTrust(options = { redirect: true }) {
         return;
     }
     
-    if (!onboardingData.beneficiaries || onboardingData.beneficiaries.length === 0) {
+    const activeBeneficiaries = getActiveBeneficiaries();
+    if (!activeBeneficiaries.length) {
         alert('Please add at least one beneficiary.');
         window.location.href = 'onboarding.php?step=4';
         return;
     }
     
-    const totalAllocation = onboardingData.beneficiaries.reduce((sum, ben) => sum + (parseFloat(ben.allocation) || 0), 0);
+    const totalAllocation = activeBeneficiaries.reduce((sum, ben) => sum + (parseFloat(ben.allocation) || 0), 0);
     if (Math.abs(totalAllocation - 100) > 0.01) {
         alert('Total allocation must equal 100%. Current total: ' + totalAllocation.toFixed(2) + '%');
         window.location.href = 'onboarding.php?step=4';
@@ -2807,7 +2852,7 @@ async function createTrust(options = { redirect: true }) {
                 } : {}),
                 business_info: onboardingData.business_info || {},
                 personal_info: onboardingData.personal_info,
-                beneficiaries: onboardingData.beneficiaries,
+                beneficiaries: activeBeneficiaries,
                 ...(isSmartContractTrustSelected() && onboardingData.entrusted_coins?.length ? {
                     entrusted_coins: onboardingData.entrusted_coins
                 } : {}),
