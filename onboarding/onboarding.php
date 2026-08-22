@@ -47,6 +47,7 @@ $page_title = 'Create Trust | ' . $site_name;
 <link rel="icon" href="<?php echo escape_html(asset_url('Storage/images/logo_ant.webp')); ?>" type="image/webp"/>
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 <script src="../assets/js/wt-icons.js"></script>
+<script src="../assets/js/onboarding-data.js"></script>
 <link href="https://fonts.googleapis.com" rel="preconnect"/>
 <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Source+Serif+4:ital,opsz,wght@0,8..60,200..900;1,8..60,200..900&display=swap" rel="stylesheet"/>
@@ -229,6 +230,10 @@ $page_title = 'Create Trust | ' . $site_name;
 let currentStep = <?php echo (int) $step; ?>;
 const trustId = <?php echo (int) $trustId; ?>;
 let isLoggedIn = <?php echo $isLoggedIn ? 'true' : 'false'; ?>;
+// Prefer shared lists from onboarding-data.js (avoids inline-script constant issues)
+const US_JURISDICTIONS = (window.US_JURISDICTIONS || window.US_FORMATIONS || []);
+const BUSINESS_ENDING_OPTIONS = (window.BUSINESS_ENDING_OPTIONS || []);
+const US_FORMATIONS = US_JURISDICTIONS;
 const steps = [
     { id: 1, title: 'Trust Type', component: 'trustType' },
     { id: 2, title: 'Business & Personal Info', component: 'personalInfo' },
@@ -315,39 +320,7 @@ const ONBOARDING_STORAGE_KEY_LEGACY = 'wyomingtrust_onboarding_v1';
 const ONBOARDING_STORAGE_TIMESTAMP_KEY = 'wyomingtrust_onboarding_timestamp';
 const ONBOARDING_STORAGE_MAX_AGE = 2 * 60 * 60 * 1000; // 2 hours max age
 
-const US_FORMATIONATIONS = [
-    { code: 'AL', name: 'Alabama' }, { code: 'AK', name: 'Alaska' }, { code: 'AZ', name: 'Arizona' },
-    { code: 'AR', name: 'Arkansas' }, { code: 'CA', name: 'California' }, { code: 'CO', name: 'Colorado' },
-    { code: 'CT', name: 'Connecticut' }, { code: 'DE', name: 'Delaware' }, { code: 'FL', name: 'Florida' },
-    { code: 'GA', name: 'Georgia' }, { code: 'HI', name: 'Hawaii' }, { code: 'ID', name: 'Idaho' },
-    { code: 'IL', name: 'Illinois' }, { code: 'IN', name: 'Indiana' }, { code: 'IA', name: 'Iowa' },
-    { code: 'KS', name: 'Kansas' }, { code: 'KY', name: 'Kentucky' }, { code: 'LA', name: 'Louisiana' },
-    { code: 'ME', name: 'Maine' }, { code: 'MD', name: 'Maryland' }, { code: 'MA', name: 'Massachusetts' },
-    { code: 'MI', name: 'Michigan' }, { code: 'MN', name: 'Minnesota' }, { code: 'MS', name: 'Mississippi' },
-    { code: 'MO', name: 'Missouri' }, { code: 'MT', name: 'Montana' }, { code: 'NE', name: 'Nebraska' },
-    { code: 'NV', name: 'Nevada' }, { code: 'NH', name: 'New Hampshire' }, { code: 'NJ', name: 'New Jersey' },
-    { code: 'NM', name: 'New Mexico' }, { code: 'NY', name: 'New York' }, { code: 'NC', name: 'North Carolina' },
-    { code: 'ND', name: 'North Dakota' }, { code: 'OH', name: 'Ohio' }, { code: 'OK', name: 'Oklahoma' },
-    { code: 'OR', name: 'Oregon' }, { code: 'PA', name: 'Pennsylvania' }, { code: 'RI', name: 'Rhode Island' },
-    { code: 'SC', name: 'South Carolina' }, { code: 'SD', name: 'South Dakota' }, { code: 'TN', name: 'Tennessee' },
-    { code: 'TX', name: 'Texas' }, { code: 'UT', name: 'Utah' }, { code: 'VT', name: 'Vermont' },
-    { code: 'VA', name: 'Virginia' }, { code: 'WA', name: 'Washington' }, { code: 'WV', name: 'West Virginia' },
-    { code: 'WI', name: 'Wisconsin' }, { code: 'WY', name: 'Wyoming' },
-    { code: 'DC', name: 'District of Columbia' },
-    { code: 'PR', name: 'Puerto Rico' },
-    { code: 'GU', name: 'Guam' },
-    { code: 'VI', name: 'U.S. Virgin Islands' }
-];
-
-const BUSINESS_ENDING_OPTIONS = [
-    { value: 'none', label: 'Prefer no ending' },
-    { value: 'llc', label: 'LLC' },
-    { value: 'limited_liability_company', label: 'Limited Liability Company' },
-    { value: 'corp', label: 'Corp' },
-    { value: 'corporation', label: 'Corporation' },
-    { value: 'inc', label: 'Inc' },
-    { value: 'incorporated', label: 'Incorporated' }
-];
+// Jurisdiction / ending lists come from onboarding-data.js (see US_JURISDICTIONS / US_FORMATIONS bindings above)
 
 function getPersonalFullName(pi) {
     const info = pi || onboardingData.personal_info || {};
