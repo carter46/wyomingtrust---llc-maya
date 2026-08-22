@@ -3,3 +3,6 @@ design reference/
 
 # Pre-redesign backup copy
 Backup/
+
+# Database and secrets (per-environment)
+api/config.php
