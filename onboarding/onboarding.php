@@ -751,6 +751,17 @@ function getTrustServiceIcon(serviceKey) {
     return icons[serviceKey] || 'account_balance';
 }
 
+function getTrustTypeLabel(serviceKey) {
+    const labels = {
+        irrevocable_trust: 'Irrevocable Trust Service',
+        revocable_living_trust: 'Revocable Living Trust',
+        smart_contract_trust: 'Smart Contract Trust Service',
+        crypto_asset_trust: 'Cryptocurrency Asset Trust',
+        trust_llc: 'Trust LLC',
+    };
+    return labels[serviceKey] || serviceKey.replace(/_/g, ' ');
+}
+
 function formatTrustServicePrice(service) {
     const price = Number(service.price || 0);
     const isFree = Number(service.is_free) === 1 || price <= 0;
@@ -841,20 +852,19 @@ function validateBusinessEntityStepAndNext() {
 }
 
 function renderTrustTypeStep() {
-    const selectedServiceKey = onboardingData.trust_service_id
-        ? (trustServices.find(s => s.id === onboardingData.trust_service_id)?.service_key || null)
-        : null;
+    const selectedServiceId = Number(onboardingData.trust_service_id) || 0;
 
     const serviceCards = trustServices.length > 0
         ? trustServices.map(service => {
-            const isSelected = selectedServiceKey === service.service_key;
+            const isSelected = selectedServiceId > 0 && Number(service.id) === selectedServiceId;
             const { isFree, label } = formatTrustServicePrice(service);
             const title = escapeHtml(service.service_name || service.service_key);
+            const categoryLabel = escapeHtml(getTrustTypeLabel(service.service_key));
             const description = escapeHtml(service.description || 'Select this trust service to continue.');
             const icon = getTrustServiceIcon(service.service_key);
             return `
                 <label class="relative border-2 ${isSelected ? 'border-secondary' : 'border-outline-variant/30'} rounded-xl p-4 sm:p-5 cursor-pointer hover:border-secondary transition-all group flex gap-3 sm:gap-4 items-start">
-                    <input class="peer sr-only" name="trust_type" type="radio" value="${escapeHtml(service.service_key)}" ${isSelected ? 'checked' : ''} onchange="selectTrustType('${escapeHtml(service.service_key)}', ${service.id})"/>
+                    <input class="peer sr-only" name="trust_service_id" type="radio" value="${Number(service.id)}" ${isSelected ? 'checked' : ''} onchange="selectTrustType('${escapeHtml(service.service_key)}', ${Number(service.id)})"/>
                     <div class="w-10 h-10 sm:w-11 sm:h-11 bg-secondary rounded-lg flex items-center justify-center text-on-secondary shrink-0">
                         ${wtIcon(icon, 'text-lg sm:text-xl')}
                     </div>
@@ -863,6 +873,7 @@ function renderTrustTypeStep() {
                             <h3 class="text-base sm:text-lg font-bold text-primary">${title}</h3>
                             <span class="text-xs font-bold ${isFree ? 'text-green-600' : 'text-secondary'}">${label}</span>
                         </div>
+                        <p class="text-xs text-on-surface-variant mb-1">${categoryLabel}</p>
                         <p class="text-on-surface-variant text-xs sm:text-sm leading-relaxed line-clamp-2 sm:line-clamp-none">${description}</p>
                     </div>
                     <div class="absolute top-4 right-4 w-5 h-5 rounded-full border-2 ${isSelected ? 'border-secondary bg-secondary' : 'border-outline-variant'} transition-colors shrink-0"></div>
