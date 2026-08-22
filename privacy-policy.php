@@ -19,7 +19,7 @@ include 'includes/header.php';
 <section>
 <h2 class="font-headline-md text-headline-md text-primary mb-4">1. Introduction</h2>
 <p class="font-body-md text-body-md text-on-surface-variant leading-relaxed">
-<?php echo escape_html($site_name); ?> ("we," "our," or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our digital asset trust platform.
+<?php echo escape_html($site_name); ?> ("we," "our," or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our Wyoming LLC formation and business management platform.
 </p>
 </section>
 <section>
@@ -28,7 +28,7 @@ include 'includes/header.php';
 <ul class="list-disc pl-6 space-y-2 font-body-md text-body-md text-on-surface-variant">
 <li>Full name and contact information (email address)</li>
 <li>Account credentials (encrypted and hashed passwords)</li>
-<li>Trust service preferences and configurations</li>
+<li>LLC service preferences and configurations</li>
 <li>Communication records</li>
 </ul>
 <h3 class="font-label-md text-label-md font-bold text-primary mb-3 mt-6">2.2 Cryptocurrency Information</h3>
@@ -44,7 +44,7 @@ include 'includes/header.php';
 <section>
 <h2 class="font-headline-md text-headline-md text-primary mb-4">3. How We Use Your Information</h2>
 <ul class="list-disc pl-6 space-y-2 font-body-md text-body-md text-on-surface-variant">
-<li>Provide and maintain our trust services</li>
+<li>Provide and maintain our LLC formation and business services</li>
 <li>Process transactions and manage your assets</li>
 <li>Verify your identity and prevent fraud</li>
 <li>Send administrative and service-related communications</li>

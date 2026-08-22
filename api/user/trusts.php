@@ -132,7 +132,7 @@ function handleUpdateUserTrust() {
     $stmt->execute([':id' => $trustId, ':user_id' => $userId]);
     $row = $stmt->fetch();
     if (!$row) {
-        send_json(['success' => false, 'message' => 'Trust not found'], 404);
+        send_json(['success' => false, 'message' => 'LLC not found'], 404);
     }
 
     $trustData = [];
@@ -148,7 +148,7 @@ function handleUpdateUserTrust() {
     if (isset($payload['trust_name'])) {
         $trustName = sanitize_text($payload['trust_name']);
         if ($trustName === '') {
-            send_json(['success' => false, 'message' => 'Trust name cannot be empty'], 400);
+            send_json(['success' => false, 'message' => 'LLC name cannot be empty'], 400);
         }
         $trustData['trust_name'] = $trustName;
         $updatesMade = true;
@@ -212,7 +212,7 @@ function handleUpdateUserTrust() {
 
     if (isset($payload['status'])) {
         if ($currentStatus === 'pending') {
-            send_json(['success' => false, 'message' => 'Trust registration is pending admin approval. Status changes are not available yet.'], 403);
+            send_json(['success' => false, 'message' => 'LLC registration is pending admin approval. Status changes are not available yet.'], 403);
         }
 
         $status = sanitize_text($payload['status']);
@@ -223,10 +223,10 @@ function handleUpdateUserTrust() {
         $requestedStatus = strtolower($status);
 
         if ($requestedStatus === 'active' && in_array($currentStatus, ['pending', 'inactive'], true)) {
-            send_json(['success' => false, 'message' => 'Trust activation requires admin approval.'], 403);
+            send_json(['success' => false, 'message' => 'LLC activation requires admin approval.'], 403);
         }
         if ($requestedStatus === 'inactive' && $currentStatus !== 'active') {
-            send_json(['success' => false, 'message' => 'Only active trusts can be set to inactive.'], 403);
+            send_json(['success' => false, 'message' => 'Only active LLCs can be set to inactive.'], 403);
         }
 
         $statusUpdate = $requestedStatus;
@@ -235,10 +235,10 @@ function handleUpdateUserTrust() {
 
     if (!empty($payload['liquidate'])) {
         if ($currentStatus === 'pending') {
-            send_json(['success' => false, 'message' => 'Trust registration is pending admin approval. Liquidation is not available yet.'], 403);
+            send_json(['success' => false, 'message' => 'LLC registration is pending admin approval. Liquidation is not available yet.'], 403);
         }
         if ($currentStatus !== 'active') {
-            send_json(['success' => false, 'message' => 'Only active trusts can be liquidated.'], 403);
+            send_json(['success' => false, 'message' => 'Only active LLCs can be liquidated.'], 403);
         }
 
         $svcStmt = $db->prepare(
@@ -249,15 +249,15 @@ function handleUpdateUserTrust() {
         $svcStmt->execute([':id' => $trustId, ':user_id' => $userId]);
         $svc = $svcStmt->fetch();
         if (!$svc) {
-            send_json(['success' => false, 'message' => 'Trust not found'], 404);
+            send_json(['success' => false, 'message' => 'LLC not found'], 404);
         }
         $trustType = $svc['service_key'] ?? '';
         if (!trust_allows_liquidation($trustType)) {
-            send_json(['success' => false, 'message' => 'Irrevocable trusts cannot be liquidated'], 403);
+            send_json(['success' => false, 'message' => 'Irrevocable LLCs cannot be liquidated'], 403);
         }
 
         if ($currentStatus === 'liquidated') {
-            send_json(['success' => false, 'message' => 'This trust has already been liquidated'], 409);
+            send_json(['success' => false, 'message' => 'This LLC has already been liquidated'], 409);
         }
 
         $fee = isset($svc['liquidation_fee']) ? (float) $svc['liquidation_fee'] : 0.0;
@@ -345,11 +345,11 @@ function handleDeleteUserTrust() {
     $svc = $svcStmt->fetch();
     
     if (!$svc) {
-        send_json(['success' => false, 'message' => 'Trust not found'], 404);
+        send_json(['success' => false, 'message' => 'LLC not found'], 404);
     }
 
     if (is_irrevocable_trust_type($svc['service_key'] ?? '')) {
-        send_json(['success' => false, 'message' => 'Irrevocable trusts cannot be deleted or liquidated'], 403);
+        send_json(['success' => false, 'message' => 'Irrevocable LLCs cannot be deleted or liquidated'], 403);
     }
     
     try {
@@ -357,7 +357,7 @@ function handleDeleteUserTrust() {
         $del = $db->prepare('DELETE FROM user_trusts WHERE id = :id AND user_id = :user_id');
         $del->execute([':id' => $trustId, ':user_id' => $userId]);
         
-        send_json(['success' => true, 'message' => 'Trust deleted successfully']);
+        send_json(['success' => true, 'message' => 'LLC deleted successfully']);
     } catch (Exception $e) {
         error_log('Delete user trust failed: ' . $e->getMessage());
         send_json(['success' => false, 'message' => 'Failed to delete trust'], 500);
@@ -395,7 +395,7 @@ function handleGetUserTrust() {
     $trust = $stmt->fetch();
 
     if (!$trust) {
-        send_json(['success' => false, 'message' => 'Trust not found'], 404);
+        send_json(['success' => false, 'message' => 'LLC not found'], 404);
     }
 
     $trust = enrich_user_trust_row($trust);
@@ -457,7 +457,7 @@ function handleCreateUserTrust() {
     $trustService = $stmt->fetch();
     
     if (!$trustService) {
-        send_json(['success' => false, 'message' => 'Trust service not found or inactive'], 404);
+        send_json(['success' => false, 'message' => 'LLC service not found or inactive'], 404);
     }
 
     // Validate beneficiaries data (must exist and total 100%)
@@ -544,7 +544,7 @@ function handleCreateUserTrust() {
         
         send_json([
             'success' => true,
-            'message' => 'Trust created successfully',
+            'message' => 'LLC created successfully',
             'trust' => [
                 'id' => $trustId,
                 'payment_method_id' => $resolvedPaymentMethodId,
@@ -561,7 +561,7 @@ function handleCreateUserTrust() {
         // Return detailed error for debugging (in production, you might want to hide this)
         send_json([
             'success' => false,
-            'message' => 'Failed to create trust. Please try again or contact support.',
+            'message' => 'Failed to create LLC. Please try again or contact support.',
         ], 500);
     }
 }

@@ -62,7 +62,7 @@ function renderUsers(users) {
                         <th class="px-4 sm:px-6 py-3 text-xs font-bold uppercase text-slate-500">Name</th>
                         <th class="px-4 sm:px-6 py-3 text-xs font-bold uppercase text-slate-500">Email</th>
                         <th class="px-4 sm:px-6 py-3 text-xs font-bold uppercase text-slate-500">Verified</th>
-                        <th class="px-4 sm:px-6 py-3 text-xs font-bold uppercase text-slate-500">Trusts</th>
+                        <th class="px-4 sm:px-6 py-3 text-xs font-bold uppercase text-slate-500">LLCs</th>
                         <th class="px-4 sm:px-6 py-3 text-xs font-bold uppercase text-slate-500">Created</th>
                         <th class="px-4 sm:px-6 py-3 text-xs font-bold uppercase text-slate-500">Actions</th>
                     </tr>
@@ -81,7 +81,7 @@ function renderUsers(users) {
                             <td class="px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-slate-500">${new Date(user.created_at).toLocaleDateString()}</td>
                             <td class="px-4 sm:px-6 py-3 sm:py-4">
                                 <div class="flex flex-wrap gap-2">
-                                    ${(user.trusts_count || 0) > 0 ? `<button onclick="viewUserTrusts(${user.id})" class="text-emerald-600 hover:underline text-xs sm:text-sm">View Trust</button>` : ''}
+                                    ${(user.trusts_count || 0) > 0 ? `<button onclick="viewUserTrusts(${user.id})" class="text-emerald-600 hover:underline text-xs sm:text-sm">View LLC</button>` : ''}
                                     <button onclick="editUser(${user.id})" class="text-primary hover:underline text-xs sm:text-sm">Edit</button>
                                     <button onclick="resetPassword(${user.id})" class="text-blue-600 hover:underline text-xs sm:text-sm">Reset</button>
                                     <button onclick="deleteUser(${user.id})" class="text-red-600 hover:underline text-xs sm:text-sm">Delete</button>
@@ -106,11 +106,11 @@ function renderUsers(users) {
                         </span>
                     </div>
                     <div class="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mb-3">
-                        <span>Trusts: <strong>${user.trusts_count || 0}</strong></span>
+                        <span>LLCs: <strong>${user.trusts_count || 0}</strong></span>
                         <span>${new Date(user.created_at).toLocaleDateString()}</span>
                     </div>
                     <div class="flex flex-wrap gap-2 pt-3 border-t border-slate-200 dark:border-slate-600">
-                        ${(user.trusts_count || 0) > 0 ? `<button onclick="viewUserTrusts(${user.id})" class="text-emerald-600 hover:underline text-xs">View Trust</button>` : ''}
+                        ${(user.trusts_count || 0) > 0 ? `<button onclick="viewUserTrusts(${user.id})" class="text-emerald-600 hover:underline text-xs">View LLC</button>` : ''}
                         <button onclick="editUser(${user.id})" class="text-primary hover:underline text-xs">Edit</button>
                         <button onclick="resetPassword(${user.id})" class="text-blue-600 hover:underline text-xs">Reset Password</button>
                         <button onclick="deleteUser(${user.id})" class="text-red-600 hover:underline text-xs">Delete</button>
@@ -390,12 +390,12 @@ async function viewUserTrusts(userId) {
         const response = await fetch(`../../api/admin/user-trusts.php?user_id=${userId}`);
         const data = await response.json();
         if (!data.success) {
-            showToast(data.message || 'Failed to load trusts', 'error');
+            showToast(data.message || 'Failed to load LLCs', 'error');
             return;
         }
         const trusts = Array.isArray(data.trusts) ? data.trusts : [];
         if (!trusts.length) {
-            showToast('This user has no trusts', 'warning');
+            showToast('This user has no LLCs', 'warning');
             return;
         }
         currentTrustViewUserId = userId;
@@ -407,14 +407,14 @@ async function viewUserTrusts(userId) {
         showTrustPickerModal(data.user || { id: userId }, trusts);
     } catch (error) {
         console.error('Error loading user trusts:', error);
-        showToast('Error loading user trusts', 'error');
+        showToast('Error loading user LLCs', 'error');
     }
 }
 
 function showTrustPickerModal(user, trusts) {
     const html = TrustDetailRender.renderTrustPickerHtml(user, trusts);
     setAdminModalWidth(true);
-    showModal(`Trusts — ${user.full_name || user.email || 'User'}`, html, [
+    showModal(`LLCs — ${user.full_name || user.email || 'User'}`, html, [
         { label: 'Close', onclick: () => closeModal(), class: 'bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white' }
     ]);
 }
@@ -424,13 +424,13 @@ async function openAdminTrustDetailModal(trustId, userId) {
         const response = await fetch(`../../api/admin/user-trusts.php?id=${trustId}`);
         const data = await response.json();
         if (!data.success || !data.trust) {
-            showToast(data.message || 'Failed to load trust details', 'error');
+            showToast(data.message || 'Failed to load LLC details', 'error');
             return;
         }
         showAdminTrustDetailModal(data.trust, userId);
     } catch (error) {
         console.error('Error loading trust detail:', error);
-        showToast('Error loading trust details', 'error');
+        showToast('Error loading LLC details', 'error');
     }
 }
 
@@ -440,7 +440,7 @@ function showAdminTrustDetailModal(trust, userId) {
 
     if (currentUserTrustsCache.length > 1) {
         actions.push({
-            label: '← Back to Trusts',
+            label: '← Back to LLCs',
             onclick: () => backToTrustPicker(),
             class: 'bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white',
         });
@@ -448,13 +448,13 @@ function showAdminTrustDetailModal(trust, userId) {
 
     if (trust.can_approve_registration) {
         actions.push({
-            label: 'Approve Trust',
+            label: 'Approve LLC',
             onclick: () => approveTrustRegistration(trust.id),
             class: 'bg-green-600 text-white',
             icon: 'check_circle',
         });
         actions.push({
-            label: 'Disapprove Trust',
+            label: 'Disapprove LLC',
             onclick: () => disapproveTrustRegistration(trust.id),
             class: 'bg-red-600 text-white',
             icon: 'cancel',
@@ -468,7 +468,7 @@ function showAdminTrustDetailModal(trust, userId) {
     });
 
     setAdminModalWidth(true);
-    showModal(`Trust Details — #${trust.id}`, html, actions);
+    showModal(`LLC Details — #${trust.id}`, html, actions);
 }
 
 function backToTrustPicker() {
@@ -488,8 +488,8 @@ async function getAdminCsrfToken() {
 
 async function approveTrustRegistration(trustId) {
     showConfirmModal(
-        'Approve Trust',
-        'Approve this free trust registration? The trust will become active.',
+        'Approve LLC',
+        'Approve this free LLC registration? The LLC will become active.',
         async function() {
             try {
                 const csrfToken = await getAdminCsrfToken();
@@ -504,17 +504,17 @@ async function approveTrustRegistration(trustId) {
                 });
                 const data = await response.json();
                 if (data.success && data.trust) {
-                    showToast(data.message || 'Trust approved', 'success');
+                    showToast(data.message || 'LLC approved', 'success');
                     const idx = currentUserTrustsCache.findIndex(t => t.id == trustId);
                     if (idx >= 0) currentUserTrustsCache[idx] = data.trust;
                     showAdminTrustDetailModal(data.trust, currentTrustViewUserId || data.trust.user_id);
                     loadUsers();
                 } else {
-                    showToast(data.message || 'Failed to approve trust', 'error');
+                    showToast(data.message || 'Failed to approve LLC', 'error');
                 }
             } catch (error) {
-                console.error('Approve trust error:', error);
-                showToast('Error approving trust', 'error');
+                console.error('Approve LLC error:', error);
+                showToast('Error approving LLC', 'error');
             }
         }
     );
@@ -522,8 +522,8 @@ async function approveTrustRegistration(trustId) {
 
 async function disapproveTrustRegistration(trustId) {
     showConfirmModal(
-        'Disapprove Trust',
-        'Disapprove this free trust registration? The trust will be set to inactive.',
+        'Disapprove LLC',
+        'Disapprove this free LLC registration? The LLC will be set to inactive.',
         async function() {
             try {
                 const csrfToken = await getAdminCsrfToken();
@@ -538,17 +538,17 @@ async function disapproveTrustRegistration(trustId) {
                 });
                 const data = await response.json();
                 if (data.success && data.trust) {
-                    showToast(data.message || 'Trust disapproved', 'success');
+                    showToast(data.message || 'LLC disapproved', 'success');
                     const idx = currentUserTrustsCache.findIndex(t => t.id == trustId);
                     if (idx >= 0) currentUserTrustsCache[idx] = data.trust;
                     showAdminTrustDetailModal(data.trust, currentTrustViewUserId || data.trust.user_id);
                     loadUsers();
                 } else {
-                    showToast(data.message || 'Failed to disapprove trust', 'error');
+                    showToast(data.message || 'Failed to disapprove LLC', 'error');
                 }
             } catch (error) {
-                console.error('Disapprove trust error:', error);
-                showToast('Error disapproving trust', 'error');
+                console.error('Disapprove LLC error:', error);
+                showToast('Error disapproving LLC', 'error');
             }
         }
     );

@@ -32,11 +32,11 @@ function renderDashboardContent() {
         </div>
     </div>
     
-    <!-- Total Trusts -->
+    <!-- Total LLCs -->
     <div class="bg-white dark:bg-navy-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-4 sm:p-6">
         <div class="flex items-center justify-between">
             <div>
-                <p class="text-xs sm:text-sm font-medium text-slate-600 dark:text-slate-400 uppercase tracking-wide">Total Trusts</p>
+                <p class="text-xs sm:text-sm font-medium text-slate-600 dark:text-slate-400 uppercase tracking-wide">Total LLCs</p>
                 <p class="text-2xl sm:text-3xl font-bold text-navy-900 dark:text-white mt-2" id="statsTotalTrusts">-</p>
                 <p class="text-xs text-slate-500 dark:text-slate-500 mt-1">Created</p>
             </div>
@@ -66,7 +66,7 @@ function renderDashboardContent() {
             <div>
                 <p class="text-xs sm:text-sm font-medium text-slate-600 dark:text-slate-400 uppercase tracking-wide">Active Services</p>
                 <p class="text-2xl sm:text-3xl font-bold text-navy-900 dark:text-white mt-2" id="statsActiveServices">-</p>
-                <p class="text-xs text-slate-500 dark:text-slate-500 mt-1">Trust services</p>
+                <p class="text-xs text-slate-500 dark:text-slate-500 mt-1">LLC services</p>
             </div>
             <div class="bg-primary/10 dark:bg-primary/20 p-3 sm:p-4 rounded-xl">
                 <span class="material-icons-outlined text-primary text-2xl sm:text-3xl">settings</span>
@@ -91,8 +91,8 @@ function renderDashboardContent() {
             <div class="bg-emerald-100 dark:bg-emerald-900/30 p-2 sm:p-3 rounded-lg w-fit mb-3 sm:mb-4 group-hover:scale-110 transition-transform">
                 <span class="material-icons-outlined text-emerald-600 dark:text-emerald-400 text-xl sm:text-2xl">account_balance</span>
             </div>
-            <h3 class="font-bold text-base sm:text-lg text-navy-900 dark:text-white mb-1 sm:mb-2">Trust Services</h3>
-            <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-400">Add, edit, or remove trust service offerings</p>
+            <h3 class="font-bold text-base sm:text-lg text-navy-900 dark:text-white mb-1 sm:mb-2">LLC Services</h3>
+            <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-400">Add, edit, or remove LLC service offerings</p>
         </a>
 
         <a href="payments.php" class="bg-white dark:bg-navy-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-4 sm:p-6 hover:shadow-md transition-shadow group">
@@ -118,11 +118,11 @@ function renderDashboardContent() {
         </div>
     </div>
     
-    <!-- Recent Trusts -->
+    <!-- Recent LLCs -->
     <div class="bg-white dark:bg-navy-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-4 sm:p-6">
         <h2 class="text-lg sm:text-xl font-bold text-navy-900 dark:text-white mb-4 flex items-center gap-2">
             <span class="material-icons-outlined text-primary">account_balance</span>
-            <span>Recent Trusts</span>
+            <span>Recent LLCs</span>
         </h2>
         <div id="recentTrusts" class="space-y-3">
             <div class="text-center py-8 text-slate-500 text-sm">Loading...</div>
@@ -192,7 +192,7 @@ function renderDashboardContent() {
         const container = document.getElementById('recentTrusts');
         
         if (!trusts || trusts.length === 0) {
-            container.innerHTML = '<div class="text-center py-8 text-slate-500 text-sm">No recent trusts</div>';
+            container.innerHTML = '<div class="text-center py-8 text-slate-500 text-sm">No recent LLCs</div>';
             return;
         }
         

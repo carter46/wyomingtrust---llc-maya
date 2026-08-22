@@ -26,8 +26,8 @@ $mobileFooterNavClass = function ($key) use ($active_nav) {
 </div>
 <nav class="flex-1 space-y-2 overflow-y-auto">
 <a class="<?php echo $mobileNavClass('dashboard'); ?>" href="dashboard.php"><?php echo wt_icon('dashboard', 'w-5 h-5'); ?>Dashboard</a>
-<a class="<?php echo $mobileNavClass('trusts'); ?>" href="manage-trust.php"><?php echo wt_icon('gavel', 'w-5 h-5'); ?>My Trusts</a>
-<a class="<?php echo $mobileNavClass('create-trust'); ?>" href="../../onboarding/onboarding.php"><?php echo wt_icon('add-circle', 'w-5 h-5'); ?>Create Trust</a>
+<a class="<?php echo $mobileNavClass('trusts'); ?>" href="manage-trust.php"><?php echo wt_icon('gavel', 'w-5 h-5'); ?>LLC Management</a>
+<a class="<?php echo $mobileNavClass('create-trust'); ?>" href="../../onboarding/onboarding.php"><?php echo wt_icon('add-circle', 'w-5 h-5'); ?>Create New LLC</a>
 <a class="<?php echo $mobileNavClass('beneficiaries'); ?>" href="beneficiaries.php"><?php echo wt_icon('group', 'w-5 h-5'); ?>Beneficiaries</a>
 <a class="<?php echo $mobileNavClass('billing'); ?>" href="billing.php"><?php echo wt_icon('receipt-long', 'w-5 h-5'); ?>Billing</a>
 <a class="<?php echo $mobileNavClass('support'); ?>" href="../../login.php"><?php echo wt_icon('help', 'w-5 h-5'); ?>Support</a>

@@ -36,7 +36,7 @@ if ($isLoggedIn) {
 
 $site_settings = get_site_settings();
 $site_name = $site_settings['site_name'] ?? 'WyomingTrust';
-$page_title = 'Create Trust | ' . $site_name;
+$page_title = 'Register Your LLC | ' . $site_name;
 ?>
 <!DOCTYPE html>
 <html class="scroll-smooth" lang="en">
@@ -244,7 +244,7 @@ const ONBOARDING_STEP = {
 };
 const steps = [
     { id: ONBOARDING_STEP.BUSINESS_ENTITY, title: 'Business Type', component: 'businessEntity' },
-    { id: ONBOARDING_STEP.TRUST_TYPE, title: 'Trust Type', component: 'trustType' },
+    { id: ONBOARDING_STEP.TRUST_TYPE, title: 'LLC Structure', component: 'trustType' },
     { id: ONBOARDING_STEP.PERSONAL_INFO, title: 'Business & Personal Info', component: 'personalInfo' },
     { id: ONBOARDING_STEP.BENEFICIARIES, title: 'Beneficiaries', component: 'beneficiaries' },
     { id: ONBOARDING_STEP.REVIEW, title: 'Review & Payment', component: 'review' }
@@ -791,13 +791,13 @@ function renderBusinessEntityStep() {
         {
             value: 'new',
             label: 'New Business',
-            description: 'You are forming a new company or entity as part of this trust setup.',
+            description: 'You are forming a new company or entity as part of this LLC setup.',
             icon: 'add-circle',
         },
         {
             value: 'existing',
             label: 'Existing Business',
-            description: 'You already have a registered business and want to place it into a trust.',
+            description: 'You already have a registered business and want to place it under an LLC structure.',
             icon: 'history',
         },
     ];
@@ -823,7 +823,7 @@ function renderBusinessEntityStep() {
         <div class="max-w-2xl mx-auto w-full px-1">
             <div class="text-center mb-6 sm:mb-8">
                 <h1 class="text-xl sm:text-2xl font-bold text-primary mb-2">Is This a New or Existing Business?</h1>
-                <p class="text-on-surface-variant text-sm sm:text-base">Choose the option that best describes your situation before selecting a trust type.</p>
+                <p class="text-on-surface-variant text-sm sm:text-base">Choose the option that best describes your situation before selecting an LLC structure.</p>
             </div>
             <div class="flex flex-col gap-3 sm:gap-4 mb-8">
                 ${cards}
@@ -874,7 +874,7 @@ function renderTrustTypeStep() {
             const { isFree, label } = formatTrustServicePrice(service);
             const title = escapeHtml(service.service_name || service.service_key);
             const categoryLabel = escapeHtml(getTrustTypeLabel(service.service_key));
-            const description = escapeHtml(service.description || 'Select this trust service to continue.');
+            const description = escapeHtml(service.description || 'Select this LLC structure to continue.');
             const icon = getTrustServiceIcon(service.service_key);
             return `
                 <label class="relative border-2 ${isSelected ? 'border-secondary' : 'border-outline-variant/30'} rounded-xl p-4 sm:p-5 cursor-pointer hover:border-secondary transition-all group flex gap-3 sm:gap-4 items-start">
@@ -897,15 +897,15 @@ function renderTrustTypeStep() {
         : `
             <div class="col-span-full text-center py-12 text-on-surface-variant">
                 ${wtIcon('info', 'text-4xl mb-3 block')}
-                <p>No trust services are available right now. Please try again later or contact support.</p>
+                <p>No LLC structures are available right now. Please try again later or contact support.</p>
             </div>
         `;
 
     return `
         <div class="max-w-2xl mx-auto w-full px-1">
             <div class="text-center mb-6 sm:mb-8">
-                <h1 class="text-xl sm:text-2xl font-bold text-primary mb-2">Choose Your Trust Type</h1>
-                <p class="text-on-surface-variant text-sm sm:text-base">Select the type of trust that best fits your needs</p>
+                <h1 class="text-xl sm:text-2xl font-bold text-primary mb-2">Choose Your LLC Structure</h1>
+                <p class="text-on-surface-variant text-sm sm:text-base">Select the structure that best fits your LLC needs</p>
             </div>
             <div class="flex flex-col gap-3 sm:gap-4 mb-8">
                 ${serviceCards}
@@ -972,9 +972,9 @@ function renderPersonalInfoStep() {
                                 <p class="text-on-surface-variant text-sm mt-1">${escapeHtml(getBusinessEntityTypeLabel(onboardingData.business_info?.entity_type) || 'Business details')} — these details belong to the business entity, not the individual.</p>
                             </div>
                             <div class="flex flex-col gap-2">
-                                <label class="text-on-surface-variant text-sm font-semibold leading-normal" for="trustNameInput">Trust Name</label>
-                                <input type="text" id="trustNameInput" value="${escapeHtml(onboardingData.trust_name || '')}" placeholder="Smith Family Living Trust" autocomplete="off" class="${inputClass}" required/>
-                                <p class="text-xs text-on-surface-variant">A descriptive name for this trust. You can change it later from your dashboard.</p>
+                                <label class="text-on-surface-variant text-sm font-semibold leading-normal" for="trustNameInput">LLC Name</label>
+                                <input type="text" id="trustNameInput" value="${escapeHtml(onboardingData.trust_name || '')}" placeholder="Smith Family Holdings LLC" autocomplete="off" class="${inputClass}" required/>
+                                <p class="text-xs text-on-surface-variant">A descriptive name for this LLC. You can change it later from your dashboard.</p>
                             </div>
                             <div class="flex flex-col gap-2">
                                 <label class="text-on-surface-variant text-sm font-semibold leading-normal" for="companyNameInput">Company Name</label>
@@ -985,7 +985,7 @@ function renderPersonalInfoStep() {
                             <div class="flex flex-col gap-2">
                                 <label class="text-on-surface-variant text-sm font-semibold leading-normal" for="totalAssetValueInput">Total Asset Value (USD)</label>
                                 <input type="number" id="totalAssetValueInput" value="${onboardingData.total_estimated_value != null && onboardingData.total_estimated_value !== '' ? escapeHtml(String(onboardingData.total_estimated_value)) : ''}" min="0" step="0.01" placeholder="500000" autocomplete="off" class="${inputClass}" required/>
-                                <p class="text-xs text-on-surface-variant">Estimated total value of assets you plan to place in this trust.</p>
+                                <p class="text-xs text-on-surface-variant">Estimated total value of assets you plan to place in this LLC.</p>
                             </div>
                             ` : ''}
                             <div class="flex flex-col gap-2">
@@ -1081,7 +1081,7 @@ function renderPersonalInfoStep() {
                             <div>
                                 <h3 class="text-primary text-lg font-bold flex items-center gap-2">
                                     <?php echo wt_icon('help', 'text-secondary'); ?>
-                                    Trust Tips
+                                    LLC Tips
                                 </h3>
                                 <p class="text-on-surface-variant text-sm font-medium mt-1">Why Choose Wyoming?</p>
                             </div>
@@ -1090,7 +1090,7 @@ function renderPersonalInfoStep() {
                                     <?php echo wt_icon('shield', 'text-secondary text-xl'); ?>
                                     <div>
                                         <p class="text-primary text-sm font-bold">Asset Protection</p>
-                                        <p class="text-xs text-on-surface-variant mt-1">Wyoming offers some of the strongest statutory protections for trust assets in the USA.</p>
+                                        <p class="text-xs text-on-surface-variant mt-1">Wyoming offers some of the strongest statutory protections for LLC assets in the USA.</p>
                                     </div>
                                 </div>
                                 <div class="flex items-start gap-3 p-3 rounded-lg hover:bg-surface-container-low transition-colors">
@@ -1104,14 +1104,14 @@ function renderPersonalInfoStep() {
                                     <?php echo wt_icon('payments', 'text-on-surface-variant text-xl'); ?>
                                     <div>
                                         <p class="text-primary text-sm font-bold">Tax Advantages</p>
-                                        <p class="text-xs text-on-surface-variant mt-1">0% state income tax for non-resident trust creators.</p>
+                                        <p class="text-xs text-on-surface-variant mt-1">0% state income tax for non-resident LLC owners.</p>
                                     </div>
                                 </div>
                                 <div class="flex items-start gap-3 p-3 rounded-lg hover:bg-surface-container-low transition-colors">
                                     <?php echo wt_icon('wallet', 'text-on-surface-variant text-xl'); ?>
                                     <div>
                                         <p class="text-primary text-sm font-bold">Crypto-Friendly</p>
-                                        <p class="text-xs text-on-surface-variant mt-1">Explicit laws recognizing digital assets as legal property within trusts.</p>
+                                        <p class="text-xs text-on-surface-variant mt-1">Explicit laws recognizing digital assets as legal property within Wyoming LLCs.</p>
                                     </div>
                                 </div>
                             </div>
@@ -1191,7 +1191,7 @@ function renderCoinSelectionPanel() {
     return `
         <div id="coinSelectionPanel" class="mb-10 p-6 lg:p-8 border-2 border-secondary/20 rounded-2xl bg-surface-container-low">
             <h2 class="text-xl font-bold text-primary mb-2">Select Cryptocurrencies to Entrust</h2>
-            <p class="text-on-surface-variant text-sm mb-6">Choose which digital assets this trust will hold. After your trust is created, you can deposit crypto and track balances from your dashboard.</p>
+            <p class="text-on-surface-variant text-sm mb-6">Choose which digital assets this LLC structure will hold. After your LLC is created, you can deposit crypto and track balances from your dashboard.</p>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 ${coinCards}
             </div>
@@ -1228,7 +1228,7 @@ function toggleEntrustedCoin(coinKey, checked) {
 
 function validateTrustTypeStepAndNext() {
     if (!onboardingData.trust_service_id) {
-        alert('Please select a trust type.');
+        alert('Please select an LLC structure.');
         return;
     }
     if (isSmartContractTrustSelected()) {
@@ -1304,7 +1304,7 @@ function renderBeneficiariesStep() {
         <div class="max-w-3xl mx-auto">
             <div class="mb-8">
                 <h1 class="text-primary text-4xl font-black leading-tight tracking-tight mb-3">Add Beneficiaries</h1>
-                <p class="text-on-surface-variant text-lg font-normal leading-relaxed">Who should receive assets from this trust?</p>
+                <p class="text-on-surface-variant text-lg font-normal leading-relaxed">Who should receive assets from this LLC?</p>
             </div>
             
             <div class="bg-surface-container-lowest border border-outline-variant/30 rounded-xl p-8 shadow-sm mb-6">
@@ -1407,8 +1407,8 @@ function renderReviewStep() {
     return `
         <div class="w-full">
             <div class="flex flex-col gap-2 mb-6">
-                <h1 class="text-primary text-4xl font-black leading-tight tracking-tight">Final Step: ${isFree ? 'Review & Register Your Trust' : 'Review & Secure Your Trust'}</h1>
-                <p class="text-on-surface-variant text-lg font-normal leading-normal">${isFree ? 'Confirm your details, then register your trust.' : 'Confirm your details and choose a payment method to finalize your trust.'}</p>
+                <h1 class="text-primary text-4xl font-black leading-tight tracking-tight">Final Step: ${isFree ? 'Review & Register Your LLC' : 'Review & Secure Your LLC'}</h1>
+                <p class="text-on-surface-variant text-lg font-normal leading-normal">${isFree ? 'Confirm your details, then register your LLC.' : 'Confirm your details and choose a payment method to finalize your LLC.'}</p>
             </div>
             <div class="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
                 <div class="lg:col-span-3 flex flex-col gap-6">
@@ -1437,7 +1437,7 @@ function renderReviewStep() {
                                         <p class="text-on-background font-medium">${escapeHtml(getBusinessEntityTypeLabel(onboardingData.business_info?.entity_type) || 'Not provided')}</p>
                                     </div>
                                     <div class="col-span-2">
-                                        <p class="text-on-surface-variant text-xs uppercase font-bold tracking-wider">Trust Name</p>
+                                        <p class="text-on-surface-variant text-xs uppercase font-bold tracking-wider">LLC Name</p>
                                         <p class="text-on-background font-medium">${escapeHtml(onboardingData.trust_name || 'Not provided')}</p>
                                     </div>
                                     <div>
@@ -1543,7 +1543,7 @@ function renderReviewStep() {
                                     <div class="w-8 h-8 rounded-full bg-secondary/10 flex items-center justify-center text-primary">
                                         <?php echo wt_icon('payments', 'text-xl'); ?>
                                     </div>
-                                    <p class="text-primary font-semibold">Trust Type</p>
+                                    <p class="text-primary font-semibold">LLC Structure</p>
                                 </div>
                                 <div class="flex items-center gap-4">
                                     <button type="button" onclick="window.location.href='?step=2'" class="text-secondary text-sm font-bold hover:underline">Edit</button>
@@ -1553,7 +1553,7 @@ function renderReviewStep() {
                             <div class="px-5 pb-5 pt-0 border-t border-outline-variant/20 mt-2">
                                 <div class="pt-4 space-y-4">
                                     <div>
-                                        <p class="text-on-surface-variant text-xs uppercase font-bold tracking-wider">Trust Type</p>
+                                        <p class="text-on-surface-variant text-xs uppercase font-bold tracking-wider">LLC Structure</p>
                                         <p class="text-on-background font-medium">${escapeHtml(trustTypeName)}</p>
                                     </div>
                                     ${isSmartContractTrustSelected() && (onboardingData.entrusted_coins || []).length ? `
@@ -1592,14 +1592,14 @@ function renderReviewStep() {
                                 ${isFree ? 'Registration' : 'Payment'}
                             </h2>
                             <p class="text-on-surface-variant text-sm mt-1">
-                                ${isFree ? 'No payment is required. Register your trust when you are ready.' : 'Pick a payment method, review the details, then confirm.'}
+                                ${isFree ? 'No payment is required. Register your LLC when you are ready.' : 'Pick a payment method, review the details, then confirm.'}
                             </p>
                         </div>
                         <div class="p-6" id="paymentFlowContainer">
                             ${isFree ? `
                                 <div class="rounded-xl border border-green-200 dark:border-green-900 bg-green-50 dark:bg-green-900/20 p-5">
                                     <p class="font-bold text-primary">No payment required</p>
-                                    <p class="text-sm text-on-surface-variant mt-1">Click <strong>Register My Trust</strong> in the order summary. You will see a confirmation, then we will open your new trust.</p>
+                                    <p class="text-sm text-on-surface-variant mt-1">Click <strong>Register My LLC</strong> in the order summary. You will see a confirmation, then we will open your new LLC.</p>
                                 </div>
                             ` : (
                                 paymentStage === 'details'
@@ -1642,7 +1642,7 @@ function renderReviewStep() {
                             ${isFree ? `
                                 <button id="freeCheckoutBtn" type="button" onclick="completeFreeCheckout()" class="w-full bg-secondary text-on-secondary hover:opacity-90 font-bold py-4 px-6 rounded-xl transition-all shadow-lg flex items-center justify-center gap-3 disabled:opacity-60 disabled:cursor-not-allowed">
                                     <?php echo wt_icon('check-circle', 'w-5 h-5'); ?>
-                                    <span>Register My Trust</span>
+                                    <span>Register My LLC</span>
                                 </button>
                             ` : (
                                 paymentStage === 'details'
@@ -1751,7 +1751,7 @@ function savePersonalInfo() {
 
 function validateStep2Fields() {
     if (!onboardingData.trust_name) {
-        alert('Please enter a trust name.');
+        alert('Please enter an LLC name.');
         return false;
     }
     const bi = onboardingData.business_info || {};
@@ -2667,7 +2667,7 @@ function renderPaymentConfirmed() {
         <div class="space-y-4">
             <div class="rounded-xl border border-green-200 dark:border-green-900 bg-green-50 dark:bg-green-900/20 p-5">
                 <p class="font-bold text-primary">Payment submitted</p>
-                <p class="text-sm text-on-surface-variant mt-1">Your trust has been created. Payment will be approved once received by the admin.</p>
+                <p class="text-sm text-on-surface-variant mt-1">Your LLC has been created. Payment will be approved once received by the admin.</p>
             </div>
             <button onclick="doneToDashboard()" class="w-full bg-secondary text-on-secondary hover:opacity-90 font-bold py-3 px-5 rounded-xl shadow">
                 View My Trust
@@ -2691,14 +2691,14 @@ function setTrustCheckoutButtonLoading(loading, buttonId) {
         if (!btn.dataset.defaultLabel) {
             btn.dataset.defaultLabel = btn.innerHTML;
         }
-        btn.innerHTML = `<span class="inline-flex items-center justify-center gap-2"><span class="inline-block w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin"></span><span>Registering your trust...</span></span>`;
+        btn.innerHTML = `<span class="inline-flex items-center justify-center gap-2"><span class="inline-block w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin"></span><span>Registering your LLC...</span></span>`;
     } else if (btn.dataset.defaultLabel) {
         btn.innerHTML = btn.dataset.defaultLabel;
     }
 }
 
 async function showTrustRegistrationSuccess(trustId, options = {}) {
-    const trustName = options.trustName || onboardingData.trust_name || 'Your trust';
+    const trustName = options.trustName || onboardingData.trust_name || 'Your LLC';
     const minDurationMs = Math.max(5000, Number(options.minDurationMs) || 5000);
     const redirectUrl = getTrustManageUrl(trustId);
 
@@ -2716,9 +2716,9 @@ async function showTrustRegistrationSuccess(trustId, options = {}) {
                 ${typeof wtIcon === 'function' ? wtIcon('check-circle', 'w-9 h-9 text-green-600') : ''}
             </div>
             <div class="animate-spin rounded-full h-10 w-10 border-4 border-secondary border-t-transparent mx-auto mb-5"></div>
-            <h2 class="text-xl font-bold text-primary mb-2">Trust Registered Successfully</h2>
+            <h2 class="text-xl font-bold text-primary mb-2">LLC Registered Successfully</h2>
             <p class="text-on-surface-variant text-sm"><strong>${escapeHtml(trustName)}</strong> has been registered.</p>
-            <p class="text-on-surface-variant text-xs mt-4">Opening your trust workspace...</p>
+            <p class="text-on-surface-variant text-xs mt-4">Opening your LLC workspace...</p>
         </div>
     `;
     document.body.appendChild(overlay);
@@ -2822,7 +2822,7 @@ async function createTrust(options = { redirect: true }) {
     }
 
     if (!onboardingData.trust_service_id) {
-        alert('Error: Please select a trust type first.');
+        alert('Error: Please select an LLC structure first.');
         window.location.href = 'onboarding.php?step=2';
         return;
     }
@@ -2840,7 +2840,7 @@ async function createTrust(options = { redirect: true }) {
     
     // Validate all required data
     if (!onboardingData.trust_name) {
-        alert('Please enter a trust name.');
+        alert('Please enter an LLC name.');
         window.location.href = 'onboarding.php?step=3';
         return;
     }
@@ -2965,13 +2965,13 @@ async function createTrust(options = { redirect: true }) {
         } else {
             const errorMsg = data.message || data.error_details || 'Unknown error';
             console.error('Trust creation failed:', data);
-            alert('Failed to create trust: ' + errorMsg);
+            alert('Failed to create LLC: ' + errorMsg);
             return { success: false };
         }
     } catch (error) {
         console.error('Error creating trust:', error);
         console.error('Error stack:', error.stack);
-        alert('An error occurred while creating trust: ' + (error.message || 'Unknown error') + '. Please check console for details.');
+        alert('An error occurred while creating LLC: ' + (error.message || 'Unknown error') + '. Please check console for details.');
         return { success: false };
     }
 }

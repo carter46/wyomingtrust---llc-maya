@@ -213,7 +213,7 @@ Welcome <br/><span class="font-bold text-transparent bg-clip-text bg-gradient-to
 </h1>
 <div class="w-12 h-1 bg-gradient-to-r from-primary-fixed-dim to-transparent rounded-full"></div>
 <p class="font-body-md text-white/80 max-w-md leading-relaxed font-light text-[15px]">
-Access your estate plan, manage your crypto trust, and protect your family's digital legacy.
+Access your Wyoming LLC dashboard, manage your business filings, and keep your company in good standing.
 </p>
 </div>
 <div class="pt-4">
@@ -243,7 +243,7 @@ SECURE CONNECTION ESTABLISHED
 <div class="h-[1px] w-6 bg-primary-fixed-dim/30"></div>
 </div>
 <h2 class="font-headline-md text-xl text-white mb-1 font-semibold">Log in to your account</h2>
-<p class="font-body-md text-white/60 text-[13px] font-light">Manage your Wills, Trusts, and digital legacy.</p>
+<p class="font-body-md text-white/60 text-[13px] font-light">Manage your LLC, documents, and business account.</p>
 </div>
 
 <div id="verificationSuccess" class="hidden mb-3 p-3 bg-emerald-500/10 border border-emerald-400/20 text-emerald-100 font-label-md text-[12px] flex items-center gap-2 rounded-lg backdrop-blur-md">
@@ -346,8 +346,8 @@ Get Started
 <div class="flex items-start gap-2">
 <span class="material-symbols-outlined text-primary-fixed-dim text-[20px] font-light">family_restroom</span>
 <div>
-<h4 class="font-label-sm text-white/90 tracking-wide text-[11px]">Trusted by Families</h4>
-<p class="text-[11px] text-white/50 mt-0.5 leading-snug font-light">Over 500k families trust us.</p>
+<h4 class="font-label-sm text-white/90 tracking-wide text-[11px]">Trusted by Founders</h4>
+<p class="text-[11px] text-white/50 mt-0.5 leading-snug font-light">100k+ businesses formed.</p>
 </div>
 </div>
 </div>

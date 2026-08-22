@@ -77,7 +77,7 @@ function admin_user_trusts_has_payment_method_id_column(PDO $db): bool {
 function format_admin_user_trust_row(array $trust): array {
     $trust = enrich_user_trust_row($trust);
     $trustData = is_array($trust['trust_data'] ?? null) ? $trust['trust_data'] : [];
-    $trust['trust_name'] = $trust['trust_name'] ?? ($trustData['trust_name'] ?? 'Untitled Trust');
+    $trust['trust_name'] = $trust['trust_name'] ?? ($trustData['trust_name'] ?? 'Untitled LLC');
     $trust['is_free'] = (int) ($trust['is_free'] ?? 0);
     $trust['price'] = isset($trust['price']) ? (float) $trust['price'] : 0.0;
     $trust['can_approve_registration'] = can_approve_free_trust_registration($trust);
@@ -130,7 +130,7 @@ function handleGetAdminUserTrust() {
     $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$row) {
-        send_json(['success' => false, 'message' => 'Trust not found'], 404);
+        send_json(['success' => false, 'message' => 'LLC not found'], 404);
     }
 
     send_json([
@@ -166,21 +166,21 @@ function handleAdminTrustRegistrationAction() {
     $trust = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$trust) {
-        send_json(['success' => false, 'message' => 'Trust not found'], 404);
+        send_json(['success' => false, 'message' => 'LLC not found'], 404);
     }
 
     if ((int) ($trust['is_free'] ?? 0) !== 1) {
-        send_json(['success' => false, 'message' => 'Paid trust registration is handled in Payment Approvals.'], 409);
+        send_json(['success' => false, 'message' => 'Paid LLC registration is handled in Payment Approvals.'], 409);
     }
 
     if (!can_approve_free_trust_registration($trust)) {
-        send_json(['success' => false, 'message' => 'Trust is not eligible for registration approval.'], 409);
+        send_json(['success' => false, 'message' => 'LLC is not eligible for registration approval.'], 409);
     }
 
     $newStatus = $action === 'approve_registration' ? 'active' : 'inactive';
     $message = $action === 'approve_registration'
-        ? 'Trust registration approved. Trust is now active.'
-        : 'Trust registration disapproved. Trust is now inactive.';
+        ? 'LLC registration approved. LLC is now active.'
+        : 'LLC registration disapproved. LLC is now inactive.';
 
     $update = $db->prepare(
         'UPDATE user_trusts ut

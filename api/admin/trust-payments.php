@@ -278,7 +278,7 @@ function handleApproveRejectPayment($payload = null) {
             // Approve: payment_status = 'completed', status = 'active'
             $newPaymentStatus = 'completed';
             $newStatus = 'active';
-            $message = 'Payment approved successfully. Trust is now active.';
+            $message = 'Payment approved successfully. LLC is now active.';
 
             $update = $db->prepare(
                 'UPDATE user_trusts
@@ -291,7 +291,7 @@ function handleApproveRejectPayment($payload = null) {
             // (keeps trust from sitting in "pending" forever)
             $newPaymentStatus = 'rejected';
             $newStatus = 'inactive';
-            $message = 'Payment rejected. Trust is now inactive.';
+            $message = 'Payment rejected. LLC is now inactive.';
 
             $update = $db->prepare(
                 'UPDATE user_trusts

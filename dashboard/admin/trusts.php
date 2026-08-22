@@ -6,7 +6,7 @@ if (!isset($_SESSION['admin_id'])) {
     exit;
 }
 
-$page_title = 'Trust Services Management';
+$page_title = 'LLC Services Management';
 
 require_once __DIR__ . '/includes/layout.php';
 
@@ -15,19 +15,19 @@ function renderTrustsContent() {
 
 <div class="mb-4 sm:mb-6 lg:mb-8">
     <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h1 class="text-2xl sm:text-3xl font-bold text-navy-900 dark:text-white">Trust Services</h1>
+        <h1 class="text-2xl sm:text-3xl font-bold text-navy-900 dark:text-white">LLC Services</h1>
         <button id="addTrustBtn" onclick="showCreateTrustModal()" class="bg-primary text-navy-900 px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg font-semibold text-sm sm:text-base hover:opacity-90 w-full sm:w-auto flex items-center justify-center gap-2 shrink-0">
             <span class="material-icons-outlined text-sm">add</span>
-            <span>Add Trust Service</span>
+            <span>Add LLC Service</span>
         </button>
     </div>
-    <p class="text-sm text-slate-500 dark:text-slate-400 mt-2 max-w-2xl">Configure trust offerings by category and display name.</p>
+    <p class="text-sm text-slate-500 dark:text-slate-400 mt-2 max-w-2xl">Configure LLC offerings by category and display name.</p>
 </div>
 
 <div id="messageContainer" class="mb-3 sm:mb-4"></div>
 <div class="bg-white dark:bg-navy-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
     <div id="trustsContainer" class="p-4 sm:p-6">
-        <div class="text-center py-8 sm:py-10 text-slate-500 text-sm sm:text-base">Loading trust services...</div>
+        <div class="text-center py-8 sm:py-10 text-slate-500 text-sm sm:text-base">Loading LLC services...</div>
     </div>
 </div>
 
@@ -48,11 +48,11 @@ async function loadTrusts() {
             renderSchemaDiagnostics(data.schema_diagnostics);
             renderTrusts(data.trusts);
         } else {
-            document.getElementById('trustsContainer').innerHTML = '<div class="text-center py-10 text-red-500">Failed to load trust services</div>';
+            document.getElementById('trustsContainer').innerHTML = '<div class="text-center py-10 text-red-500">Failed to load LLC services</div>';
         }
     } catch (error) {
         console.error('Error loading trusts:', error);
-        document.getElementById('trustsContainer').innerHTML = '<div class="text-center py-10 text-red-500">Error loading trust services</div>';
+        document.getElementById('trustsContainer').innerHTML = '<div class="text-center py-10 text-red-500">Error loading LLC services</div>';
     }
 }
 
@@ -99,7 +99,7 @@ function renderSchemaDiagnostics(diagnostics) {
 function renderTrusts(trusts) {
     const container = document.getElementById('trustsContainer');
     if (!trusts || trusts.length === 0) {
-        container.innerHTML = '<div class="text-center py-8 sm:py-10 text-slate-500 text-sm sm:text-base">No trust services configured yet. Click <strong>Add Trust Service</strong> to get started.</div>';
+        container.innerHTML = '<div class="text-center py-8 sm:py-10 text-slate-500 text-sm sm:text-base">No LLC services configured yet. Click <strong>Add LLC Service</strong> to get started.</div>';
         return;
     }
 
@@ -290,7 +290,7 @@ function buildPricingFields(isFree = false, price = '0.00', liquidationFee = '0.
         </div>
         <div id="liquidationFeeSection" class="${showLiq ? '' : 'hidden'}">
             <label class="block text-sm font-semibold text-navy-900 dark:text-white mb-2">Liquidation Fee</label>
-            <p class="text-xs text-slate-500 dark:text-slate-400 mb-2">Fee charged when a user liquidates this trust type. Not applicable to irrevocable trusts.</p>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mb-2">Fee charged when a user liquidates this LLC structure. Not applicable to irrevocable structures.</p>
             <div class="relative">
                 <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">$</span>
                 <input type="number" name="liquidation_fee" step="0.01" min="0" value="${parseFloat(liquidationFee || 0).toFixed(2)}"
@@ -338,7 +338,7 @@ function showCreateTrustModal() {
         </div>
     `;
 
-    showFormModal('Add Trust Service', formHtml, function(data) {
+    showFormModal('Add LLC Service', formHtml, function(data) {
         const trustType = (data.trust_type || '').trim();
         const serviceName = (data.service_name || '').trim();
         const description = (data.description || '').trim();
@@ -378,22 +378,22 @@ async function createTrust(payload) {
             data = raw ? JSON.parse(raw) : null;
         } catch (parseError) {
             console.error('Create trust non-JSON response:', raw);
-            showToast('Server error while creating trust service. Check the browser console for details.', 'error');
+            showToast('Server error while creating LLC service. Check the browser console for details.', 'error');
             return;
         }
         if (data.success) {
-            showToast('Trust service created successfully', 'success');
+            showToast('LLC service created successfully', 'success');
             loadTrusts();
         } else {
             console.error('Create trust failed:', data);
-            showToast(data.message || 'Failed to create trust service', 'error');
+            showToast(data.message || 'Failed to create LLC service', 'error');
             if (data.schema_diagnostics) {
                 renderSchemaDiagnostics(data.schema_diagnostics);
             }
         }
     } catch (error) {
         console.error('Error creating trust:', error);
-        showToast('Error creating trust service', 'error');
+        showToast('Error creating LLC service', 'error');
     }
 }
 
@@ -421,7 +421,7 @@ async function toggleTrustStatus(id, isActive) {
 function editTrust(id) {
     const trust = allTrusts.find(t => t.id == id);
     if (!trust) {
-        showToast('Trust service not found', 'error');
+        showToast('LLC service not found', 'error');
         return;
     }
 
@@ -448,7 +448,7 @@ function editTrust(id) {
         </div>
     `;
 
-    showFormModal('Edit Trust Service', formHtml, function(data) {
+    showFormModal('Edit LLC Service', formHtml, function(data) {
         const serviceName = (data.service_name || '').trim();
         const description = (data.description || '').trim();
         const isFree = data.is_free === true || data.is_free === 'on';
@@ -481,30 +481,30 @@ async function updateTrust(payload) {
             showToast('Trust type updated successfully', 'success');
             loadTrusts();
         } else {
-            showToast(data.message || 'Failed to update trust type', 'error');
+            showToast(data.message || 'Failed to update LLC service', 'error');
         }
     } catch (error) {
         console.error('Error updating trust:', error);
-        showToast('Error updating trust type', 'error');
+        showToast('Error updating LLC service', 'error');
     }
 }
 
 async function deleteTrust(id) {
     const trust = allTrusts.find(t => t.id == id);
     if (!trust) {
-        showToast('Trust service not found', 'error');
+        showToast('LLC service not found', 'error');
         return;
     }
 
     showConfirmModal(
-        'Delete Trust Service',
+        'Delete LLC Service',
         `Are you sure you want to delete "${escapeHtml(trust.service_name)}"? This action cannot be undone.`,
         async function() {
             try {
                 const response = await fetch(`../../api/admin/trusts.php?id=${id}`, { method: 'DELETE' });
                 const data = await response.json();
                 if (data.success) {
-                    showToast('Trust type deleted successfully', 'success');
+                    showToast('LLC service deleted successfully', 'success');
                     loadTrusts();
                 } else {
                     showToast(data.message || 'Failed to delete', 'error');

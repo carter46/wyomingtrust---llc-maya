@@ -13,13 +13,13 @@ include __DIR__ . '/includes/layout.php';
 <!-- Welcome -->
 <section>
 <h1 class="text-xl sm:text-2xl font-semibold text-primary mb-1.5 font-headline-md">Welcome Back, <span id="userName"><?php echo escape_html($userName); ?></span>.</h1>
-<p class="text-sm sm:text-base text-on-surface-variant">Manage your trusts, beneficiaries, and estate planning from one secure dashboard.</p>
+<p class="text-sm sm:text-base text-on-surface-variant">Manage your LLCs, beneficiaries, and business details from one secure dashboard.</p>
 </section>
 
 <!-- Key Metrics (3 cards) -->
 <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
 <div class="metric-card-gradient p-6 rounded-2xl card-hover flex flex-col justify-between min-h-[7.5rem] text-on-primary shadow-lg dashboard-metric-card">
-<span class="text-xs md:text-sm uppercase tracking-widest text-on-primary/70 font-bold">Active Trusts</span>
+<span class="text-xs md:text-sm uppercase tracking-widest text-on-primary/70 font-bold">Active LLCs</span>
 <div class="min-w-0">
 <div class="dashboard-metric-value-wrap">
 <p class="dashboard-metric-value text-on-primary" id="trustCount" data-fit-max="36" data-fit-min="16">0</p>
@@ -50,14 +50,14 @@ include __DIR__ . '/includes/layout.php';
 </div>
 </section>
 
-<!-- My Trusts (list) -->
+<!-- LLC Management (list) -->
 <section>
 <div class="flex items-center justify-between mb-6">
-<h2 class="font-headline-md text-headline-md text-primary">My Trusts</h2>
+<h2 class="font-headline-md text-headline-md text-primary">LLC Management</h2>
 <a class="font-label-md text-label-md text-secondary hover:underline underline-offset-4 inline-flex items-center gap-1" href="manage-trust.php">View All <?php echo wt_icon('arrow-forward', 'w-4 h-4'); ?></a>
 </div>
 <div id="trustsContainer" class="bg-surface-container-lowest rounded-2xl border border-outline-variant overflow-hidden divide-y divide-outline-variant/30">
-<div class="p-10 text-center text-on-surface-variant">Loading trusts...</div>
+<div class="p-10 text-center text-on-surface-variant">Loading LLCs...</div>
 </div>
 </section>
 
@@ -191,7 +191,7 @@ async function loadDashboardData() {
         });
 
         if (!trustsResponse.ok) {
-            showTrustsError(`Failed to load trusts (HTTP ${trustsResponse.status})`);
+            showTrustsError(`Failed to load LLCs (HTTP ${trustsResponse.status})`);
         } else {
             let trustsData;
             try {
@@ -212,7 +212,7 @@ async function loadDashboardData() {
                     renderTrusts(activeTrusts);
                 } else if (trustsData.trusts.length > 0) {
                     if (trustsContainer) {
-                        trustsContainer.innerHTML = '<div class="p-10 text-center text-on-surface-variant">No active trusts yet. <a href="manage-trust.php" class="text-secondary font-semibold hover:underline">View pending trusts</a></div>';
+                        trustsContainer.innerHTML = '<div class="p-10 text-center text-on-surface-variant">No active LLCs yet. <a href="manage-trust.php" class="text-secondary font-semibold hover:underline">View pending LLCs</a></div>';
                     }
                 } else {
                     renderTrusts([]);
@@ -221,7 +221,7 @@ async function loadDashboardData() {
                 if (trustCountEl) trustCountEl.textContent = '0';
                 if (beneficiaryEl) beneficiaryEl.textContent = '0';
                 if (trustsContainer) {
-                    trustsContainer.innerHTML = '<div class="p-10 text-center text-on-surface-variant">No trusts yet. <a href="../../onboarding/onboarding.php" class="text-secondary font-semibold hover:underline">Create your first trust</a></div>';
+                    trustsContainer.innerHTML = '<div class="p-10 text-center text-on-surface-variant">No LLCs yet. <a href="../../onboarding/onboarding.php" class="text-secondary font-semibold hover:underline">Create your first LLC</a></div>';
                 }
             }
         }
@@ -256,12 +256,12 @@ async function loadDashboardData() {
 function renderTrusts(trusts) {
     const container = document.getElementById('trustsContainer');
     if (!trusts || trusts.length === 0) {
-        container.innerHTML = '<div class="p-10 text-center text-on-surface-variant">No trusts yet. <a href="../../onboarding/onboarding.php" class="text-secondary font-semibold hover:underline">Create your first trust</a></div>';
+        container.innerHTML = '<div class="p-10 text-center text-on-surface-variant">No LLCs yet. <a href="../../onboarding/onboarding.php" class="text-secondary font-semibold hover:underline">Create your first LLC</a></div>';
         return;
     }
 
     container.innerHTML = trusts.map(trust => {
-        const trustName = trust.trust_name || trust.service_name || 'Untitled Trust';
+        const trustName = trust.trust_name || trust.service_name || 'Untitled LLC';
         const serviceName = trust.service_name || '';
         const createdDate = formatDateSafe(trust.created_at);
         const trustId = trust.id || 0;
@@ -314,7 +314,7 @@ function renderPayments(payments) {
                     ${payments.map(payment => `
                         <tr class="hover:bg-surface transition-colors">
                             <td class="px-6 md:px-8 py-5 text-on-surface">${formatDateSafe(payment.created_at)}</td>
-                            <td class="px-6 md:px-8 py-5 font-medium text-primary">${escapeHtml(payment.service_name || 'Trust Service')}</td>
+                            <td class="px-6 md:px-8 py-5 font-medium text-primary">${escapeHtml(payment.service_name || 'LLC Service')}</td>
                             <td class="px-6 md:px-8 py-5 font-bold">${escapeHtml(formatPaymentAmount(payment))}</td>
                             <td class="px-6 md:px-8 py-5"><span class="font-medium capitalize ${paymentStatusClass(payment.payment_status)}">${escapeHtml(payment.payment_status || 'unknown')}</span></td>
                             <td class="px-6 md:px-8 py-5 text-right">${paymentTrustLink(payment)}</td>

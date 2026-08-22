@@ -35,7 +35,7 @@ include __DIR__ . '/includes/layout.php';
 Select All
 </label>
 </div>
-<p class="text-xs text-on-surface-variant mb-4">Only coins not yet added to this trust are shown below.</p>
+<p class="text-xs text-on-surface-variant mb-4">Only coins not yet added to this LLC are shown below.</p>
 <div id="availableCoinsList" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
 <p id="noAvailableMsg" class="hidden text-center py-8 text-on-surface-variant text-sm">All available coins are already in your trust portfolio.</p>
 </div>
@@ -120,7 +120,7 @@ async function loadData() {
         allCoins = coinsData.success && coinsData.coins ? coinsData.coins : [];
         userAssets = assetsData.success && assetsData.assets ? assetsData.assets : [];
 
-        const name = trust.trust_name || 'Your Trust';
+        const name = trust.trust_name || 'Your LLC';
         document.getElementById('trustSubtitle').textContent = `Add coins to "${name}" (Trust #${TRUST_ID})`;
 
         const entrustedSet = new Set(getEntrustedKeys());

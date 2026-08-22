@@ -15,7 +15,7 @@ function renderAdminLayout($page_title, $active_page = 'dashboard', $content_cal
     $nav_items = [
         'dashboard' => ['label' => 'Dashboard', 'icon' => 'dashboard', 'href' => 'index.php'],
         'users' => ['label' => 'User Management', 'icon' => 'people', 'href' => 'users.php'],
-        'trusts' => ['label' => 'Trust Services', 'icon' => 'account_balance', 'href' => 'trusts.php'],
+        'trusts' => ['label' => 'LLC Services', 'icon' => 'account_balance', 'href' => 'trusts.php'],
         'trust-payments' => ['label' => 'Payment Approvals', 'icon' => 'pending_actions', 'href' => 'trust-payments.php'],
         'coins' => ['label' => 'Coins Management', 'icon' => 'monetization_on', 'href' => 'coins.php'],
         'addresses' => ['label' => 'Wallet Addresses', 'icon' => 'account_balance_wallet', 'href' => 'addresses.php'],

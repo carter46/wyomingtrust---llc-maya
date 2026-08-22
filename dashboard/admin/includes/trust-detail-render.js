@@ -76,7 +76,7 @@
                 : businessInfo.company_name)
             : '';
 
-        const trustName = trust.trust_name || trustData.trust_name || 'Untitled Trust';
+        const trustName = trust.trust_name || trustData.trust_name || 'Untitled LLC';
         const isFree = Number(trust.is_free) === 1;
         const createdAt = trust.created_at ? new Date(trust.created_at).toLocaleString() : 'N/A';
         const declaredUnverified = parseFloat(trust.declared_unverified_value ?? 0) || 0;
@@ -85,14 +85,14 @@
         return `
             <div class="space-y-4">
                 <div>
-                    <h4 class="font-bold text-sm text-navy-900 dark:text-white mb-2">Trust Information</h4>
+                    <h4 class="font-bold text-sm text-navy-900 dark:text-white mb-2">LLC Information</h4>
                     <div class="space-y-1 text-sm">
-                        <div><span class="text-slate-500 dark:text-slate-400">Trust ID:</span> <span class="font-mono">#${escapeHtml(trust.id)}</span></div>
-                        <div><span class="text-slate-500 dark:text-slate-400">Trust Name:</span> ${escapeHtml(trustName)}</div>
+                        <div><span class="text-slate-500 dark:text-slate-400">LLC ID:</span> <span class="font-mono">#${escapeHtml(trust.id)}</span></div>
+                        <div><span class="text-slate-500 dark:text-slate-400">LLC Name:</span> ${escapeHtml(trustName)}</div>
                         <div><span class="text-slate-500 dark:text-slate-400">Service:</span> ${escapeHtml(trust.service_name || 'N/A')}</div>
                         <div><span class="text-slate-500 dark:text-slate-400">Type:</span> ${isFree ? 'Free' : 'Paid'}</div>
                         <div><span class="text-slate-500 dark:text-slate-400">Formation Fee:</span> <span class="font-semibold">${isFree ? 'Free' : formatUsd(trust.price || 0)}</span></div>
-                        <div><span class="text-slate-500 dark:text-slate-400">Trust Status:</span> ${statusBadge(trust.status, trust.payment_status)}</div>
+                        <div><span class="text-slate-500 dark:text-slate-400">LLC Status:</span> ${statusBadge(trust.status, trust.payment_status)}</div>
                         <div><span class="text-slate-500 dark:text-slate-400">Payment Status:</span> ${escapeHtml((trust.payment_status || 'N/A').replace(/_/g, ' '))}</div>
                         <div><span class="text-slate-500 dark:text-slate-400">Created:</span> ${escapeHtml(createdAt)}</div>
                         ${!isFree && trust.payment_method_name ? `<div><span class="text-slate-500 dark:text-slate-400">Payment Method:</span> ${escapeHtml(trust.payment_method_name)}</div>` : ''}
@@ -187,7 +187,7 @@
 
     function renderTrustPickerHtml(user, trusts) {
         return `
-            <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">Select a trust to view details for <strong>${escapeHtml(user.full_name || user.email || 'this user')}</strong>.</p>
+            <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">Select an LLC to view details for <strong>${escapeHtml(user.full_name || user.email || 'this user')}</strong>.</p>
             <div class="space-y-3 max-h-[60vh] overflow-y-auto">
                 ${trusts.map((trust) => {
                     const isFree = Number(trust.is_free) === 1;
@@ -196,8 +196,8 @@
                         <div class="p-4 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-navy-700/40">
                             <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                                 <div class="min-w-0">
-                                    <p class="font-bold text-navy-900 dark:text-white truncate">${escapeHtml(trust.trust_name || 'Untitled Trust')}</p>
-                                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">${escapeHtml(trust.service_name || 'Trust')} · ${isFree ? 'Free' : 'Paid'} · #${escapeHtml(trust.id)}</p>
+                                    <p class="font-bold text-navy-900 dark:text-white truncate">${escapeHtml(trust.trust_name || 'Untitled LLC')}</p>
+                                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">${escapeHtml(trust.service_name || 'LLC')} · ${isFree ? 'Free' : 'Paid'} · #${escapeHtml(trust.id)}</p>
                                     <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Status: ${escapeHtml((trust.status || 'pending').replace(/_/g, ' '))} · Payment: ${escapeHtml((trust.payment_status || 'N/A').replace(/_/g, ' '))}</p>
                                     ${declared > 0 ? `<p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Declared: ${formatUsd(declared)}</p>` : ''}
                                     <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Created: ${escapeHtml(trust.created_at ? new Date(trust.created_at).toLocaleDateString() : 'N/A')}</p>

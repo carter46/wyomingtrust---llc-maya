@@ -7,7 +7,7 @@ if (!isset($_SESSION['admin_id'])) {
     exit;
 }
 
-$page_title = 'Trust Payment Approvals';
+$page_title = 'LLC Payment Approvals';
 
 // Include shared layout
 require_once __DIR__ . '/includes/layout.php';
@@ -21,7 +21,7 @@ function renderTrustPaymentsContent() {
 </div>
 
 <div class="flex gap-2 mb-4 border-b border-slate-200 dark:border-slate-700">
-    <button type="button" id="tabTrustPayments" onclick="switchTab('trust')" class="px-4 py-2 text-sm font-semibold border-b-2 border-primary text-primary">Trust Service Payments</button>
+    <button type="button" id="tabTrustPayments" onclick="switchTab('trust')" class="px-4 py-2 text-sm font-semibold border-b-2 border-primary text-primary">LLC Service Payments</button>
     <button type="button" id="tabCryptoDeposits" onclick="switchTab('deposits')" class="px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-slate-500 hover:text-primary">Crypto Deposits</button>
     <button type="button" id="tabLiquidationFees" onclick="switchTab('liquidation_fees')" class="px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-slate-500 hover:text-primary">Liquidation Fees</button>
     <button type="button" id="tabAssetFundings" onclick="switchTab('asset_fundings')" class="px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-slate-500 hover:text-primary">Asset Deposits</button>
@@ -632,7 +632,7 @@ function renderPayments(payments) {
             <table class="w-full text-left">
                 <thead class="bg-slate-50 dark:bg-navy-700">
                     <tr>
-                        <th class="px-4 sm:px-6 py-3 text-xs font-bold uppercase text-slate-500">Trust ID</th>
+                        <th class="px-4 sm:px-6 py-3 text-xs font-bold uppercase text-slate-500">LLC ID</th>
                         <th class="px-4 sm:px-6 py-3 text-xs font-bold uppercase text-slate-500">User</th>
                         <th class="px-4 sm:px-6 py-3 text-xs font-bold uppercase text-slate-500">Service</th>
                         <th class="px-4 sm:px-6 py-3 text-xs font-bold uppercase text-slate-500">Amount</th>
@@ -737,7 +737,7 @@ async function viewDetails(trustId) {
             showValueSplit: true,
         });
 
-        showModal('Trust Payment Details', detailsHtml, [
+        showModal('LLC Payment Details', detailsHtml, [
             { label: 'Close', onclick: () => closeModal(), class: 'bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white' }
         ]);
     } catch (error) {
@@ -755,7 +755,7 @@ function approvePayment(trustId) {
     
     showConfirmModal(
         'Approve Payment',
-        `Are you sure you want to approve this payment?\n\nTrust ID: #${payment.id}\nUser: ${escapeHtml(payment.user_name || 'N/A')}\nAmount: $${parseFloat(payment.price || 0).toFixed(2)}\n\nThis will activate the trust.`,
+        `Are you sure you want to approve this payment?\n\nLLC ID: #${payment.id}\nUser: ${escapeHtml(payment.user_name || 'N/A')}\nAmount: $${parseFloat(payment.price || 0).toFixed(2)}\n\nThis will activate the LLC.`,
         async function() {
             try {
                 // Get CSRF token
@@ -798,7 +798,7 @@ function rejectPayment(trustId) {
     
     showConfirmModal(
         'Reject Payment',
-        `Are you sure you want to reject this payment?\n\nTrust ID: #${payment.id}\nUser: ${escapeHtml(payment.user_name || 'N/A')}\nAmount: $${parseFloat(payment.price || 0).toFixed(2)}\n\nThe trust will remain pending.`,
+        `Are you sure you want to reject this payment?\n\nLLC ID: #${payment.id}\nUser: ${escapeHtml(payment.user_name || 'N/A')}\nAmount: $${parseFloat(payment.price || 0).toFixed(2)}\n\nThe LLC will remain pending.`,
         async function() {
             try {
                 // Get CSRF token

@@ -179,7 +179,7 @@ if ($method === 'GET') {
 
         $feeInfo = resolve_trust_liquidation_fee_usd($db, $userId, $trustId);
         if (!$feeInfo['allows_liquidation']) {
-            send_json(['success' => false, 'message' => 'This trust cannot be liquidated'], 403);
+            send_json(['success' => false, 'message' => 'This LLC cannot be liquidated'], 403);
         }
 
         $existingPayment = user_has_trust_liquidation_fee_payment($db, $userId, $trustId, false);
@@ -233,7 +233,7 @@ if ($method === 'GET') {
             'success' => true,
             'type' => 'asset_funding',
             'title' => 'Asset Deposit Checkout',
-            'description' => 'Deposit the cash value of this trust asset. An administrator will verify your payment before the asset value is added to your trust.',
+            'description' => 'Deposit the cash value of this LLC asset. An administrator will verify your payment before the asset value is added to your LLC.',
             'purpose_label' => 'Asset Value Deposit',
             'item_label' => $asset['label'] ?? 'Trust Asset',
             'trust_id' => $trustId,
@@ -261,7 +261,7 @@ if ($method === 'GET') {
         if (!trust_declared_value_funding_applies($trustData)) {
             send_json([
                 'success' => false,
-                'message' => 'This trust uses per-asset deposits. Fund each asset individually from Manage Trust.',
+                'message' => 'This LLC uses per-asset deposits. Fund each asset individually from LLC Management.',
             ], 400);
         }
 
@@ -278,7 +278,7 @@ if ($method === 'GET') {
             'success' => true,
             'type' => 'trust_value',
             'title' => 'Trust Value Deposit Checkout',
-            'description' => 'Deposit the declared total asset value for your trust. An administrator will verify your payment before the value is credited.',
+            'description' => 'Deposit the declared total asset value for your LLC. An administrator will verify your payment before the value is credited.',
             'purpose_label' => 'Declared Trust Value Deposit',
             'item_label' => $trust['trust_data']['trust_name'] ?? $trust['service_name'] ?? 'Trust',
             'trust_id' => $trustId,
@@ -381,10 +381,10 @@ if ($method === 'POST') {
 
         $feeInfo = resolve_trust_liquidation_fee_usd($db, $userId, $trustId);
         if (!$feeInfo['allows_liquidation']) {
-            send_json(['success' => false, 'message' => 'This trust cannot be liquidated'], 403);
+            send_json(['success' => false, 'message' => 'This LLC cannot be liquidated'], 403);
         }
         if (!$feeInfo['has_fee']) {
-            send_json(['success' => false, 'message' => 'No liquidation fee is required for this trust'], 400);
+            send_json(['success' => false, 'message' => 'No liquidation fee is required for this LLC'], 400);
         }
         if (user_has_trust_liquidation_fee_payment($db, $userId, $trustId, false)) {
             send_json(['success' => false, 'message' => 'Liquidation fee payment has already been submitted'], 409);
@@ -502,7 +502,7 @@ if ($method === 'POST') {
         if (!trust_declared_value_funding_applies($trustData)) {
             send_json([
                 'success' => false,
-                'message' => 'This trust uses per-asset deposits. Fund each asset individually from Manage Trust.',
+                'message' => 'This LLC uses per-asset deposits. Fund each asset individually from LLC Management.',
             ], 400);
         }
 
@@ -515,7 +515,7 @@ if ($method === 'POST') {
             send_json(['success' => false, 'message' => 'Declared trust value has already been funded'], 409);
         }
         if (user_has_pending_asset_funding($db, $userId, $trustId, 'trust_declared_value')) {
-            send_json(['success' => false, 'message' => 'A deposit for this trust value is already pending'], 409);
+            send_json(['success' => false, 'message' => 'A deposit for this LLC value is already pending'], 409);
         }
 
         $db->beginTransaction();

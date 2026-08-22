@@ -25,13 +25,13 @@ By accessing and using <?php echo escape_html($site_name); ?> ("the Platform"), 
 <section>
 <h2 class="font-headline-md text-headline-md text-primary mb-4">2. Description of Service</h2>
 <p class="font-body-md text-body-md text-on-surface-variant leading-relaxed mb-4">
-<?php echo escape_html($site_name); ?> provides a digital platform for creating and managing trust services for cryptocurrency and digital assets. Our services include:
+<?php echo escape_html($site_name); ?> provides a digital platform for Wyoming LLC formation and business management services. Our services include:
 </p>
 <ul class="list-disc pl-6 space-y-2 font-body-md text-body-md text-on-surface-variant">
-<li>Digital asset trust creation and management</li>
-<li>Portfolio tracking and asset monitoring</li>
-<li>Transaction history and reporting</li>
-<li>Secure wallet linking and encryption services</li>
+<li>Wyoming LLC formation and registration</li>
+<li>Business document preparation and delivery</li>
+<li>Registered agent and compliance support</li>
+<li>Online account tools for managing your LLC</li>
 </ul>
 <p class="font-body-md text-body-md text-on-surface-variant mt-4 leading-relaxed">
 <strong>Important Disclaimer:</strong> <?php echo escape_html($site_name); ?> is a technology platform and administrative service provider. We are not a bank, financial institution, or legal advisor. We do not provide investment, legal, or tax advice.
@@ -77,20 +77,20 @@ To use our services, you must create an account by providing accurate, current, 
 </ul>
 </section>
 <section>
-<h2 class="font-headline-md text-headline-md text-primary mb-4">5. Trust Services</h2>
-<h3 class="font-label-md text-label-md font-bold text-primary mb-3">5.1 Trust Creation</h3>
+<h2 class="font-headline-md text-headline-md text-primary mb-4">5. LLC Services</h2>
+<h3 class="font-label-md text-label-md font-bold text-primary mb-3">5.1 LLC Formation</h3>
 <p class="font-body-md text-body-md text-on-surface-variant leading-relaxed mb-4">
-When creating a trust through our platform, you acknowledge that:
+When registering an LLC through our platform, you acknowledge that:
 </p>
 <ul class="list-disc pl-6 space-y-2 font-body-md text-body-md text-on-surface-variant">
-<li>You have legal authority to place assets into the trust</li>
-<li>Trust terms and conditions are legally binding once created</li>
-<li>You are responsible for compliance with applicable trust and tax laws</li>
-<li>Trust fees are non-refundable unless otherwise specified</li>
+<li>You have legal authority to form or manage the business entity</li>
+<li>Formation documents and operating terms are binding once filed</li>
+<li>You are responsible for compliance with applicable business and tax laws</li>
+<li>Formation fees are non-refundable unless otherwise specified</li>
 </ul>
-<h3 class="font-label-md text-label-md font-bold text-primary mb-3 mt-6">5.2 Trust Management</h3>
+<h3 class="font-label-md text-label-md font-bold text-primary mb-3 mt-6">5.2 LLC Management</h3>
 <p class="font-body-md text-body-md text-on-surface-variant leading-relaxed">
-You may manage your trusts through the platform, subject to the terms of each specific trust agreement. Some trusts (irrevocable) may have restrictions on modifications.
+You may manage your LLC through the platform, subject to the terms of your formation documents and any structure you select during registration. Some structures may have restrictions on modifications.
 </p>
 </section>
 <section>

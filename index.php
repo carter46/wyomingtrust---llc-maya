@@ -207,32 +207,32 @@ include 'includes/header.php';
 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-8 lg:mb-10">
 <div class="flex items-start gap-3">
 <span class="material-symbols-outlined text-secondary-fixed-dim flex-shrink-0">check_circle</span>
-<p class="text-sm font-medium text-on-primary/80">100% free setup &amp; management.</p>
+<p class="text-sm font-medium text-on-primary/80">Complete privacy &amp; anonymity for members.</p>
 </div>
 <div class="flex items-start gap-3">
 <span class="material-symbols-outlined text-secondary-fixed-dim flex-shrink-0">check_circle</span>
-<p class="text-sm font-medium text-on-primary/80">Multi-signature security.</p>
+<p class="text-sm font-medium text-on-primary/80">No state income, corporate, or franchise tax.</p>
 </div>
 <div class="flex items-start gap-3">
 <span class="material-symbols-outlined text-secondary-fixed-dim flex-shrink-0">check_circle</span>
-<p class="text-sm font-medium text-on-primary/80">Support for 50+ cryptocurrencies.</p>
+<p class="text-sm font-medium text-on-primary/80">Registered agent service included.</p>
 </div>
 <div class="flex items-start gap-3">
 <span class="material-symbols-outlined text-secondary-fixed-dim flex-shrink-0">check_circle</span>
-<p class="text-sm font-medium text-on-primary/80">Unlimited beneficiaries.</p>
+<p class="text-sm font-medium text-on-primary/80">Operating agreement &amp; formation docs.</p>
 </div>
 <div class="flex items-start gap-3">
 <span class="material-symbols-outlined text-secondary-fixed-dim flex-shrink-0">check_circle</span>
-<p class="text-sm font-medium text-on-primary/80">Bank-grade encryption.</p>
+<p class="text-sm font-medium text-on-primary/80">Same-day filing available.</p>
 </div>
 <div class="flex items-start gap-3">
 <span class="material-symbols-outlined text-secondary-fixed-dim flex-shrink-0">check_circle</span>
-<p class="text-sm font-medium text-on-primary/80">Estate planning documents included.</p>
+<p class="text-sm font-medium text-on-primary/80">Strong charging-order asset protection.</p>
 </div>
 </div>
 <a href="<?php echo escape_html(asset_url('onboarding/onboarding.php')); ?>" class="inline-flex items-center justify-center gap-2 bg-secondary text-on-secondary px-6 py-3 rounded-full font-bold hover:brightness-110 transition-all w-full sm:w-auto">
-<span class="material-symbols-outlined text-[20px]">payments</span>
-<span>Create Your Trust Now</span>
+<span class="material-symbols-outlined text-[20px]">domain_add</span>
+<span>Start Your LLC</span>
 </a>
 </div>
 <div class="w-full lg:w-1/2">

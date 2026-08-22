@@ -111,7 +111,7 @@ function renderLastPayment(payment) {
 
     section.classList.remove('hidden');
     document.getElementById('lastPaymentAmount').textContent = formatPaymentAmount(payment);
-    document.getElementById('lastPaymentService').textContent = payment.service_name || 'Trust Service';
+    document.getElementById('lastPaymentService').textContent = payment.service_name || 'LLC Service';
     document.getElementById('lastPaymentDate').textContent = formatDateSafe(payment.created_at);
     const status = statusLabel(payment.payment_status);
     document.getElementById('lastPaymentStatus').textContent = status.text;
@@ -154,7 +154,7 @@ function renderBillingHistory(payments) {
                         return `
                             <tr class="hover:bg-surface transition-colors">
                                 <td class="px-6 md:px-8 py-6 text-on-surface">${formatDateSafe(payment.created_at)}</td>
-                                <td class="px-6 md:px-8 py-6 font-medium text-primary">${escapeHtml(payment.service_name || 'Trust Service')}</td>
+                                <td class="px-6 md:px-8 py-6 font-medium text-primary">${escapeHtml(payment.service_name || 'LLC Service')}</td>
                                 <td class="px-6 md:px-8 py-6 font-bold">${escapeHtml(formatPaymentAmount(payment))}</td>
                                 <td class="px-6 md:px-8 py-6 text-on-surface-variant">${escapeHtml(method)}</td>
                                 <td class="px-6 md:px-8 py-6"><span class="font-medium ${status.class}">${status.text}</span></td>

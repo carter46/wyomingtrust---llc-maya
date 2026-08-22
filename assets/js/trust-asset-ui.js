@@ -115,7 +115,7 @@
 
     function showAddAssetModal(categories, trustId, onSaved) {
         if (!categories.length) {
-            alert('No asset categories are enabled for this trust type.');
+            alert('No asset categories are enabled for this LLC structure.');
             return;
         }
 

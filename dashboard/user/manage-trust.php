@@ -7,25 +7,25 @@ $trustId = isset($_GET['id']) ? (int) $_GET['id'] : 0;
 $userName = $_SESSION['user_name'] ?? 'User';
 
 if ($trustId <= 0) {
-    $page_title = 'My Trusts | WyomingTrust';
+    $page_title = 'LLC Management | WyomingTrust';
     $active_nav = 'trusts';
     include __DIR__ . '/includes/layout.php';
     ?>
 
 <section class="flex flex-wrap justify-between items-end gap-4">
 <div>
-<h1 class="font-headline-lg text-headline-lg text-primary mb-2">My Trusts</h1>
-<p class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl">View and manage your trusts.</p>
+<h1 class="font-headline-lg text-headline-lg text-primary mb-2">LLC Management</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl">View and manage your LLCs.</p>
 </div>
 <a href="../../onboarding/onboarding.php" class="inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-primary text-on-primary text-xs sm:text-sm font-bold hover:bg-primary/90 h-8 sm:h-10 transition-colors">
 <?php echo wt_icon('add', 'text-xs sm:text-sm'); ?>
-Create New Trust
+Create New LLC
 </a>
 </section>
 
 <section>
 <div id="trustsList" class="space-y-4">
-<div class="text-center py-10 text-on-surface-variant">Loading trusts...</div>
+<div class="text-center py-10 text-on-surface-variant">Loading LLCs...</div>
 </div>
 </section>
 
@@ -103,9 +103,9 @@ async function requiresTrustLiquidationCheckout(targetTrustId, fee) {
 async function liquidateTrustFromList(trustId, fee) {
     const feeText = fee > 0 ? ` You will be taken to checkout to pay the $${fee.toFixed(2)} liquidation fee.` : '';
     const confirmed = await showConfirmModal(
-        'Liquidate Trust',
-        `This will begin the trust liquidation process.${feeText} This action cannot be easily undone.`,
-        fee > 0 ? 'Continue to Checkout' : 'Liquidate Trust',
+        'Liquidate LLC',
+        `This will begin the LLC liquidation process.${feeText} This action cannot be easily undone.`,
+        fee > 0 ? 'Continue to Checkout' : 'Liquidate LLC',
         'Cancel',
         'danger'
     );
@@ -120,7 +120,7 @@ async function liquidateTrustFromList(trustId, fee) {
         } else if (data.payment_pending) {
             await showAlertModal('Payment Pending', data.message || 'Liquidation fee payment is pending admin approval.', 'warning');
         } else {
-            await showAlertModal('Error', data.message || 'Failed to liquidate trust', 'error');
+            await showAlertModal('Error', data.message || 'Failed to liquidate LLC', 'error');
         }
     } catch (e) {
         console.error(e);
@@ -134,16 +134,16 @@ async function loadTrusts() {
         const data = await res.json();
         const container = document.getElementById('trustsList');
         if (!data.success || !data.trusts) {
-            container.innerHTML = '<div class="text-center py-10 text-error">Failed to load trusts</div>';
+            container.innerHTML = '<div class="text-center py-10 text-error">Failed to load LLCs</div>';
             return;
         }
         if (data.trusts.length === 0) {
-            container.innerHTML = '<div class="text-center py-10 text-on-surface-variant">No trusts yet. <a class="text-secondary font-semibold hover:underline" href="../../onboarding/onboarding.php">Create your first trust</a></div>';
+            container.innerHTML = '<div class="text-center py-10 text-on-surface-variant">No LLCs yet. <a class="text-secondary font-semibold hover:underline" href="../../onboarding/onboarding.php">Create your first LLC</a></div>';
             return;
         }
         container.innerHTML = data.trusts.map(t => {
-            const trustName = t.trust_name || t.service_name || 'Untitled Trust';
-            const serviceName = t.service_name || 'Trust';
+            const trustName = t.trust_name || t.service_name || 'Untitled LLC';
+            const serviceName = t.service_name || 'LLC';
             const status = (t.status || 'pending').toString();
             const createdAt = t.created_at ? new Date(t.created_at).toLocaleDateString() : '';
             const bens = Array.isArray(t.beneficiaries) ? t.beneficiaries.length :
@@ -169,7 +169,7 @@ async function loadTrusts() {
         }).join('');
     } catch (e) {
         console.error(e);
-        document.getElementById('trustsList').innerHTML = '<div class="text-center py-10 text-error">Error loading trusts</div>';
+        document.getElementById('trustsList').innerHTML = '<div class="text-center py-10 text-error">Error loading LLCs</div>';
     }
 }
 
@@ -270,7 +270,7 @@ document.addEventListener('DOMContentLoaded', loadTrusts);
     exit;
 }
 
-$page_title = 'Manage Trust | WyomingTrust';
+$page_title = 'Manage LLC | WyomingTrust';
 $active_nav = 'trusts';
 $extra_styles = '
 @media print { aside, header, .no-print { display: none !important; } body { background: white; color: black; } }
@@ -301,11 +301,11 @@ include __DIR__ . '/includes/layout.php';
 <div class="flex flex-wrap gap-2 items-center no-print w-full sm:w-auto">
 <button onclick="window.location.href='../../onboarding/onboarding.php'" class="flex items-center justify-center rounded-lg h-8 sm:h-10 px-2.5 sm:px-4 bg-primary text-on-primary text-xs sm:text-sm font-bold gap-1 sm:gap-2 hover:bg-primary/90 transition-all">
 <?php echo wt_icon('add', 'text-xs sm:text-sm'); ?>
-<span>Create New Trust</span>
+<span>Create New LLC</span>
 </button>
 <button onclick="window.location.href='manage-trust.php'" class="flex items-center justify-center rounded-lg h-8 sm:h-10 px-2.5 sm:px-4 bg-primary-container text-on-primary text-xs sm:text-sm font-bold gap-1 sm:gap-2 hover:bg-primary transition-all">
 <?php echo wt_icon('arrow-back', 'text-xs sm:text-sm'); ?>
-<span>Back to Trusts</span>
+<span>Back to LLCs</span>
 </button>
 </div>
 </section>
@@ -356,8 +356,8 @@ include __DIR__ . '/includes/layout.php';
 </section>
 
 <div id="pendingRegistrationBanner" class="hidden mb-8 rounded-xl border border-secondary/30 bg-secondary/10 p-4">
-<p class="text-sm font-bold text-primary">Your trust registration is pending admin approval.</p>
-<p class="text-xs text-on-surface-variant mt-1">You can review your trust details below. Some actions will be available once an administrator approves your trust.</p>
+<p class="text-sm font-bold text-primary">Your LLC registration is pending admin approval.</p>
+<p class="text-xs text-on-surface-variant mt-1">You can review your LLC details below. Some actions will be available once an administrator approves your LLC.</p>
 </div>
 
 <section class="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2 sm:gap-3 mb-8 bg-surface-container-low p-3 sm:p-4 rounded-xl border border-outline-variant no-print">
@@ -379,7 +379,7 @@ include __DIR__ . '/includes/layout.php';
 </section>
 
 <section class="mb-8">
-<h2 class="font-headline-md text-headline-md text-primary pb-4">Trust Settings</h2>
+<h2 class="font-headline-md text-headline-md text-primary pb-4">LLC Settings</h2>
 <div class="flex flex-col gap-3">
 <div id="businessInfoCard" class="rounded-xl border border-outline-variant bg-surface-container-lowest p-5 shadow-sm hidden">
 <p class="text-primary text-base font-bold mb-3">Business Information</p>
@@ -408,8 +408,8 @@ include __DIR__ . '/includes/layout.php';
 </div>
 <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 rounded-xl border border-outline-variant bg-surface-container-lowest p-5 shadow-sm">
 <div class="flex flex-col gap-1">
-<p class="text-primary text-base font-bold">Edit Trust Name</p>
-<p class="text-on-surface-variant text-sm">Modify the official title of this trust.</p>
+<p class="text-primary text-base font-bold">Edit LLC Name</p>
+<p class="text-on-surface-variant text-sm">Modify the official title of this LLC.</p>
 </div>
 <button onclick="editTrustName()" class="flex min-w-[120px] cursor-pointer items-center justify-center rounded-lg h-9 px-4 bg-primary text-on-primary text-sm font-bold hover:bg-primary/90 transition-all">
 Edit Name
@@ -457,7 +457,7 @@ Change Status
 
 <section class="mb-8" id="trustAssetsSection" style="display:none;">
 <div class="flex justify-between items-center pb-4">
-<h2 class="font-headline-md text-headline-md text-primary">Trust Assets <span id="assetsCountLabel" class="text-on-surface-variant text-base font-normal"></span></h2>
+<h2 class="font-headline-md text-headline-md text-primary">LLC Assets <span id="assetsCountLabel" class="text-on-surface-variant text-base font-normal"></span></h2>
 <button type="button" onclick="openAddAssetModal()" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-on-primary text-sm font-bold hover:bg-primary/90">
 <?php echo wt_icon('add', 'w-4 h-4'); ?>
 Add Asset
@@ -492,17 +492,17 @@ Add Beneficiary
 <p class="text-error/70 text-sm mb-6 max-w-2xl" id="dangerZoneDesc">Actions in this section are permanent and may require legal authorization. Proceed with extreme caution.</p>
 <div class="flex flex-wrap gap-4" id="dangerZoneActions">
 <button id="suspendTrustBtn" onclick="suspendTrust()" class="px-6 py-2.5 rounded-lg bg-surface-container-lowest border border-error/20 text-error text-sm font-bold hover:bg-error hover:text-on-primary transition-all shadow-sm">
-Suspend Trust
+Suspend LLC
 </button>
 <button onclick="archiveTrust()" id="liquidateTrustBtn" class="px-6 py-2.5 rounded-lg bg-error text-on-primary text-sm font-bold hover:bg-error/90 transition-all shadow-md">
-Liquidate Trust
+Liquidate LLC
 </button>
 </div>
 </section>
 
 <section id="irrevocableNotice" class="hidden rounded-xl border border-outline-variant bg-surface-container-low p-6">
 <?php echo wt_icon('lock', 'w-5 h-5 text-secondary inline-block mr-2'); ?>
-<p class="text-sm text-on-surface-variant inline"><strong class="text-primary">Irrevocable Trust:</strong> This trust cannot be deleted or liquidated. Assets placed here are managed under irrevocable terms.</p>
+<p class="text-sm text-on-surface-variant inline"><strong class="text-primary">Irrevocable Structure:</strong> This LLC cannot be deleted or liquidated. Assets placed here are managed under irrevocable terms.</p>
 </section>
 </div>
 
@@ -523,7 +523,7 @@ Liquidate Trust
 </button>
 <button type="button" onclick="window.location.href='manage-trust.php'" class="crypto-action-btn flex items-center justify-center rounded-lg h-10 px-3 sm:px-4 bg-surface-container-lowest border border-outline-variant text-primary text-xs sm:text-sm font-bold gap-1.5 hover:bg-surface-container transition-all">
 <?php echo wt_icon('arrow-back', 'text-sm shrink-0'); ?>
-<span>Back to Trusts</span>
+<span>Back to LLCs</span>
 </button>
 </div>
 </section>
@@ -588,7 +588,7 @@ Liquidate Trust
 <div class="lg:col-span-7 space-y-6 sm:space-y-10 min-w-0">
 <div class="bg-surface-container-lowest p-4 sm:p-8 rounded-xl card-shadow border border-surface-container-high crypto-layout-card min-w-0">
 <div class="flex justify-between items-center mb-6">
-<h3 class="font-headline-md text-headline-md text-primary">Trust Settings</h3>
+<h3 class="font-headline-md text-headline-md text-primary">LLC Settings</h3>
 <?php echo wt_icon('settings', 'text-outline w-6 h-6'); ?>
 </div>
 <div class="space-y-4">
@@ -619,14 +619,14 @@ Liquidate Trust
 </div>
 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 sm:p-4 bg-background rounded-lg border border-surface-container">
 <div class="min-w-0">
-<p class="font-label-md text-label-md text-on-surface-variant text-xs sm:text-sm">Trust Name</p>
+<p class="font-label-md text-label-md text-on-surface-variant text-xs sm:text-sm">LLC Name</p>
 <p id="cryptoTrustNameDisplay" class="font-body-lg text-body-lg font-bold text-primary break-words">Loading...</p>
 </div>
 <button type="button" onclick="editTrustName()" class="text-secondary font-label-md text-label-md hover:underline text-sm shrink-0 self-start sm:self-center">Edit</button>
 </div>
 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 sm:p-4 bg-background rounded-lg border border-surface-container">
 <div class="min-w-0">
-<p class="font-label-md text-label-md text-on-surface-variant text-xs sm:text-sm">Trust Status</p>
+<p class="font-label-md text-label-md text-on-surface-variant text-xs sm:text-sm">LLC Status</p>
 <p id="cryptoStatusBadge" class="font-body-lg text-body-lg font-bold text-primary">Loading...</p>
 </div>
 <button id="cryptoChangeStatusBtn" type="button" onclick="changeStatus()" class="text-secondary font-label-md text-label-md hover:underline text-sm shrink-0 self-start sm:self-center">Change</button>
@@ -681,10 +681,10 @@ Warning: The following actions are irreversible and may require additional legal
 </p>
 <div class="flex flex-col gap-3">
 <button type="button" id="cryptoSuspendTrustBtn" onclick="suspendTrust()" class="w-full py-3 px-4 rounded-lg border-2 border-error text-error font-bold text-xs sm:text-sm hover:bg-error hover:text-on-primary transition-colors text-center whitespace-nowrap">
-Suspend Trust
+Suspend LLC
 </button>
 <button type="button" onclick="archiveTrust()" id="cryptoLiquidateTrustBtn" class="w-full py-3 px-4 rounded-lg bg-error text-on-primary font-bold text-xs sm:text-sm hover:opacity-90 transition-opacity text-center shadow-md whitespace-nowrap">
-Liquidate Trust
+Liquidate LLC
 </button>
 </div>
 </section>
@@ -694,7 +694,7 @@ Liquidate Trust
 
 <section id="irrevocableNoticeCrypto" class="hidden rounded-xl border border-outline-variant bg-surface-container-low p-6 mb-12">
 <?php echo wt_icon('lock', 'w-5 h-5 text-secondary inline-block mr-2'); ?>
-<p class="text-sm text-on-surface-variant inline"><strong class="text-primary">Irrevocable Trust:</strong> This trust cannot be deleted or liquidated.</p>
+<p class="text-sm text-on-surface-variant inline"><strong class="text-primary">Irrevocable Structure:</strong> This LLC cannot be deleted or liquidated.</p>
 </section>
 
 <script src="<?php echo escape_html(asset_url('assets/js/trust-asset-ui.js')); ?>"></script>
@@ -770,7 +770,7 @@ function applyTrustLayout(trust) {
 }
 
 function syncCryptoHeader(trust) {
-    const name = trust.trust_name || 'Untitled Trust';
+    const name = trust.trust_name || 'Untitled LLC';
     const typeLabel = trust.service_meta?.is_crypto ? 'Smart Contract Trust' : (trust.trust_type || 'Trust');
     const els = {
         cryptoTrustName: name,
@@ -990,8 +990,8 @@ function showInputModal(title, message, initialValue = '', confirmText = 'Confir
         cancelBtn.classList.remove('hidden');
         titleEl.textContent = title;
         messageEl.textContent = message;
-        inputField.placeholder = 'Enter trust name';
-        inputField.value = initialValue === 'Untitled Trust' ? '' : (initialValue || '');
+        inputField.placeholder = 'Enter LLC name';
+        inputField.value = initialValue === 'Untitled LLC' ? '' : (initialValue || '');
         confirmBtn.textContent = confirmText;
 
         setModalIcon('edit', 'text-secondary text-xl');
@@ -1031,7 +1031,7 @@ function closeModal(options = {}) {
 
 async function loadTrustData() {
     if (!trustId) {
-        await showAlertModal('Error', 'Invalid trust ID', 'error');
+        await showAlertModal('Error', 'Invalid LLC ID', 'error');
         window.location.href = 'dashboard.php';
         return;
     }
@@ -1045,7 +1045,7 @@ async function loadTrustData() {
             currentTrust = trust;
             applyTrustLayout(trust);
 
-            const trustName = trust.trust_name || 'Untitled Trust';
+            const trustName = trust.trust_name || 'Untitled LLC';
             document.getElementById('trustName').textContent = trustName;
             document.getElementById('trustId').textContent = `ID: ${trust.id || 'N/A'}`;
             document.getElementById('trustTypeBadge').textContent = trust.service_meta?.is_irrevocable ? 'Irrevocable Trust' : (trust.service_meta?.is_revocable ? 'Revocable Living Trust' : (trust.service_meta?.is_crypto ? 'Smart Contract Trust' : (trust.trust_type || 'Standard')));
@@ -1082,12 +1082,12 @@ async function loadTrustData() {
                 document.getElementById('cryptoTrustSection').style.display = 'none';
             }
         } else {
-            await showAlertModal('Error', 'Trust not found', 'error');
+            await showAlertModal('Error', 'LLC not found', 'error');
             window.location.href = 'dashboard.php';
         }
     } catch (error) {
         console.error('Error loading trust:', error);
-        await showAlertModal('Error', 'Error loading trust data', 'error');
+        await showAlertModal('Error', 'Error loading LLC data', 'error');
     }
 }
 
@@ -1247,7 +1247,7 @@ async function editTrustName() {
     const displayName = currentTrust?.trust_name || document.getElementById('trustName').textContent;
     const storedName = (currentTrust?.trust_name || '').trim();
     try {
-        const newName = await showInputModal('Edit Trust Name', 'Enter a new name for this trust:', displayName, 'Save');
+        const newName = await showInputModal('Edit LLC Name', 'Enter a new name for this LLC:', displayName, 'Save');
         if (newName && newName.trim() !== storedName) {
             await updateTrustName(newName.trim());
         }
@@ -1259,13 +1259,13 @@ async function editTrustName() {
 async function changeStatus() {
     const currentStatus = (currentTrust?.status || 'active').toString().toLowerCase();
     if (currentStatus !== 'active') {
-        await showAlertModal('Not Available', 'Trust activation requires admin approval.', 'warning');
+        await showAlertModal('Not Available', 'LLC activation requires admin approval.', 'warning');
         return;
     }
     const newStatus = 'inactive';
     const confirmed = await showConfirmModal(
-        'Change Trust Status',
-        `Are you sure you want to change the trust status from "${currentStatus}" to "${newStatus}"?`,
+        'Change LLC Status',
+        `Are you sure you want to change the LLC status from "${currentStatus}" to "${newStatus}"?`,
         'Change Status',
         'Cancel'
     );
@@ -1298,13 +1298,13 @@ function addBeneficiary() {
 async function suspendTrust() {
     const currentStatus = (currentTrust?.status || '').toString().toLowerCase();
     if (currentStatus !== 'active') {
-        await showAlertModal('Not Available', 'Only active trusts can be suspended.', 'warning');
+        await showAlertModal('Not Available', 'Only active LLCs can be suspended.', 'warning');
         return;
     }
     const confirmed = await showConfirmModal(
-        'Suspend Trust',
-        'Are you sure you want to suspend this trust? The trust status will be changed to inactive. This action may be reversible.',
-        'Suspend Trust',
+        'Suspend LLC',
+        'Are you sure you want to suspend this LLC? The LLC status will be changed to inactive. This action may be reversible.',
+        'Suspend LLC',
         'Cancel',
         'warning'
     );
@@ -1316,24 +1316,24 @@ async function suspendTrust() {
 async function archiveTrust() {
     const meta = currentTrust?.service_meta || {};
     if (meta.is_irrevocable) {
-        await showAlertModal('Not Allowed', 'Irrevocable trusts cannot be deleted or liquidated.', 'error');
+        await showAlertModal('Not Allowed', 'Irrevocable LLCs cannot be deleted or liquidated.', 'error');
         return;
     }
     const currentStatus = (currentTrust?.status || '').toString().toLowerCase();
     if (currentStatus === 'pending') {
-        await showAlertModal('Not Available', 'Trust registration is pending admin approval. Liquidation is not available yet.', 'warning');
+        await showAlertModal('Not Available', 'LLC registration is pending admin approval. Liquidation is not available yet.', 'warning');
         return;
     }
     if (currentStatus !== 'active') {
-        await showAlertModal('Not Available', 'Only active trusts can be liquidated.', 'warning');
+        await showAlertModal('Not Available', 'Only active LLCs can be liquidated.', 'warning');
         return;
     }
     const fee = parseFloat(meta.liquidation_fee || 0);
     const feeMsg = fee > 0 ? ` You will be taken to checkout to pay the $${fee.toFixed(2)} liquidation fee.` : '';
     const confirmed = await showConfirmModal(
-        'Liquidate Trust',
-        `Are you sure you want to liquidate this trust?${feeMsg} This begins the formal wind-down process.`,
-        fee > 0 ? 'Continue to Checkout' : 'Liquidate Trust',
+        'Liquidate LLC',
+        `Are you sure you want to liquidate this LLC?${feeMsg} This begins the formal wind-down process.`,
+        fee > 0 ? 'Continue to Checkout' : 'Liquidate LLC',
         'Cancel',
         'danger'
     );
@@ -1348,7 +1348,7 @@ async function archiveTrust() {
         } else if (data.payment_pending) {
             await showAlertModal('Payment Pending', data.message || 'Liquidation fee payment is pending admin approval.', 'warning');
         } else {
-            await showAlertModal('Error', data.message || 'Failed to liquidate trust', 'error');
+            await showAlertModal('Error', data.message || 'Failed to liquidate LLC', 'error');
         }
     } catch (e) {
         console.error(e);
@@ -1371,9 +1371,9 @@ function updateTrustPermissionsUI(trust) {
     if (liqBtn) {
         const fee = parseFloat(meta.liquidation_fee || 0);
         if (isCryptoLayout) {
-            liqBtn.textContent = fee > 0 ? `Liquidate Trust & Withdraw ($${fee.toFixed(2)} fee)` : 'Liquidate Trust & Withdraw';
+            liqBtn.textContent = fee > 0 ? `Liquidate LLC & Withdraw ($${fee.toFixed(2)} fee)` : 'Liquidate LLC & Withdraw';
         } else {
-            liqBtn.textContent = fee > 0 ? `Liquidate Trust ($${fee.toFixed(2)} fee)` : 'Liquidate Trust';
+            liqBtn.textContent = fee > 0 ? `Liquidate LLC ($${fee.toFixed(2)} fee)` : 'Liquidate LLC';
         }
     }
 }
@@ -1652,9 +1652,9 @@ function renderDeclaredValueFundingBanner(trust) {
     }
 
     const label = status === 'pending'
-        ? `Declared trust value deposit of ${formatUsd(amount)} is pending admin approval.`
+        ? `Declared LLC value deposit of ${formatUsd(amount)} is pending admin approval.`
         : status === 'rejected'
-            ? `Declared trust value deposit of ${formatUsd(amount)} was rejected. Please submit payment again.`
+            ? `Declared LLC value deposit of ${formatUsd(amount)} was rejected. Please submit payment again.`
             : `Deposit ${formatUsd(amount)} to verify your declared total asset value.`;
 
     banner.innerHTML = `
@@ -1790,13 +1790,13 @@ async function updateTrustName(newName) {
             document.getElementById('trustName').textContent = data.trust.trust_name || newName;
             currentTrust.trust_name = data.trust.trust_name || newName;
             if (isCryptoLayout) syncCryptoHeader(currentTrust);
-            await showAlertModal('Success', 'Trust name updated successfully.', 'success');
+            await showAlertModal('Success', 'LLC name updated successfully.', 'success');
         } else {
-            await showAlertModal('Error', data.message || 'Failed to update trust name', 'error');
+            await showAlertModal('Error', data.message || 'Failed to update LLC name', 'error');
         }
     } catch (e) {
         console.error(e);
-        await showAlertModal('Error', 'Error updating trust name', 'error');
+        await showAlertModal('Error', 'Error updating LLC name', 'error');
     }
 }
 
@@ -1898,14 +1898,14 @@ async function updateTrustStatus(newStatus) {
         if (data.success && data.trust) {
             currentTrust = data.trust;
             updateStatusUI(currentTrust);
-            await showAlertModal('Success', `Trust status updated to ${newStatus}.`, 'success');
+            await showAlertModal('Success', `LLC status updated to ${newStatus}.`, 'success');
             await loadTrustData();
         } else {
-            await showAlertModal('Error', data.message || 'Failed to update trust status', 'error');
+            await showAlertModal('Error', data.message || 'Failed to update LLC status', 'error');
         }
     } catch (e) {
         console.error(e);
-        await showAlertModal('Error', 'Error updating trust status', 'error');
+        await showAlertModal('Error', 'Error updating LLC status', 'error');
     }
 }
 
@@ -1918,7 +1918,7 @@ function exportTrustReport() {
     const bi = currentTrust.business_info || currentTrust.trust_data?.business_info || {};
     const csv = [
         ['Trust Report', ''],
-        ['Trust Name', currentTrust.trust_name || 'Untitled Trust'],
+        ['LLC Name', currentTrust.trust_name || 'Untitled LLC'],
         ['Trust Type', currentTrust.trust_type || 'Standard'],
         ['Status', currentTrust.status || 'Active'],
         ['Created', currentTrust.created_at ? new Date(currentTrust.created_at).toLocaleDateString() : 'N/A'],
@@ -1974,8 +1974,8 @@ async function shareWithAdvisor() {
         );
 
         if (email && email.includes('@')) {
-            const subject = encodeURIComponent(`Trust Details: ${currentTrust.trust_name || 'Untitled Trust'}`);
-            const body = encodeURIComponent(`Please review the details of my trust.\n\nTrust ID: ${currentTrust.id}\nTrust Name: ${currentTrust.trust_name || 'Untitled Trust'}\nStatus: ${currentTrust.status || 'Active'}`);
+            const subject = encodeURIComponent(`LLC Details: ${currentTrust.trust_name || 'Untitled LLC'}`);
+            const body = encodeURIComponent(`Please review the details of my LLC.\n\nLLC ID: ${currentTrust.id}\nLLC Name: ${currentTrust.trust_name || 'Untitled LLC'}\nStatus: ${currentTrust.status || 'Active'}`);
             window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
             await showAlertModal('Success', `Share link prepared for ${email}. Your email client should open.`, 'success');
         } else if (email) {
