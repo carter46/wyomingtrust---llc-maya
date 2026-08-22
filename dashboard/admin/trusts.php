@@ -16,11 +16,11 @@ function renderTrustsContent() {
 <div class="mb-4 sm:mb-6 lg:mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
     <div>
         <h1 class="text-2xl sm:text-3xl font-bold text-navy-900 dark:text-white">Trust Services</h1>
-        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Configure the four trust types users can select during onboarding.</p>
+        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Create multiple trust offerings. Each offering has a category (revocable, irrevocable, or smart contract) and a custom display name shown during onboarding.</p>
     </div>
     <button id="addTrustBtn" onclick="showCreateTrustModal()" class="bg-primary text-navy-900 px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg font-semibold text-sm sm:text-base hover:opacity-90 w-full sm:w-auto flex items-center gap-2">
         <span class="material-icons-outlined text-sm">add</span>
-        <span>Add Trust Type</span>
+        <span>Add Trust Service</span>
     </button>
 </div>
 
@@ -46,7 +46,6 @@ async function loadTrusts() {
             trustTypeOptions = data.trust_type_options || {};
             assetCategoryCatalog = data.asset_category_catalog || {};
             renderTrusts(data.trusts);
-            updateAddButton();
         } else {
             document.getElementById('trustsContainer').innerHTML = '<div class="text-center py-10 text-red-500">Failed to load trust services</div>';
         }
@@ -56,20 +55,10 @@ async function loadTrusts() {
     }
 }
 
-function updateAddButton() {
-    const btn = document.getElementById('addTrustBtn');
-    if (!btn) return;
-    const configured = new Set(allTrusts.map(t => t.service_key));
-    const available = Object.keys(trustTypeOptions).filter(k => !configured.has(k));
-    btn.disabled = available.length === 0;
-    btn.classList.toggle('opacity-50', available.length === 0);
-    btn.classList.toggle('cursor-not-allowed', available.length === 0);
-}
-
 function renderTrusts(trusts) {
     const container = document.getElementById('trustsContainer');
     if (!trusts || trusts.length === 0) {
-        container.innerHTML = '<div class="text-center py-8 sm:py-10 text-slate-500 text-sm sm:text-base">No trust types configured yet. Click <strong>Add Trust Type</strong> to get started.</div>';
+        container.innerHTML = '<div class="text-center py-8 sm:py-10 text-slate-500 text-sm sm:text-base">No trust services configured yet. Click <strong>Add Trust Service</strong> to get started.</div>';
         return;
     }
 
@@ -78,7 +67,7 @@ function renderTrusts(trusts) {
             <table class="w-full text-left">
                 <thead class="bg-slate-50 dark:bg-navy-700">
                     <tr>
-                        <th class="px-4 sm:px-6 py-3 text-xs font-bold uppercase text-slate-500">Trust Type</th>
+                        <th class="px-4 sm:px-6 py-3 text-xs font-bold uppercase text-slate-500">Category</th>
                         <th class="px-4 sm:px-6 py-3 text-xs font-bold uppercase text-slate-500">Display Name</th>
                         <th class="px-4 sm:px-6 py-3 text-xs font-bold uppercase text-slate-500">Asset Types</th>
                         <th class="px-4 sm:px-6 py-3 text-xs font-bold uppercase text-slate-500">Price</th>
@@ -117,10 +106,10 @@ function renderTrustRow(trust) {
     return `
         <tr class="hover:bg-slate-50 dark:hover:bg-navy-700/50">
             <td class="px-4 sm:px-6 py-3 sm:py-4">
-                <p class="font-semibold text-sm">${escapeHtml(trust.trust_type_label || trust.service_name)}</p>
+                <p class="font-semibold text-sm">${escapeHtml(trust.trust_type_label || trust.service_key)}</p>
                 <p class="text-xs text-slate-500 mt-0.5">${escapeHtml(trust.service_key)}</p>
             </td>
-            <td class="px-4 sm:px-6 py-3 sm:py-4 text-sm">${escapeHtml(trust.service_name)}</td>
+            <td class="px-4 sm:px-6 py-3 sm:py-4 text-sm font-medium">${escapeHtml(trust.service_name)}</td>
             <td class="px-4 sm:px-6 py-3 sm:py-4">${renderAssetTypesSummary(trust)}</td>
             <td class="px-4 sm:px-6 py-3 sm:py-4 text-sm">${trust.is_free ? '<span class="text-green-600 font-bold">FREE</span>' : '$' + parseFloat(trust.price || 0).toFixed(2)}</td>
             <td class="px-4 sm:px-6 py-3 sm:py-4">${renderStatusToggle(trust)}</td>
@@ -134,8 +123,8 @@ function renderTrustCard(trust) {
         <div class="bg-slate-50 dark:bg-navy-700/50 rounded-lg p-4 border border-slate-200 dark:border-slate-600">
             <div class="flex items-start justify-between mb-3">
                 <div class="flex-1 min-w-0">
-                    <h3 class="font-bold text-sm text-navy-900 dark:text-white">${escapeHtml(trust.trust_type_label || trust.service_name)}</h3>
-                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">${escapeHtml(trust.service_name)}</p>
+                    <h3 class="font-bold text-sm text-navy-900 dark:text-white">${escapeHtml(trust.service_name)}</h3>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">${escapeHtml(trust.trust_type_label || trust.service_key)}</p>
                 </div>
                 ${renderStatusToggle(trust)}
             </div>
@@ -171,14 +160,8 @@ function renderActions(trust, mobile = false) {
     `;
 }
 
-function getAvailableTrustTypes(excludeKey = null) {
-    const configured = new Set(allTrusts.map(t => t.service_key).filter(k => k !== excludeKey));
-    return Object.entries(trustTypeOptions).filter(([key]) => !configured.has(key));
-}
-
 function buildTrustTypeSelect(selectedKey = '', disabled = false) {
-    const available = getAvailableTrustTypes(selectedKey);
-    const options = available.map(([key, label]) =>
+    const options = Object.entries(trustTypeOptions).map(([key, label]) =>
         `<option value="${escapeHtml(key)}" ${key === selectedKey ? 'selected' : ''}>${escapeHtml(label)}</option>`
     ).join('');
     return `
@@ -232,7 +215,6 @@ function buildAssetCategorySection(config = [], trustType = '') {
 
 function onTrustTypeChange() {
     const select = document.getElementById('trustTypeSelect');
-    const nameInput = document.getElementById('serviceNameInput');
     const section = document.getElementById('assetTypesSection');
     const liqSection = document.getElementById('liquidationFeeSection');
     if (!select) return;
@@ -241,9 +223,6 @@ function onTrustTypeChange() {
     const showAssets = supportsAssetCatalog(key);
     const showLiq = allowsLiquidation(key);
 
-    if (nameInput && key && trustTypeOptions[key] && !nameInput.dataset.userEdited) {
-        nameInput.value = trustTypeOptions[key];
-    }
     if (section) section.classList.toggle('hidden', !showAssets);
     if (liqSection) liqSection.classList.toggle('hidden', !showLiq);
 }
@@ -294,25 +273,18 @@ function toggleModalPriceField() {
 }
 
 function showCreateTrustModal() {
-    const available = getAvailableTrustTypes();
-    if (available.length === 0) {
-        showToast('All four trust types are already configured', 'warning');
-        return;
-    }
-
     const formHtml = `
         <div class="space-y-4">
             <div>
-                <label class="block text-sm font-semibold text-navy-900 dark:text-white mb-2">Trust Type *</label>
+                <label class="block text-sm font-semibold text-navy-900 dark:text-white mb-2">Trust Category *</label>
                 ${buildTrustTypeSelect()}
-                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Choose one of the four predefined trust types.</p>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Controls onboarding behavior (asset catalog, liquidation rules, crypto flow). You can create multiple offerings per category.</p>
             </div>
             <div>
                 <label class="block text-sm font-semibold text-navy-900 dark:text-white mb-2">Display Name *</label>
                 <input type="text" name="service_name" id="serviceNameInput" required
-                       oninput="this.dataset.userEdited='1'"
                        class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-navy-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary"
-                       placeholder="Shown to users during onboarding">
+                       placeholder="e.g. Premium Revocable Living Trust">
             </div>
             <div>
                 <label class="block text-sm font-semibold text-navy-900 dark:text-white mb-2">Description</label>
@@ -325,7 +297,7 @@ function showCreateTrustModal() {
         </div>
     `;
 
-    showFormModal('Add Trust Type', formHtml, function(data) {
+    showFormModal('Add Trust Service', formHtml, function(data) {
         const trustType = (data.trust_type || '').trim();
         const serviceName = (data.service_name || '').trim();
         const description = (data.description || '').trim();
@@ -361,7 +333,7 @@ async function createTrust(payload) {
         });
         const data = await response.json();
         if (data.success) {
-            showToast('Trust type configured successfully', 'success');
+            showToast('Trust service created successfully', 'success');
             loadTrusts();
         } else {
             showToast(data.message || 'Failed to create trust type', 'error');
@@ -404,8 +376,8 @@ function editTrust(id) {
     const formHtml = `
         <div class="space-y-4">
             <div>
-                <label class="block text-sm font-semibold text-navy-900 dark:text-white mb-2">Trust Type</label>
-                <input type="text" value="${escapeHtml(trust.trust_type_label || trust.service_name)}" disabled
+                <label class="block text-sm font-semibold text-navy-900 dark:text-white mb-2">Trust Category</label>
+                <input type="text" value="${escapeHtml(trust.trust_type_label || trust.service_key)}" disabled
                        class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-slate-100 dark:bg-navy-900 text-slate-600 dark:text-slate-400 cursor-not-allowed">
             </div>
             <div>
@@ -423,7 +395,7 @@ function editTrust(id) {
         </div>
     `;
 
-    showFormModal('Edit Trust Type', formHtml, function(data) {
+    showFormModal('Edit Trust Service', formHtml, function(data) {
         const serviceName = (data.service_name || '').trim();
         const description = (data.description || '').trim();
         const isFree = data.is_free === true || data.is_free === 'on';
@@ -472,8 +444,8 @@ async function deleteTrust(id) {
     }
 
     showConfirmModal(
-        'Delete Trust Type',
-        `Are you sure you want to delete "${escapeHtml(trust.trust_type_label || trust.service_name)}"? This action cannot be undone.`,
+        'Delete Trust Service',
+        `Are you sure you want to delete "${escapeHtml(trust.service_name)}"? This action cannot be undone.`,
         async function() {
             try {
                 const response = await fetch(`../../api/admin/trusts.php?id=${id}`, { method: 'DELETE' });

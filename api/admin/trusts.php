@@ -105,9 +105,8 @@ function handleCreateTrust() {
         send_json(['success' => false, 'message' => 'Please select a valid trust type'], 400);
     }
 
-    $typeOptions = get_trust_type_options();
     if ($serviceName === '') {
-        $serviceName = $typeOptions[$trustType];
+        send_json(['success' => false, 'message' => 'Display name is required'], 400);
     }
 
     if (!trust_type_supports_asset_catalog($trustType)) {
@@ -122,12 +121,6 @@ function handleCreateTrust() {
 
     $db = getDatabase();
     $cols = trust_service_extra_columns($db);
-
-    $exists = $db->prepare('SELECT COUNT(*) FROM trust_services WHERE service_key = :key');
-    $exists->execute([':key' => $trustType]);
-    if ((int) $exists->fetchColumn() > 0) {
-        send_json(['success' => false, 'message' => 'This trust type is already configured. Edit the existing service instead.'], 409);
-    }
 
     try {
         $fields = ['service_key', 'service_name', 'description', 'price', 'is_free', 'is_active'];

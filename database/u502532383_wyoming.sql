@@ -450,7 +450,6 @@ ALTER TABLE `transactions`
 --
 ALTER TABLE `trust_services`
   ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `service_key` (`service_key`),
   ADD KEY `idx_service_key` (`service_key`),
   ADD KEY `idx_is_active` (`is_active`);
 

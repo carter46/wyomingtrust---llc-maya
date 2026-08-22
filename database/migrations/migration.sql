@@ -317,6 +317,27 @@ EXECUTE alterIfNotExistsTxCoinId;
 DEALLOCATE PREPARE alterIfNotExistsTxCoinId;
 
 -- ============================================================================
+-- Migration: Allow multiple trust_services rows per trust type (service_key)
+-- ============================================================================
+
+SET @tablename = 'trust_services';
+SET @indexname = 'service_key';
+SET @preparedStatement = (SELECT IF(
+  (
+    SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS
+    WHERE TABLE_SCHEMA = @dbname
+      AND TABLE_NAME = @tablename
+      AND INDEX_NAME = @indexname
+      AND NON_UNIQUE = 0
+  ) > 0,
+  CONCAT('ALTER TABLE ', @tablename, ' DROP INDEX ', @indexname),
+  'SELECT 1'
+));
+PREPARE dropTrustServiceKeyUnique FROM @preparedStatement;
+EXECUTE dropTrustServiceKeyUnique;
+DEALLOCATE PREPARE dropTrustServiceKeyUnique;
+
+-- ============================================================================
 -- Migration Complete
 -- ============================================================================
 
