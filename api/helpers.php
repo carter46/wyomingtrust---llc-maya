@@ -908,12 +908,52 @@ function trust_services_has_lookup_index(PDO $db): bool {
     }
 }
 
+function get_pdo_database_name(PDO $db): string {
+    try {
+        $name = $db->query('SELECT DATABASE()')->fetchColumn();
+        return is_string($name) ? $name : '';
+    } catch (Exception $e) {
+        return '';
+    }
+}
+
+function get_trust_services_api_version(): string {
+    return '2026-08-22-multi-offering-v2';
+}
+
+function trust_services_service_key_index_rows(PDO $db): array {
+    try {
+        $stmt = $db->query(
+            "SELECT INDEX_NAME, NON_UNIQUE, SEQ_IN_INDEX, COLUMN_NAME
+             FROM INFORMATION_SCHEMA.STATISTICS
+             WHERE TABLE_SCHEMA = DATABASE()
+               AND TABLE_NAME = 'trust_services'
+               AND COLUMN_NAME = 'service_key'
+             ORDER BY INDEX_NAME, SEQ_IN_INDEX"
+        );
+        $rows = [];
+        while ($row = $stmt->fetch()) {
+            $rows[] = [
+                'index_name' => (string) ($row['INDEX_NAME'] ?? ''),
+                'non_unique' => (int) ($row['NON_UNIQUE'] ?? 0),
+                'column_name' => (string) ($row['COLUMN_NAME'] ?? ''),
+            ];
+        }
+        return $rows;
+    } catch (Exception $e) {
+        return [];
+    }
+}
+
 function get_trust_services_schema_diagnostics(PDO $db): array {
     $uniqueIndexes = trust_services_unique_service_key_indexes($db);
     $hasLookupIndex = trust_services_has_lookup_index($db);
     return [
+        'api_version' => get_trust_services_api_version(),
+        'connected_database' => get_pdo_database_name($db),
         'allows_multiple_per_category' => count($uniqueIndexes) === 0,
         'unique_service_key_indexes' => $uniqueIndexes,
+        'service_key_indexes' => trust_services_service_key_index_rows($db),
         'has_lookup_index' => $hasLookupIndex,
         'fix_sql' => [
             'drop_unique' => array_map(function ($name) {
@@ -956,7 +996,9 @@ function format_trust_service_db_error(Throwable $e, PDO $db = null): array {
                 $drops = array_map(function ($name) {
                     return 'ALTER TABLE trust_services DROP INDEX `' . str_replace('`', '', $name) . '`;';
                 }, $uniqueIndexes);
-                $message = 'Insert blocked by unique index on trust_services.service_key (' . implode(', ', $uniqueIndexes) . '). Run: ' . implode(' ', $drops);
+                $dbName = $db instanceof PDO ? get_pdo_database_name($db) : '';
+                $dbNote = $dbName !== '' ? " (database: {$dbName})" : '';
+                $message = 'Insert blocked by unique index on trust_services.service_key (' . implode(', ', $uniqueIndexes) . '). Run: ' . implode(' ', $drops) . $dbNote;
                 if ($db instanceof PDO && !trust_services_has_lookup_index($db)) {
                     $message .= ' Then add lookup index: ALTER TABLE trust_services ADD KEY idx_service_key (service_key);';
                 }

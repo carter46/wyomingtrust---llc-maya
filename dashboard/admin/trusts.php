@@ -74,10 +74,18 @@ function renderSchemaDiagnostics(diagnostics) {
     const addLookup = diagnostics.fix_sql && Array.isArray(diagnostics.fix_sql.add_lookup) && diagnostics.fix_sql.add_lookup.length
         ? diagnostics.fix_sql.add_lookup[0]
         : '';
+    const connectedDb = diagnostics.connected_database
+        ? `<p class="mb-2">Connected database: <code>${escapeHtml(diagnostics.connected_database)}</code>${diagnostics.api_version ? ` · API ${escapeHtml(diagnostics.api_version)}` : ''}</p>`
+        : '';
+    const indexRows = Array.isArray(diagnostics.service_key_indexes) && diagnostics.service_key_indexes.length
+        ? `<p class="text-xs mt-2">Indexes on <code>service_key</code> (from app): ${escapeHtml(diagnostics.service_key_indexes.map(r => `${r.index_name} (non_unique=${r.non_unique})`).join(', '))}</p>`
+        : '';
     container.innerHTML = `
         <div class="rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-700 px-4 py-3 text-sm text-amber-900 dark:text-amber-200">
             <p class="font-semibold mb-1">Database still limits one row per trust category</p>
+            ${connectedDb}
             <p class="mb-2">Unique index(es) on <code>service_key</code>: ${escapeHtml(indexes.join(', ') || 'unknown')}</p>
+            ${indexRows}
             <p class="font-semibold mt-2">Step 1 — run this only:</p>
             <p class="text-xs break-all">${escapeHtml(dropSql || 'SHOW INDEX FROM trust_services;')}</p>
             ${addLookup

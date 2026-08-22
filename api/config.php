@@ -51,7 +51,7 @@ function getDatabase()
     // Edit these values directly to match your database settings
     $host = 'localhost';
     $port = '3306';
-    $database = 'u502532383_wyoming';  // Change this to your database name
+    $database = 'u502532383_newwyomin';  // Production database (verified via phpMyAdmin)
     $username = 'u502532383_wyoming';  // Change this to your MySQL username
     $password = 'Secretpass0721//';    // Change this to your database password
     $charset = 'utf8mb4';
