@@ -226,9 +226,9 @@ $page_title = 'Create Trust | ' . $site_name;
 </div>
 
 <script>
-const currentStep = <?php echo $step; ?>;
-const trustId = <?php echo $trustId; ?>;
-const isLoggedIn = <?php echo $isLoggedIn ? 'true' : 'false'; ?>;
+let currentStep = <?php echo (int) $step; ?>;
+const trustId = <?php echo (int) $trustId; ?>;
+let isLoggedIn = <?php echo $isLoggedIn ? 'true' : 'false'; ?>;
 const steps = [
     { id: 1, title: 'Trust Type', component: 'trustType' },
     { id: 2, title: 'Business & Personal Info', component: 'personalInfo' },
@@ -236,6 +236,37 @@ const steps = [
     { id: 4, title: 'Review & Payment', component: 'review' }
 ];
 
+function withTimeout(promise, ms) {
+    return Promise.race([
+        Promise.resolve(promise).catch((err) => {
+            console.warn('Timed task failed:', err);
+            return null;
+        }),
+        new Promise((resolve) => setTimeout(resolve, ms))
+    ]);
+}
+
+function onboardingStepUrl(step) {
+    return `onboarding.php?step=${step}${trustId ? '&trust_id=' + trustId : ''}`;
+}
+
+async function goToStep(step, options = {}) {
+    const target = Number(step);
+    if (!Number.isFinite(target) || target < 1 || target > 4) return;
+    saveOnboardingToStorage();
+    currentStep = target;
+    const url = onboardingStepUrl(target);
+    try {
+        if (options.replace) {
+            history.replaceState({ step: target }, '', url);
+        } else {
+            history.pushState({ step: target }, '', url);
+        }
+    } catch (e) {
+        // ignore history failures
+    }
+    await loadStep(target);
+}
 let onboardingData = {
     trust_service_id: null,
     trust_type: '', // service_key from trust_services
@@ -273,6 +304,9 @@ let onboardingData = {
 
 let trustServices = [];
 let availableCoins = [];
+let coinsLoadState = 'idle'; // idle | loading | loaded | error
+let coinsLoadError = '';
+let coinsLoadPromise = null;
 
 // Persist onboarding state across page reloads between steps
 // IMPORTANT: Only persists during active onboarding session, clears when done or abandoned
@@ -396,19 +430,7 @@ function loadOnboardingFromStorage() {
         clearOnboardingStorage();
         return;
     }
-    
-    // IMPORTANT: Clear storage if user is on step 1 (starting fresh)
-    // Only restore data if continuing from step 2, 3, or 4
-    const urlParams = new URLSearchParams(window.location.search);
-    const stepParam = urlParams.get('step');
-    const currentStepNum = stepParam ? parseInt(stepParam, 10) : 1;
-    
-    if (currentStepNum === 1) {
-        // User is starting fresh - clear any old data
-        clearOnboardingStorage();
-        return;
-    }
-    
+
     try {
         const timestamp = sessionStorage.getItem(ONBOARDING_STORAGE_TIMESTAMP_KEY);
         if (timestamp) {
@@ -419,20 +441,20 @@ function loadOnboardingFromStorage() {
                 return;
             }
         }
-        
+
         const raw = sessionStorage.getItem(ONBOARDING_STORAGE_KEY)
             || sessionStorage.getItem(ONBOARDING_STORAGE_KEY_LEGACY);
         if (!raw) return;
-        
+
         const parsed = JSON.parse(raw);
         if (!parsed || typeof parsed !== 'object') {
             clearOnboardingStorage();
             return;
         }
-        
+
         // Remove internal metadata
         delete parsed._saved_at;
-        
+
         const mergedPersonal = {
             ...onboardingData.personal_info,
             ...(parsed.personal_info || {}),
@@ -534,7 +556,10 @@ async function prefillPersonalInfoFromLastTrust() {
 // Load available trust services from API (all active services from admin)
 async function loadTrustServices() {
     try {
-        const response = await fetch('../api/trust-services.php');
+        const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+        const timeoutId = controller ? setTimeout(() => controller.abort(), 15000) : null;
+        const response = await fetch('../api/trust-services.php', controller ? { signal: controller.signal } : undefined);
+        if (timeoutId) clearTimeout(timeoutId);
         const data = await response.json();
         if (data.success && data.services) {
             // Defensive normalization (prevents "0" truthiness bugs even if backend changes)
@@ -553,15 +578,69 @@ async function loadTrustServices() {
     }
 }
 
-async function loadAvailableCoins() {
-    try {
-        const response = await fetch('../api/coins.php');
-        const data = await response.json();
-        if (data.success && Array.isArray(data.coins)) {
+async function loadAvailableCoins(force = false) {
+    if (!force && coinsLoadState === 'loaded') {
+        return availableCoins;
+    }
+    if (!force && coinsLoadPromise) {
+        return coinsLoadPromise;
+    }
+
+    coinsLoadState = 'loading';
+    coinsLoadError = '';
+    coinsLoadPromise = (async () => {
+        try {
+            const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+            const timeoutId = controller ? setTimeout(() => controller.abort(), 15000) : null;
+            const response = await fetch('../api/coins.php', controller ? { signal: controller.signal } : undefined);
+            if (timeoutId) clearTimeout(timeoutId);
+
+            let data = null;
+            try {
+                data = await response.json();
+            } catch (parseErr) {
+                throw new Error('Coins API returned an invalid response');
+            }
+
+            if (!response.ok || !data || !data.success || !Array.isArray(data.coins)) {
+                throw new Error((data && data.message) ? data.message : 'Failed to load cryptocurrencies');
+            }
+
             availableCoins = data.coins;
+            coinsLoadState = 'loaded';
+            coinsLoadError = '';
+            return availableCoins;
+        } catch (error) {
+            console.error('Failed to load coins:', error);
+            availableCoins = [];
+            coinsLoadState = 'error';
+            coinsLoadError = error && error.name === 'AbortError'
+                ? 'Timed out while loading cryptocurrencies.'
+                : (error.message || 'Failed to load cryptocurrencies.');
+            return availableCoins;
+        } finally {
+            coinsLoadPromise = null;
         }
-    } catch (error) {
-        console.error('Failed to load coins:', error);
+    })();
+
+    return coinsLoadPromise;
+}
+
+function refreshCoinSelectionPanel() {
+    const mount = document.getElementById('coinSelectionPanel');
+    if (!mount) return;
+    mount.outerHTML = renderCoinSelectionPanel();
+}
+
+async function ensureCoinsForSmartContract() {
+    if (!isSmartContractTrustSelected()) {
+        refreshCoinSelectionPanel();
+        return;
+    }
+    refreshCoinSelectionPanel();
+    if (coinsLoadState !== 'loaded') {
+        await loadAvailableCoins();
+        refreshCoinSelectionPanel();
     }
 }
 
@@ -573,7 +652,21 @@ function getTrustServiceId(serviceKey) {
 
 // Get selected trust service details
 function getSelectedTrustService() {
-    return trustServices.find(s => s.id === onboardingData.trust_service_id);
+    const selectedId = Number(onboardingData.trust_service_id);
+    if (!Number.isFinite(selectedId) || selectedId <= 0) return null;
+    return trustServices.find(s => Number(s.id) === selectedId) || null;
+}
+
+function showOnboardingError(message) {
+    const container = document.getElementById('onboardingContent');
+    if (!container) return;
+    container.innerHTML = `
+        <div class="text-center py-10 max-w-lg mx-auto">
+            <p class="text-red-600 font-semibold mb-2">Something went wrong</p>
+            <p class="text-on-surface-variant text-sm mb-6">${escapeHtml(message || 'Please try again.')}</p>
+            <button type="button" onclick="location.reload()" class="px-5 py-2.5 rounded-lg bg-secondary text-on-secondary font-semibold">Reload</button>
+        </div>
+    `;
 }
 
 async function loadStep(step) {
@@ -586,53 +679,62 @@ async function loadStep(step) {
     
     const container = document.getElementById('onboardingContent');
     
-    switch(step) {
-        case 1:
-            if (trustServices.length === 0) {
-                await loadTrustServices();
-            }
-            if (availableCoins.length === 0) {
-                await loadAvailableCoins();
-            }
-            container.innerHTML = renderTrustTypeStep();
-            break;
-        case 2:
-            // Logged-in users: prefill step 2 right before rendering (works when starting from step 1)
-            if (isLoggedIn) {
-                await prefillPersonalInfoFromProfile();
-                await prefillPersonalInfoFromLastTrust();
-            }
-            container.innerHTML = renderPersonalInfoStep();
-            break;
-        case 3:
-            // Check if user needs email verification before showing beneficiaries step
-            // After registration, user is logged in but may need to verify email
-            if (isLoggedIn) {
-                try {
-                    const response = await fetch('../api/user/profile.php?check_verification=true');
-                    const data = await response.json();
-                    if (data.success && data.requires_verification && !data.email_verified) {
-                        // User needs to verify email - show OTP verification step
-                        showOTPVerificationStep();
-                        return;
-                    }
-                } catch (error) {
-                    console.error('Error checking verification status:', error);
-                    // Continue to beneficiaries step if check fails
+    try {
+        switch(step) {
+            case 1:
+                if (trustServices.length === 0) {
+                    await loadTrustServices();
                 }
-            }
-            // Ensure there is at least one beneficiary form shown by default
-            ensureDefaultBeneficiary();
-            if (!isSmartContractTrustSelected()) {
-                onboardingData.beneficiaries.forEach(b => { b.wallet_address = ''; });
-            }
-            container.innerHTML = renderBeneficiariesStep();
-            // Attach event listeners after HTML is inserted
-            setupBeneficiariesStep();
-            break;
-        case 4:
-            container.innerHTML = renderReviewStep();
-            break;
+                // Show trust types immediately — do not block on coins
+                container.innerHTML = renderTrustTypeStep();
+                if (isSmartContractTrustSelected()) {
+                    ensureCoinsForSmartContract();
+                } else {
+                    // Warm the coins cache so Smart Contract selection is instant
+                    loadAvailableCoins().catch(() => {});
+                }
+                break;
+            case 2:
+                // Never block the form on profile/trust prefills
+                if (isLoggedIn) {
+                    await withTimeout(Promise.all([
+                        prefillPersonalInfoFromProfile(),
+                        prefillPersonalInfoFromLastTrust()
+                    ]), 2500);
+                }
+                container.innerHTML = renderPersonalInfoStep();
+                break;
+            case 3:
+                // Check if user needs email verification before showing beneficiaries step
+                if (isLoggedIn) {
+                    try {
+                        const verificationCheck = withTimeout((async () => {
+                            const response = await fetch('../api/user/profile.php?check_verification=true');
+                            return response.json();
+                        })(), 2500);
+                        const data = await verificationCheck;
+                        if (data && data.success && data.requires_verification && !data.email_verified) {
+                            showOTPVerificationStep();
+                            return;
+                        }
+                    } catch (error) {
+                        console.error('Error checking verification status:', error);
+                    }
+                }
+                ensureDefaultBeneficiary();
+                if (!isSmartContractTrustSelected()) {
+                    onboardingData.beneficiaries.forEach(b => { b.wallet_address = ''; });
+                }
+                container.innerHTML = renderBeneficiariesStep();
+                setupBeneficiariesStep();
+                break;
+            case 4:
+                container.innerHTML = renderReviewStep();
+                break;
+        }
+    } catch (error) {
+        console.error('Failed to load onboarding step:', error);
+        showOnboardingError(error && error.message ? error.message : 'Failed to load this step.');
     }
 }
 
@@ -920,7 +1022,12 @@ function renderPersonalInfoStep() {
 
 function isSmartContractTrustSelected() {
     const service = getSelectedTrustService();
-    const key = service?.service_key || onboardingData.trust_type || '';
+    if (service) {
+        if (service.is_crypto || service.service_key === 'smart_contract_trust' || service.service_key === 'crypto_asset_trust') {
+            return true;
+        }
+    }
+    const key = onboardingData.trust_type || '';
     return key === 'smart_contract_trust' || key === 'crypto_asset_trust';
 }
 
@@ -932,33 +1039,51 @@ function isCatalogTrustSelected() {
 
 function renderCoinSelectionPanel() {
     if (!isSmartContractTrustSelected()) {
-        return '';
+        return `<div id="coinSelectionPanel" class="hidden"></div>`;
     }
     const selected = onboardingData.entrusted_coins || [];
-    if (!availableCoins.length) {
+
+    if (coinsLoadState === 'loading' || coinsLoadState === 'idle') {
         return `
-            <div class="mb-10 p-6 border border-outline-variant/30 rounded-2xl bg-surface-container-low">
-                <p class="text-on-surface-variant text-sm">Loading available cryptocurrencies...</p>
+            <div id="coinSelectionPanel" class="mb-10 p-6 border border-outline-variant/30 rounded-2xl bg-surface-container-low">
+                <div class="flex items-center gap-3 text-on-surface-variant text-sm">
+                    <div class="animate-spin rounded-full h-5 w-5 border-2 border-secondary border-t-transparent"></div>
+                    <p>Loading available cryptocurrencies...</p>
+                </div>
             </div>
         `;
     }
+
+    if (coinsLoadState === 'error' || !availableCoins.length) {
+        return `
+            <div id="coinSelectionPanel" class="mb-10 p-6 border border-red-200 rounded-2xl bg-red-50">
+                <p class="text-red-700 text-sm font-semibold mb-2">Could not load cryptocurrencies</p>
+                <p class="text-red-600/80 text-xs mb-4">${escapeHtml(coinsLoadError || 'No coins are available right now.')}</p>
+                <button type="button" onclick="retryLoadCoins()" class="px-4 py-2 rounded-lg bg-secondary text-on-secondary text-sm font-semibold">
+                    Retry
+                </button>
+            </div>
+        `;
+    }
+
     const coinCards = availableCoins.map(coin => {
-        const isChecked = selected.includes(coin.coin_key);
-        const logo = coin.logo ? `<img src="${escapeHtml(coin.logo)}" alt="" class="w-8 h-8 rounded-full object-cover shrink-0" onerror="this.style.display='none'">` : `<span class="w-8 h-8 rounded-full bg-secondary/10 flex items-center justify-center text-xs font-bold shrink-0">${escapeHtml((coin.symbol || '?').slice(0, 3))}</span>`;
+        const coinKey = String(coin.coin_key || '');
+        const isChecked = selected.includes(coinKey);
+        const logo = coin.logo ? `<img src="${escapeHtml(String(coin.logo))}" alt="" class="w-8 h-8 rounded-full object-cover shrink-0" onerror="this.style.display='none'">` : `<span class="w-8 h-8 rounded-full bg-secondary/10 flex items-center justify-center text-xs font-bold shrink-0">${escapeHtml(String((coin.symbol || '?')).slice(0, 3))}</span>`;
         return `
             <label class="flex items-center gap-3 p-4 border-2 ${isChecked ? 'border-secondary bg-secondary/5' : 'border-outline-variant/30'} rounded-xl cursor-pointer hover:border-secondary transition-all">
-                <input type="checkbox" class="rounded text-secondary focus:ring-secondary" ${isChecked ? 'checked' : ''} onchange="toggleEntrustedCoin('${escapeHtml(coin.coin_key)}', this.checked)"/>
+                <input type="checkbox" class="rounded text-secondary focus:ring-secondary" ${isChecked ? 'checked' : ''} onchange="toggleEntrustedCoin('${escapeHtml(coinKey)}', this.checked)"/>
                 ${logo}
                 <span class="min-w-0">
-                    <span class="block font-bold text-primary text-sm truncate">${escapeHtml(coin.display_name || coin.coin_key)}</span>
-                    <span class="block text-xs text-on-surface-variant">${escapeHtml(coin.symbol || coin.coin_key.toUpperCase())}</span>
+                    <span class="block font-bold text-primary text-sm truncate">${escapeHtml(String(coin.display_name || coinKey))}</span>
+                    <span class="block text-xs text-on-surface-variant">${escapeHtml(String(coin.symbol || coinKey.toUpperCase()))}</span>
                 </span>
             </label>
         `;
     }).join('');
 
     return `
-        <div class="mb-10 p-6 lg:p-8 border-2 border-secondary/20 rounded-2xl bg-surface-container-low">
+        <div id="coinSelectionPanel" class="mb-10 p-6 lg:p-8 border-2 border-secondary/20 rounded-2xl bg-surface-container-low">
             <h2 class="text-xl font-bold text-primary mb-2">Select Cryptocurrencies to Entrust</h2>
             <p class="text-on-surface-variant text-sm mb-6">Choose which digital assets this trust will hold. After your trust is created, you can deposit crypto and track balances from your dashboard.</p>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -970,6 +1095,11 @@ function renderCoinSelectionPanel() {
             </p>
         </div>
     `;
+}
+
+async function retryLoadCoins() {
+    await loadAvailableCoins(true);
+    refreshCoinSelectionPanel();
 }
 
 function toggleEntrustedCoin(coinKey, checked) {
@@ -996,6 +1126,15 @@ function validateTrustTypeStepAndNext() {
         return;
     }
     if (isSmartContractTrustSelected()) {
+        if (coinsLoadState === 'loading' || coinsLoadState === 'idle') {
+            alert('Please wait for cryptocurrencies to finish loading, then select at least one.');
+            ensureCoinsForSmartContract();
+            return;
+        }
+        if (coinsLoadState === 'error' || !availableCoins.length) {
+            alert('Cryptocurrencies could not be loaded. Please tap Retry and try again.');
+            return;
+        }
         if (!onboardingData.entrusted_coins || onboardingData.entrusted_coins.length === 0) {
             alert('Please select at least one cryptocurrency to entrust in this Smart Contract Trust.');
             return;
@@ -1397,19 +1536,22 @@ function renderReviewStep() {
 }
 
 function selectTrustType(serviceKey, serviceId) {
-    onboardingData.trust_service_id = serviceId;
+    onboardingData.trust_service_id = Number(serviceId) || serviceId;
     onboardingData.trust_type = serviceKey;
     if (serviceKey !== 'smart_contract_trust' && serviceKey !== 'crypto_asset_trust') {
         onboardingData.entrusted_coins = [];
     }
-    
-    // Enable next button without re-rendering the entire step
+    saveOnboardingToStorage();
+
+    // Enable next button and refresh step UI without blocking on a full reload race
     const nextBtn = document.getElementById('nextBtn');
-    if (nextBtn) {
-        nextBtn.disabled = false;
-        // Update visual selection by re-rendering the step content only
-        loadStep(1);
+    if (nextBtn) nextBtn.disabled = false;
+
+    const container = document.getElementById('onboardingContent');
+    if (container) {
+        container.innerHTML = renderTrustTypeStep();
     }
+    ensureCoinsForSmartContract();
 }
 
 function savePersonalInfo() {
@@ -1555,11 +1697,13 @@ async function savePersonalInfoAndContinue() {
                 // If email verification is required, show OTP step
                 if (data.requires_verification) {
                     // Show OTP verification step instead of going to step 3
+                    isLoggedIn = true;
                     showOTPVerificationStep();
                 } else {
                     // No verification needed, continue to step 3
+                    isLoggedIn = true;
                     saveOnboardingToStorage();
-                    window.location.href = 'onboarding.php?step=3';
+                    await goToStep(3);
                 }
             } else {
                 alert('Registration failed: ' + (data.message || 'Unknown error'));
@@ -1753,10 +1897,9 @@ async function verifyOTP() {
         if (data.success) {
             // Email verified successfully - continue to step 3 (beneficiaries)
             showToast('Email verified successfully!', 'success');
-            setTimeout(() => {
-                saveOnboardingToStorage();
-                window.location.href = 'onboarding.php?step=3';
-            }, 500);
+            isLoggedIn = true;
+            saveOnboardingToStorage();
+            await goToStep(3);
         } else {
             showOTPError(data.message || 'Invalid verification code. Please try again.');
             verifyBtn.disabled = false;
@@ -2411,24 +2554,15 @@ function showToast(message, type = 'info') {
     }, 3000);
 }
 
-function escapeHtml(text) {
-    if (typeof text !== 'string') return text;
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
-
 function nextStep() {
     if (currentStep < 4) {
-        saveOnboardingToStorage();
-        window.location.href = `onboarding.php?step=${currentStep + 1}${trustId ? '&trust_id=' + trustId : ''}`;
+        goToStep(currentStep + 1);
     }
 }
 
 function previousStep() {
     if (currentStep > 1) {
-        saveOnboardingToStorage();
-        window.location.href = `onboarding.php?step=${currentStep - 1}${trustId ? '&trust_id=' + trustId : ''}`;
+        goToStep(currentStep - 1);
     }
 }
 
@@ -2601,8 +2735,9 @@ async function createTrust(options = { redirect: true }) {
 }
 
 function escapeHtml(text) {
+    if (text === null || text === undefined) return '';
     const div = document.createElement('div');
-    div.textContent = text;
+    div.textContent = String(text);
     return div.innerHTML;
 }
 
@@ -2622,26 +2757,38 @@ function togglePasswordVisibility(inputId, button) {
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', async () => {
-    // Restore onboarding state ONLY if continuing from step 2+ (not step 1)
-    // Step 1 always starts fresh
-    loadOnboardingFromStorage();
-    
-    // Only prefill from profile if logged in AND on step 2+ (not step 1)
-    // This prevents auto-filling when user wants to start fresh
-    if (currentStep > 1) {
-        await prefillPersonalInfoFromProfile();
+    // Hard refresh on step 1 starts clean; step 2+ restores draft
+    if (currentStep <= 1) {
+        clearOnboardingStorage();
+    } else {
+        loadOnboardingFromStorage();
     }
-    
-    // Load trust services first
-    await loadTrustServices();
-    
-    loadStep(currentStep);
-    
+
+    // Load services with a hard timeout so the UI never sits on Loading forever
+    await withTimeout(loadTrustServices(), 8000);
+
+    try {
+        await loadStep(currentStep);
+    } catch (error) {
+        console.error('Failed to initialize onboarding step:', error);
+        showOnboardingError(error && error.message ? error.message : 'Failed to load onboarding.');
+    }
+
     // Disable next button if trust type not selected on step 1
     if (currentStep === 1 && !onboardingData.trust_service_id) {
         const nextBtn = document.getElementById('nextBtn');
         if (nextBtn) nextBtn.disabled = true;
     }
+});
+
+window.addEventListener('popstate', async (event) => {
+    const stepFromState = event.state && event.state.step;
+    const stepFromUrl = parseInt(new URLSearchParams(window.location.search).get('step') || '1', 10);
+    const step = Number(stepFromState || stepFromUrl || 1);
+    currentStep = Number.isFinite(step) && step >= 1 && step <= 4 ? step : 1;
+    // Restore draft when browsing history within onboarding (do not wipe on back to step 1)
+    loadOnboardingFromStorage();
+    await loadStep(currentStep);
 });
 
 // Clear storage when user leaves the onboarding page (browser navigation, close tab, etc.)

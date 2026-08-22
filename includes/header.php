@@ -142,8 +142,10 @@ tailwind.config = {
 <?php
 $logo_class = 'flex items-center gap-2 group';
 $logo_text_class = 'font-headline-md text-headline-md text-primary tracking-tight';
-$logo_img_class = 'w-10 h-10 object-contain rounded-xl';
+$logo_img_class = 'h-10 w-auto max-w-[180px] object-contain';
+$logo_show_text = false;
 include __DIR__ . '/components/site-logo.php';
+unset($logo_show_text);
 ?>
 <nav class="hidden lg:flex items-center gap-8">
 <div class="relative group">

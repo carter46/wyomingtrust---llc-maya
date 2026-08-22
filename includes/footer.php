@@ -12,8 +12,10 @@ $onboarding_href = asset_url('onboarding/onboarding.php');
 <?php
 $logo_class = 'flex items-center gap-2';
 $logo_text_class = 'font-headline-md text-headline-md tracking-tight text-on-primary';
-$logo_img_class = 'w-8 h-8 object-contain rounded-lg bg-on-primary p-0.5';
+$logo_img_class = 'h-8 w-auto max-w-[160px] object-contain rounded-lg bg-on-primary p-0.5';
+$logo_show_text = false;
 include __DIR__ . '/components/site-logo.php';
+unset($logo_show_text);
 ?>
 <p class="text-label-md opacity-70 leading-relaxed">Premium asset protection and business formation services tailored for modern entrepreneurs.</p>
 </div>
