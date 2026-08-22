@@ -369,7 +369,7 @@ function getBusinessEndingLabel(value) {
 }
 
 function getFormationLabel(code) {
-    const match = US_JURISDICTIONS.find(j => j.code === code);
+    const match = US_FORMATIONS.find(j => j.code === code);
     return match ? match.name : (code || '');
 }
 
@@ -388,7 +388,7 @@ function isValidBusinessEnding(value) {
 }
 
 function isValidFormationState(code) {
-    return US_JURISDICTIONS.some(j => j.code === code);
+    return US_FORMATIONS.some(j => j.code === code);
 }
 
 function isValidPhone(phone) {
@@ -829,7 +829,7 @@ function renderPersonalInfoStep() {
     const bi = onboardingData.business_info || {};
     const inputClass = 'form-input flex w-full rounded-lg text-primary border border-outline-variant bg-surface-container-low focus:ring-2 focus:ring-secondary focus:border-secondary h-14 placeholder:text-on-surface-variant p-4 text-base font-normal';
     const inputClassSm = 'form-input flex w-full rounded-lg text-primary border border-outline-variant bg-surface-container-low focus:ring-2 focus:ring-secondary focus:border-secondary h-12 placeholder:text-on-surface-variant p-4 text-base font-normal';
-    const jurisdictionOptions = US_JURISDICTIONS.map(j =>
+    const jurisdictionOptions = US_FORMATIONS.map(j =>
         `<option value="${escapeHtml(j.code)}" ${bi.formation_state === j.code ? 'selected' : ''}>${escapeHtml(j.name)}</option>`
     ).join('');
     const endingOptions = BUSINESS_ENDING_OPTIONS.map(o =>
