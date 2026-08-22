@@ -111,7 +111,9 @@ function handleCreateTrust() {
 
     if (!trust_type_supports_asset_catalog($trustType)) {
         $categoryConfig = [];
-    } elseif (empty(array_filter($categoryConfig, fn($c) => !empty($c['enabled'])))) {
+    } elseif (empty(array_filter($categoryConfig, function ($c) {
+        return !empty($c['enabled']);
+    }))) {
         $categoryConfig = get_default_asset_category_config($trustType);
     }
 
@@ -121,6 +123,17 @@ function handleCreateTrust() {
 
     $db = getDatabase();
     $cols = trust_service_extra_columns($db);
+
+    if (trust_services_has_unique_service_key($db)) {
+        $exists = $db->prepare('SELECT COUNT(*) FROM trust_services WHERE service_key = :key');
+        $exists->execute([':key' => $trustType]);
+        if ((int) $exists->fetchColumn() > 0) {
+            send_json([
+                'success' => false,
+                'message' => 'This trust category already exists in the database. Run the latest migration (database/migrations/migration.sql) or execute: ALTER TABLE trust_services DROP INDEX service_key; — then you can add multiple offerings per category.',
+            ], 409);
+        }
+    }
 
     try {
         $fields = ['service_key', 'service_name', 'description', 'price', 'is_free', 'is_active'];
@@ -164,9 +177,10 @@ function handleCreateTrust() {
                 'service_name' => $serviceName,
             ],
         ]);
-    } catch (Exception $e) {
+    } catch (Throwable $e) {
         error_log('Create trust failed: ' . $e->getMessage());
-        send_json(['success' => false, 'message' => 'Failed to create trust service'], 500);
+        $formatted = format_trust_service_db_error($e);
+        send_json(['success' => false, 'message' => $formatted['message']], $formatted['status']);
     }
 }
 

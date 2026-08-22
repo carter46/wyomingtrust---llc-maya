@@ -205,11 +205,11 @@ $page_title = 'Create Trust | ' . $site_name;
 <div class="bg-surface-container border-b border-outline-variant/30">
 <div class="max-w-container-max mx-auto px-gutter py-4">
 <div class="flex items-center justify-between mb-2 gap-2">
-<span class="font-label-md text-label-md text-on-surface-variant whitespace-nowrap">Step <span id="currentStep"><?php echo $step; ?></span> of 4</span>
-<span class="font-label-md text-label-md text-on-surface-variant truncate text-right" id="stepTitle">Trust Type</span>
+<span class="font-label-md text-label-md text-on-surface-variant whitespace-nowrap">Step <span id="currentStep"><?php echo $step; ?></span> of 5</span>
+<span class="font-label-md text-label-md text-on-surface-variant truncate text-right" id="stepTitle">Business Type</span>
 </div>
 <div class="w-full bg-surface-container-high rounded-full h-1.5 overflow-hidden">
-<div id="progressBar" class="bg-secondary h-1.5 rounded-full transition-all duration-300" style="width: <?php echo ($step / 4) * 100; ?>%"></div>
+<div id="progressBar" class="bg-secondary h-1.5 rounded-full transition-all duration-300" style="width: <?php echo min(100, max(0, ($step / 5) * 100)); ?>%"></div>
 </div>
 </div>
 </div>
@@ -234,11 +234,20 @@ let isLoggedIn = <?php echo $isLoggedIn ? 'true' : 'false'; ?>;
 const US_JURISDICTIONS = (window.US_JURISDICTIONS || window.US_FORMATIONS || []);
 const BUSINESS_ENDING_OPTIONS = (window.BUSINESS_ENDING_OPTIONS || []);
 const US_FORMATIONS = US_JURISDICTIONS;
+const ONBOARDING_TOTAL_STEPS = 5;
+const ONBOARDING_STEP = {
+    BUSINESS_ENTITY: 1,
+    TRUST_TYPE: 2,
+    PERSONAL_INFO: 3,
+    BENEFICIARIES: 4,
+    REVIEW: 5,
+};
 const steps = [
-    { id: 1, title: 'Trust Type', component: 'trustType' },
-    { id: 2, title: 'Business & Personal Info', component: 'personalInfo' },
-    { id: 3, title: 'Beneficiaries', component: 'beneficiaries' },
-    { id: 4, title: 'Review & Payment', component: 'review' }
+    { id: ONBOARDING_STEP.BUSINESS_ENTITY, title: 'Business Type', component: 'businessEntity' },
+    { id: ONBOARDING_STEP.TRUST_TYPE, title: 'Trust Type', component: 'trustType' },
+    { id: ONBOARDING_STEP.PERSONAL_INFO, title: 'Business & Personal Info', component: 'personalInfo' },
+    { id: ONBOARDING_STEP.BENEFICIARIES, title: 'Beneficiaries', component: 'beneficiaries' },
+    { id: ONBOARDING_STEP.REVIEW, title: 'Review & Payment', component: 'review' }
 ];
 
 function withTimeout(promise, ms) {
@@ -257,7 +266,7 @@ function onboardingStepUrl(step) {
 
 async function goToStep(step, options = {}) {
     const target = Number(step);
-    if (!Number.isFinite(target) || target < 1 || target > 4) return;
+    if (!Number.isFinite(target) || target < 1 || target > ONBOARDING_TOTAL_STEPS) return;
     saveOnboardingToStorage();
     currentStep = target;
     const url = onboardingStepUrl(target);
@@ -289,6 +298,7 @@ let onboardingData = {
         // legacy full_name may appear when reading older drafts/trusts
     },
     business_info: {
+        entity_type: '', // new | existing
         company_name: '',
         formation_state: '',
         business_ending: ''
@@ -344,6 +354,16 @@ function getBusinessEndingLabel(value) {
 function getFormationLabel(code) {
     const match = US_FORMATIONS.find(j => j.code === code);
     return match ? match.name : (code || '');
+}
+
+function getBusinessEntityTypeLabel(type) {
+    if (type === 'new') return 'New Business';
+    if (type === 'existing') return 'Existing Business';
+    return '';
+}
+
+function isValidBusinessEntityType(type) {
+    return type === 'new' || type === 'existing';
 }
 
 function formatCompanyDisplayName(bi) {
@@ -645,16 +665,24 @@ function showOnboardingError(message) {
 async function loadStep(step) {
     const stepData = steps[step - 1];
     if (!stepData) return;
+
+    if (step > ONBOARDING_STEP.BUSINESS_ENTITY && !isValidBusinessEntityType(onboardingData.business_info?.entity_type)) {
+        await goToStep(ONBOARDING_STEP.BUSINESS_ENTITY, { replace: true });
+        return;
+    }
     
     document.getElementById('currentStep').textContent = step;
     document.getElementById('stepTitle').textContent = stepData.title;
-    document.getElementById('progressBar').style.width = ((step / 4) * 100) + '%';
+    document.getElementById('progressBar').style.width = ((step / ONBOARDING_TOTAL_STEPS) * 100) + '%';
     
     const container = document.getElementById('onboardingContent');
     
     try {
         switch(step) {
-            case 1:
+            case ONBOARDING_STEP.BUSINESS_ENTITY:
+                container.innerHTML = renderBusinessEntityStep();
+                break;
+            case ONBOARDING_STEP.TRUST_TYPE:
                 if (trustServices.length === 0) {
                     await loadTrustServices();
                 }
@@ -667,7 +695,7 @@ async function loadStep(step) {
                     loadAvailableCoins().catch(() => {});
                 }
                 break;
-            case 2:
+            case ONBOARDING_STEP.PERSONAL_INFO:
                 // Never block the form on profile/trust prefills
                 if (isLoggedIn) {
                     await withTimeout(Promise.all([
@@ -677,7 +705,7 @@ async function loadStep(step) {
                 }
                 container.innerHTML = renderPersonalInfoStep();
                 break;
-            case 3:
+            case ONBOARDING_STEP.BENEFICIARIES:
                 // Check if user needs email verification before showing beneficiaries step
                 if (isLoggedIn) {
                     try {
@@ -701,7 +729,7 @@ async function loadStep(step) {
                 container.innerHTML = renderBeneficiariesStep();
                 setupBeneficiariesStep();
                 break;
-            case 4:
+            case ONBOARDING_STEP.REVIEW:
                 container.innerHTML = renderReviewStep();
                 break;
         }
@@ -730,6 +758,86 @@ function formatTrustServicePrice(service) {
         isFree,
         label: isFree ? 'FREE' : `$${price.toFixed(2)}`,
     };
+}
+
+function renderBusinessEntityStep() {
+    const selected = onboardingData.business_info?.entity_type || '';
+    const options = [
+        {
+            value: 'new',
+            label: 'New Business',
+            description: 'You are forming a new company or entity as part of this trust setup.',
+            icon: 'add-circle',
+        },
+        {
+            value: 'existing',
+            label: 'Existing Business',
+            description: 'You already have a registered business and want to place it into a trust.',
+            icon: 'history',
+        },
+    ];
+
+    const cards = options.map(option => {
+        const isSelected = selected === option.value;
+        return `
+            <label class="relative border-2 ${isSelected ? 'border-secondary' : 'border-outline-variant/30'} rounded-xl p-4 sm:p-5 cursor-pointer hover:border-secondary transition-all group flex gap-3 sm:gap-4 items-start">
+                <input class="peer sr-only" name="business_entity_type" type="radio" value="${escapeHtml(option.value)}" ${isSelected ? 'checked' : ''} onchange="selectBusinessEntityType('${escapeHtml(option.value)}')"/>
+                <div class="w-10 h-10 sm:w-11 sm:h-11 bg-secondary rounded-lg flex items-center justify-center text-on-secondary shrink-0">
+                    ${wtIcon(option.icon, 'text-lg sm:text-xl')}
+                </div>
+                <div class="flex-1 min-w-0 pr-8">
+                    <h3 class="text-base sm:text-lg font-bold text-primary mb-1">${escapeHtml(option.label)}</h3>
+                    <p class="text-on-surface-variant text-xs sm:text-sm leading-relaxed">${escapeHtml(option.description)}</p>
+                </div>
+                <div class="absolute top-4 right-4 w-5 h-5 rounded-full border-2 ${isSelected ? 'border-secondary bg-secondary' : 'border-outline-variant'} transition-colors shrink-0"></div>
+            </label>
+        `;
+    }).join('');
+
+    return `
+        <div class="max-w-2xl mx-auto w-full px-1">
+            <div class="text-center mb-6 sm:mb-8">
+                <h1 class="text-xl sm:text-2xl font-bold text-primary mb-2">Is This a New or Existing Business?</h1>
+                <p class="text-on-surface-variant text-sm sm:text-base">Choose the option that best describes your situation before selecting a trust type.</p>
+            </div>
+            <div class="flex flex-col gap-3 sm:gap-4 mb-8">
+                ${cards}
+            </div>
+            <div class="fixed bottom-0 left-0 w-full bg-surface-container-lowest border-t border-outline-variant/30 py-4 px-8 z-40 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+                <div class="max-w-container-max mx-auto flex justify-between items-center">
+                    <button onclick="handleCancelOrExit(); window.location.href='../index.php'" class="px-6 py-2 text-on-surface-variant hover:text-primary">Cancel</button>
+                    <button onclick="validateBusinessEntityStepAndNext()" ${selected ? '' : 'disabled'} id="nextBtn" class="bg-secondary text-on-secondary hover:opacity-90 font-semibold py-3 px-8 rounded-lg flex items-center shadow-lg transform transition hover:-translate-y-0.5 focus:ring-4 focus:ring-secondary/20 disabled:opacity-50 disabled:cursor-not-allowed">
+                        Next
+                        <?php echo wt_icon('arrow-forward', 'ml-2 text-lg'); ?>
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function selectBusinessEntityType(type) {
+    if (!onboardingData.business_info) onboardingData.business_info = {};
+    onboardingData.business_info.entity_type = type;
+    saveOnboardingToStorage();
+
+    const nextBtn = document.getElementById('nextBtn');
+    if (nextBtn) nextBtn.disabled = false;
+
+    const container = document.getElementById('onboardingContent');
+    if (container) {
+        container.innerHTML = renderBusinessEntityStep();
+    }
+}
+
+function validateBusinessEntityStepAndNext() {
+    const type = onboardingData.business_info?.entity_type || '';
+    if (!isValidBusinessEntityType(type)) {
+        alert('Please select whether this is a new business or an existing business.');
+        return;
+    }
+    saveOnboardingToStorage();
+    nextStep();
 }
 
 function renderTrustTypeStep() {
@@ -786,7 +894,7 @@ function renderTrustTypeStep() {
             </div>
             <div class="fixed bottom-0 left-0 w-full bg-surface-container-lowest border-t border-outline-variant/30 py-4 px-8 z-40 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
                 <div class="max-w-container-max mx-auto flex justify-between items-center">
-                    <button onclick="handleCancelOrExit(); window.location.href='../index.php'" class="px-6 py-2 text-on-surface-variant hover:text-primary">Cancel</button>
+                    <button onclick="previousStep()" class="px-6 py-2 text-on-surface-variant hover:text-primary">Previous</button>
                     <button onclick="validateTrustTypeStepAndNext()" ${onboardingData.trust_service_id ? '' : 'disabled'} id="nextBtn" class="bg-secondary text-on-secondary hover:opacity-90 font-semibold py-3 px-8 rounded-lg flex items-center shadow-lg transform transition hover:-translate-y-0.5 focus:ring-4 focus:ring-secondary/20 disabled:opacity-50 disabled:cursor-not-allowed">
                         Next
                         <?php echo wt_icon('arrow-forward', 'ml-2 text-lg'); ?>
@@ -814,11 +922,11 @@ function renderPersonalInfoStep() {
             <div class="mb-10">
                 <div class="flex flex-col gap-3 max-w-[960px] mx-auto">
                     <div class="flex gap-6 justify-between">
-                        <p class="text-primary text-base font-semibold leading-normal">Step 2 of 4: Business &amp; Personal Info</p>
-                        <p class="text-primary text-sm font-medium leading-normal">50% Complete</p>
+                        <p class="text-primary text-base font-semibold leading-normal">Step 3 of 5: Business &amp; Personal Info</p>
+                        <p class="text-primary text-sm font-medium leading-normal">60% Complete</p>
                     </div>
                     <div class="rounded-full bg-surface-container h-2 overflow-hidden">
-                        <div class="h-full rounded-full bg-secondary transition-all duration-500" style="width: 50%;"></div>
+                        <div class="h-full rounded-full bg-secondary transition-all duration-500" style="width: 60%;"></div>
                     </div>
                     <div class="flex justify-between items-center">
                         <p class="text-on-surface-variant text-sm font-normal leading-normal italic">Next: Beneficiaries</p>
@@ -836,7 +944,7 @@ function renderPersonalInfoStep() {
                         <div class="bg-surface-container-lowest border border-outline-variant/30 rounded-xl p-8 shadow-sm space-y-6">
                             <div>
                                 <h2 class="text-primary text-2xl font-bold tracking-tight">Business Information</h2>
-                                <p class="text-on-surface-variant text-sm mt-1">These details belong to the business entity, not the individual.</p>
+                                <p class="text-on-surface-variant text-sm mt-1">${escapeHtml(getBusinessEntityTypeLabel(onboardingData.business_info?.entity_type) || 'Business details')} — these details belong to the business entity, not the individual.</p>
                             </div>
                             <div class="flex flex-col gap-2">
                                 <label class="text-on-surface-variant text-sm font-semibold leading-normal" for="trustNameInput">Trust Name</label>
@@ -1225,7 +1333,7 @@ function renderReviewStep() {
     const trustTypeName = serviceName;
     
     // Load payment methods only when needed (paid services)
-    if (currentStep === 4 && !isFree) {
+    if (currentStep === ONBOARDING_STEP.REVIEW && !isFree) {
         setTimeout(() => loadPaymentMethods(), 100);
     }
 
@@ -1251,12 +1359,16 @@ function renderReviewStep() {
                                     <p class="text-primary font-semibold">Business Information</p>
                                 </div>
                                 <div class="flex items-center gap-4">
-                                    <button type="button" onclick="window.location.href='?step=2'" class="text-secondary text-sm font-bold hover:underline">Edit</button>
+                                    <button type="button" onclick="window.location.href='?step=3'" class="text-secondary text-sm font-bold hover:underline">Edit</button>
                                     <?php echo wt_icon('chevron-down', 'text-on-surface-variant group-open:rotate-180 transition-transform'); ?>
                                 </div>
                             </summary>
                             <div class="px-5 pb-5 pt-0 border-t border-outline-variant/20 mt-2">
                                 <div class="grid grid-cols-2 gap-4 pt-4">
+                                    <div class="col-span-2">
+                                        <p class="text-on-surface-variant text-xs uppercase font-bold tracking-wider">Business Type</p>
+                                        <p class="text-on-background font-medium">${escapeHtml(getBusinessEntityTypeLabel(onboardingData.business_info?.entity_type) || 'Not provided')}</p>
+                                    </div>
                                     <div class="col-span-2">
                                         <p class="text-on-surface-variant text-xs uppercase font-bold tracking-wider">Trust Name</p>
                                         <p class="text-on-background font-medium">${escapeHtml(onboardingData.trust_name || 'Not provided')}</p>
@@ -1297,7 +1409,7 @@ function renderReviewStep() {
                                     <p class="text-primary font-semibold">Personal Information</p>
                                 </div>
                                 <div class="flex items-center gap-4">
-                                    <button type="button" onclick="window.location.href='?step=2'" class="text-secondary text-sm font-bold hover:underline">Edit</button>
+                                    <button type="button" onclick="window.location.href='?step=3'" class="text-secondary text-sm font-bold hover:underline">Edit</button>
                                     <?php echo wt_icon('chevron-down', 'text-on-surface-variant group-open:rotate-180 transition-transform'); ?>
                                 </div>
                             </summary>
@@ -1337,7 +1449,7 @@ function renderReviewStep() {
                                     <p class="text-primary font-semibold">Beneficiaries</p>
                                 </div>
                                 <div class="flex items-center gap-4">
-                                    <button type="button" onclick="window.location.href='?step=3'" class="text-secondary text-sm font-bold hover:underline">Edit</button>
+                                    <button type="button" onclick="window.location.href='?step=4'" class="text-secondary text-sm font-bold hover:underline">Edit</button>
                                     <?php echo wt_icon('chevron-down', 'text-on-surface-variant group-open:rotate-180 transition-transform'); ?>
                                 </div>
                             </summary>
@@ -1367,7 +1479,7 @@ function renderReviewStep() {
                                     <p class="text-primary font-semibold">Trust Type</p>
                                 </div>
                                 <div class="flex items-center gap-4">
-                                    <button type="button" onclick="window.location.href='?step=1'" class="text-secondary text-sm font-bold hover:underline">Edit</button>
+                                    <button type="button" onclick="window.location.href='?step=2'" class="text-secondary text-sm font-bold hover:underline">Edit</button>
                                     <?php echo wt_icon('chevron-down', 'text-on-surface-variant group-open:rotate-180 transition-transform'); ?>
                                 </div>
                             </summary>
@@ -1541,6 +1653,7 @@ function savePersonalInfo() {
     const formationEl = document.getElementById('formationStateInput');
     const endingEl = document.getElementById('businessEndingInput');
     onboardingData.business_info = {
+        entity_type: onboardingData.business_info?.entity_type || '',
         company_name: companyNameEl ? companyNameEl.value.trim() : (onboardingData.business_info?.company_name || ''),
         formation_state: formationEl ? formationEl.value.trim() : (onboardingData.business_info?.formation_state || ''),
         business_ending: endingEl ? endingEl.value.trim() : (onboardingData.business_info?.business_ending || '')
@@ -1694,10 +1807,10 @@ async function savePersonalInfoAndContinue() {
 function showOTPVerificationStep() {
     const content = document.getElementById('onboardingContent');
     content.innerHTML = renderOTPVerificationStep();
-    // Update progress to show this is still step 2 (before beneficiaries)
-    document.getElementById('currentStep').textContent = '2';
+    // Update progress to show email verification before beneficiaries
+    document.getElementById('currentStep').textContent = String(ONBOARDING_STEP.PERSONAL_INFO);
     document.getElementById('stepTitle').textContent = 'Verify Email';
-    document.getElementById('progressBar').style.width = '50%';
+    document.getElementById('progressBar').style.width = ((ONBOARDING_STEP.PERSONAL_INFO / ONBOARDING_TOTAL_STEPS) * 100) + '%';
     // Attach OTP input event listeners after HTML is inserted
     setupOTPInputs();
     saveOnboardingToStorage();
@@ -1966,7 +2079,7 @@ function startResendCooldown(seconds) {
 
 function goBackToPersonalInfo() {
     saveOnboardingToStorage();
-    window.location.href = 'onboarding.php?step=2';
+    window.location.href = 'onboarding.php?step=3';
 }
 
 function addNewBeneficiary() {
@@ -1979,7 +2092,7 @@ function addNewBeneficiary() {
         is_myself: false
     });
     saveOnboardingToStorage();
-    loadStep(3);
+    loadStep(ONBOARDING_STEP.BENEFICIARIES);
 }
 
 function updateBeneficiary(index, field, value) {
@@ -2028,7 +2141,7 @@ function removeBeneficiary(index) {
     }
     onboardingData.beneficiaries.splice(index, 1);
     saveOnboardingToStorage();
-    loadStep(3);
+    loadStep(ONBOARDING_STEP.BENEFICIARIES);
 }
 
 function toggleAddMyself(checked) {
@@ -2053,7 +2166,7 @@ function toggleAddMyself(checked) {
         }
     }
     saveOnboardingToStorage();
-    loadStep(3);
+    loadStep(ONBOARDING_STEP.BENEFICIARIES);
 }
 
 function setupBeneficiariesStep() {
@@ -2119,8 +2232,8 @@ async function loadPaymentMethods() {
             paymentMethods = data.methods;
             renderPaymentMethods(data.methods);
             // If we're on step 4 and in details stage, refresh the details panel now that methods exist
-            if (currentStep === 4 && onboardingData.payment_stage === 'details') {
-                loadStep(4);
+            if (currentStep === ONBOARDING_STEP.REVIEW && onboardingData.payment_stage === 'details') {
+                loadStep(ONBOARDING_STEP.REVIEW);
             }
         } else {
             const container = document.getElementById('paymentMethodsContainer') || document.getElementById('paymentFlowContainer');
@@ -2336,14 +2449,14 @@ function goToPaymentDetails() {
     if (!onboardingData.payment_method_id) return;
     onboardingData.payment_stage = 'details';
     saveOnboardingToStorage();
-    loadStep(4);
+    loadStep(ONBOARDING_STEP.REVIEW);
 }
 
 function backToPaymentSelection() {
     onboardingData.payment_stage = 'select';
     onboardingData.payment_confirmed = false;
     saveOnboardingToStorage();
-    loadStep(4);
+    loadStep(ONBOARDING_STEP.REVIEW);
 }
 
 function getSelectedPaymentMethodObj() {
@@ -2473,7 +2586,7 @@ async function confirmPaymentAndCreateTrust() {
         onboardingData.payment_stage = 'confirmed';
         onboardingData.created_trust_id = result.trust_id || null;
         saveOnboardingToStorage();
-        loadStep(4);
+        loadStep(ONBOARDING_STEP.REVIEW);
     }
 }
 
@@ -2528,7 +2641,7 @@ function showToast(message, type = 'info') {
 }
 
 function nextStep() {
-    if (currentStep < 4) {
+    if (currentStep < ONBOARDING_TOTAL_STEPS) {
         goToStep(currentStep + 1);
     }
 }
@@ -2545,9 +2658,15 @@ function handleCancelOrExit() {
 }
 
 async function createTrust(options = { redirect: true }) {
+    if (!isValidBusinessEntityType(onboardingData.business_info?.entity_type)) {
+        alert('Please select whether this is a new or existing business.');
+        window.location.href = 'onboarding.php?step=1';
+        return;
+    }
+
     if (!onboardingData.trust_service_id) {
         alert('Error: Please select a trust type first.');
-        window.location.href = 'onboarding.php?step=1';
+        window.location.href = 'onboarding.php?step=2';
         return;
     }
     
@@ -2565,14 +2684,14 @@ async function createTrust(options = { redirect: true }) {
     // Validate all required data
     if (!onboardingData.trust_name) {
         alert('Please enter a trust name.');
-        window.location.href = 'onboarding.php?step=2';
+        window.location.href = 'onboarding.php?step=3';
         return;
     }
 
     const bi = onboardingData.business_info || {};
     if (!bi.company_name || !isValidFormationState(bi.formation_state) || !isValidBusinessEnding(bi.business_ending)) {
         alert('Please complete all required business information.');
-        window.location.href = 'onboarding.php?step=2';
+        window.location.href = 'onboarding.php?step=3';
         return;
     }
 
@@ -2580,7 +2699,7 @@ async function createTrust(options = { redirect: true }) {
         const totalValue = parseFloat(onboardingData.total_estimated_value);
         if (onboardingData.total_estimated_value === '' || Number.isNaN(totalValue) || totalValue < 0) {
             alert('Please enter a valid total asset value.');
-            window.location.href = 'onboarding.php?step=2';
+            window.location.href = 'onboarding.php?step=3';
             return;
         }
     }
@@ -2589,27 +2708,27 @@ async function createTrust(options = { redirect: true }) {
     const pi = onboardingData.personal_info || {};
     if (!personName || !pi.email || !isValidPhone(pi.phone) || !pi.street || !pi.city || !pi.state || !pi.zip) {
         alert('Please complete all required personal information.');
-        window.location.href = 'onboarding.php?step=2';
+        window.location.href = 'onboarding.php?step=3';
         return;
     }
     
     if (!onboardingData.beneficiaries || onboardingData.beneficiaries.length === 0) {
         alert('Please add at least one beneficiary.');
-        window.location.href = 'onboarding.php?step=3';
+        window.location.href = 'onboarding.php?step=4';
         return;
     }
     
     const totalAllocation = onboardingData.beneficiaries.reduce((sum, ben) => sum + (parseFloat(ben.allocation) || 0), 0);
     if (Math.abs(totalAllocation - 100) > 0.01) {
         alert('Total allocation must equal 100%. Current total: ' + totalAllocation.toFixed(2) + '%');
-        window.location.href = 'onboarding.php?step=3';
+        window.location.href = 'onboarding.php?step=4';
         return;
     }
     
     // Ensure user is logged in before creating trust
     if (!isLoggedIn) {
         alert('Please complete registration first. Redirecting...');
-        window.location.href = 'onboarding.php?step=2';
+        window.location.href = 'onboarding.php?step=3';
         return;
     }
     
@@ -2747,8 +2866,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         showOnboardingError(error && error.message ? error.message : 'Failed to load onboarding.');
     }
 
-    // Disable next button if trust type not selected on step 1
-    if (currentStep === 1 && !onboardingData.trust_service_id) {
+    // Disable next button when required selections are missing on early steps
+    if (currentStep === ONBOARDING_STEP.BUSINESS_ENTITY && !isValidBusinessEntityType(onboardingData.business_info?.entity_type)) {
+        const nextBtn = document.getElementById('nextBtn');
+        if (nextBtn) nextBtn.disabled = true;
+    }
+    if (currentStep === ONBOARDING_STEP.TRUST_TYPE && !onboardingData.trust_service_id) {
         const nextBtn = document.getElementById('nextBtn');
         if (nextBtn) nextBtn.disabled = true;
     }
@@ -2758,7 +2881,7 @@ window.addEventListener('popstate', async (event) => {
     const stepFromState = event.state && event.state.step;
     const stepFromUrl = parseInt(new URLSearchParams(window.location.search).get('step') || '1', 10);
     const step = Number(stepFromState || stepFromUrl || 1);
-    currentStep = Number.isFinite(step) && step >= 1 && step <= 4 ? step : 1;
+    currentStep = Number.isFinite(step) && step >= 1 && step <= ONBOARDING_TOTAL_STEPS ? step : 1;
     // Restore draft when browsing history within onboarding (do not wipe on back to step 1)
     loadOnboardingFromStorage();
     await loadStep(currentStep);

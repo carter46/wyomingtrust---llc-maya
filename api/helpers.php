@@ -866,6 +866,47 @@ function trust_services_has_liquidation_fee_column(PDO $db): bool {
     return $cache;
 }
 
+function trust_services_has_unique_service_key(PDO $db): bool {
+    static $cache = null;
+    if ($cache !== null) {
+        return $cache;
+    }
+    try {
+        $stmt = $db->query("SHOW INDEX FROM trust_services WHERE Column_name = 'service_key' AND Non_unique = 0");
+        $cache = (bool) $stmt->fetch();
+    } catch (Exception $e) {
+        $cache = false;
+    }
+    return $cache;
+}
+
+function format_trust_service_db_error(Throwable $e): array {
+    $message = 'Failed to create trust service';
+    $status = 500;
+
+    if ($e instanceof PDOException) {
+        $driverCode = (int) ($e->errorInfo[1] ?? 0);
+        $sqlState = (string) ($e->errorInfo[0] ?? '');
+        $raw = strtolower($e->getMessage());
+
+        if ($driverCode === 1062 || $sqlState === '23000' || strpos($raw, 'duplicate entry') !== false) {
+            return [
+                'message' => 'This trust category already exists in the database. Run the latest migration (database/migrations/migration.sql) or execute: ALTER TABLE trust_services DROP INDEX service_key; — then you can add multiple offerings per category.',
+                'status' => 409,
+            ];
+        }
+
+        if ($driverCode === 1054 || strpos($raw, 'unknown column') !== false) {
+            return [
+                'message' => 'The trust_services table is missing required columns. Run database/migrations/migration.sql on this database, then try again.',
+                'status' => 500,
+            ];
+        }
+    }
+
+    return ['message' => $message, 'status' => $status];
+}
+
 function coins_has_liquidation_fee_column(PDO $db): bool {
     static $cache = null;
     if ($cache !== null) {

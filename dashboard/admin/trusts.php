@@ -13,15 +13,15 @@ require_once __DIR__ . '/includes/layout.php';
 function renderTrustsContent() {
 ?>
 
-<div class="mb-4 sm:mb-6 lg:mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
-    <div>
+<div class="mb-4 sm:mb-6 lg:mb-8">
+    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 class="text-2xl sm:text-3xl font-bold text-navy-900 dark:text-white">Trust Services</h1>
-        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Create multiple trust offerings. Each offering has a category (revocable, irrevocable, or smart contract) and a custom display name shown during onboarding.</p>
+        <button id="addTrustBtn" onclick="showCreateTrustModal()" class="bg-primary text-navy-900 px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg font-semibold text-sm sm:text-base hover:opacity-90 w-full sm:w-auto flex items-center justify-center gap-2 shrink-0">
+            <span class="material-icons-outlined text-sm">add</span>
+            <span>Add Trust Service</span>
+        </button>
     </div>
-    <button id="addTrustBtn" onclick="showCreateTrustModal()" class="bg-primary text-navy-900 px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg font-semibold text-sm sm:text-base hover:opacity-90 w-full sm:w-auto flex items-center gap-2">
-        <span class="material-icons-outlined text-sm">add</span>
-        <span>Add Trust Service</span>
-    </button>
+    <p class="text-sm text-slate-500 dark:text-slate-400 mt-2 max-w-2xl">Configure trust offerings by category and display name.</p>
 </div>
 
 <div id="messageContainer" class="mb-3 sm:mb-4"></div>
@@ -331,16 +331,24 @@ async function createTrust(payload) {
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({ ...payload, is_active: 1 })
         });
-        const data = await response.json();
+        const raw = await response.text();
+        let data = null;
+        try {
+            data = raw ? JSON.parse(raw) : null;
+        } catch (parseError) {
+            console.error('Create trust non-JSON response:', raw);
+            showToast('Server error while creating trust service. Check the browser console for details.', 'error');
+            return;
+        }
         if (data.success) {
             showToast('Trust service created successfully', 'success');
             loadTrusts();
         } else {
-            showToast(data.message || 'Failed to create trust type', 'error');
+            showToast(data.message || 'Failed to create trust service', 'error');
         }
     } catch (error) {
         console.error('Error creating trust:', error);
-        showToast('Error creating trust type', 'error');
+        showToast('Error creating trust service', 'error');
     }
 }
 
