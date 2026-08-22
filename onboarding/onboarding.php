@@ -267,19 +267,32 @@ function onboardingStepUrl(step) {
 async function goToStep(step, options = {}) {
     const target = Number(step);
     if (!Number.isFinite(target) || target < 1 || target > ONBOARDING_TOTAL_STEPS) return;
-    saveOnboardingToStorage();
-    currentStep = target;
-    const url = onboardingStepUrl(target);
-    try {
-        if (options.replace) {
-            history.replaceState({ step: target }, '', url);
-        } else {
-            history.pushState({ step: target }, '', url);
-        }
-    } catch (e) {
-        // ignore history failures
+
+    if (activeStepNavigation) {
+        return activeStepNavigation;
     }
-    await loadStep(target);
+
+    activeStepNavigation = (async () => {
+        saveOnboardingToStorage();
+        currentStep = target;
+        const url = onboardingStepUrl(target);
+        try {
+            if (options.replace) {
+                history.replaceState({ step: target }, '', url);
+            } else {
+                history.pushState({ step: target }, '', url);
+            }
+        } catch (e) {
+            // ignore history failures
+        }
+        await loadStep(target);
+    })();
+
+    try {
+        await activeStepNavigation;
+    } finally {
+        activeStepNavigation = null;
+    }
 }
 let onboardingData = {
     trust_service_id: null,
@@ -322,6 +335,7 @@ let availableCoins = [];
 let coinsLoadState = 'idle'; // idle | loading | loaded | error
 let coinsLoadError = '';
 let coinsLoadPromise = null;
+let activeStepNavigation = null;
 
 // Persist onboarding state across page reloads between steps
 // IMPORTANT: Only persists during active onboarding session, clears when done or abandoned
@@ -848,7 +862,7 @@ function validateBusinessEntityStepAndNext() {
         return;
     }
     saveOnboardingToStorage();
-    nextStep();
+    void nextStep();
 }
 
 function renderTrustTypeStep() {
@@ -1053,7 +1067,7 @@ function renderPersonalInfoStep() {
                         </div>
 
                         <div class="pt-2 flex justify-end">
-                            <button type="button" onclick="savePersonalInfoAndContinue();" class="flex min-w-[180px] cursor-pointer items-center justify-center rounded-lg h-14 px-6 bg-secondary text-on-secondary hover:opacity-90 transition-all text-base font-bold shadow-md shadow-secondary/20">
+                            <button type="button" id="continueToBeneficiariesBtn" onclick="savePersonalInfoAndContinue();" class="flex min-w-[180px] cursor-pointer items-center justify-center rounded-lg h-14 px-6 bg-secondary text-on-secondary hover:opacity-90 transition-all text-base font-bold shadow-md shadow-secondary/20 disabled:opacity-60 disabled:cursor-not-allowed">
                                 <span>Continue to Beneficiaries</span>
                                 <?php echo wt_icon('arrow-forward', 'ml-2 text-sm'); ?>
                             </button>
@@ -1235,7 +1249,7 @@ function validateTrustTypeStepAndNext() {
         onboardingData.entrusted_coins = [];
     }
     saveOnboardingToStorage();
-    nextStep();
+    void nextStep();
 }
 
 function renderBeneficiariesStep() {
@@ -1745,6 +1759,11 @@ function validateStep2Fields() {
 }
 
 async function savePersonalInfoAndContinue() {
+    const continueBtn = document.getElementById('continueToBeneficiariesBtn');
+    if (continueBtn?.disabled || activeStepNavigation) {
+        return;
+    }
+
     savePersonalInfo();
     saveOnboardingToStorage();
 
@@ -1752,21 +1771,39 @@ async function savePersonalInfoAndContinue() {
         return;
     }
     saveOnboardingToStorage();
+
+    const setContinueLoading = (loading) => {
+        if (!continueBtn) return;
+        continueBtn.disabled = loading;
+        if (loading) {
+            if (!continueBtn.dataset.defaultLabel) {
+                continueBtn.dataset.defaultLabel = continueBtn.innerHTML;
+            }
+            continueBtn.innerHTML = '<span>Continuing...</span>';
+        } else if (continueBtn.dataset.defaultLabel) {
+            continueBtn.innerHTML = continueBtn.dataset.defaultLabel;
+        }
+    };
+
+    setContinueLoading(true);
     
     // If not logged in, register the user first
     if (!isLoggedIn) {
         if (!onboardingData.password || !onboardingData.confirm_password) {
             alert('Please enter and confirm your password.');
+            setContinueLoading(false);
             return;
         }
         
         if (onboardingData.password !== onboardingData.confirm_password) {
             alert('Passwords do not match.');
+            setContinueLoading(false);
             return;
         }
         
         if (onboardingData.password.length < 8) {
             alert('Password must be at least 8 characters long.');
+            setContinueLoading(false);
             return;
         }
         
@@ -1793,14 +1830,14 @@ async function savePersonalInfoAndContinue() {
                 
                 // If email verification is required, show OTP step
                 if (data.requires_verification) {
-                    // Show OTP verification step instead of going to step 3
+                    // Show OTP verification step instead of going to beneficiaries
                     isLoggedIn = true;
                     showOTPVerificationStep();
                 } else {
-                    // No verification needed, continue to step 3
+                    // No verification needed, continue to beneficiaries
                     isLoggedIn = true;
                     saveOnboardingToStorage();
-                    await goToStep(3);
+                    await goToStep(ONBOARDING_STEP.BENEFICIARIES);
                 }
             } else {
                 alert('Registration failed: ' + (data.message || 'Unknown error'));
@@ -1808,10 +1845,16 @@ async function savePersonalInfoAndContinue() {
         } catch (error) {
             console.error('Registration error:', error);
             alert('An error occurred during registration. Please try again.');
+        } finally {
+            setContinueLoading(false);
         }
     } else {
-        // Already logged in, just continue
-        nextStep();
+        // Already logged in, continue to beneficiaries
+        try {
+            await goToStep(ONBOARDING_STEP.BENEFICIARIES);
+        } finally {
+            setContinueLoading(false);
+        }
     }
 }
 
@@ -1992,11 +2035,11 @@ async function verifyOTP() {
         const data = await response.json();
         
         if (data.success) {
-            // Email verified successfully - continue to step 3 (beneficiaries)
+            // Email verified successfully - continue to beneficiaries
             showToast('Email verified successfully!', 'success');
             isLoggedIn = true;
             saveOnboardingToStorage();
-            await goToStep(3);
+            await goToStep(ONBOARDING_STEP.BENEFICIARIES);
         } else {
             showOTPError(data.message || 'Invalid verification code. Please try again.');
             verifyBtn.disabled = false;
@@ -2228,7 +2271,7 @@ function validateAndNext() {
             return;
         }
     }
-    nextStep();
+    void nextStep();
 }
 
 // Load payment methods when review step is loaded
@@ -2651,15 +2694,15 @@ function showToast(message, type = 'info') {
     }, 3000);
 }
 
-function nextStep() {
+async function nextStep() {
     if (currentStep < ONBOARDING_TOTAL_STEPS) {
-        goToStep(currentStep + 1);
+        await goToStep(currentStep + 1);
     }
 }
 
-function previousStep() {
+async function previousStep() {
     if (currentStep > 1) {
-        goToStep(currentStep - 1);
+        await goToStep(currentStep - 1);
     }
 }
 
