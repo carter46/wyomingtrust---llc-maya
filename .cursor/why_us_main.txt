@@ -1,0 +1,311 @@
+﻿<div class="flex flex-col w-full">
+<!-- Editorial Intro Section -->
+<section class="w-full pt-section-gap-lg pb-section-gap-md relative overflow-hidden">
+<!-- Ambient background element -->
+<div class="absolute top-0 right-0 w-3/4 h-full bg-gradient-to-bl from-primary-fixed/20 to-transparent rounded-bl-full opacity-50 pointer-events-none -z-10"></div>
+<div class="max-w-7xl mx-auto px-6 lg:px-12">
+<div class="flex flex-col lg:flex-row gap-12 items-start justify-between">
+<div class="flex flex-col max-w-3xl">
+<p class="font-label-md text-label-md text-secondary-container uppercase tracking-widest mb-6 flex items-center gap-4">
+<span class="w-8 h-[2px] bg-secondary-container inline-block"></span>
+            Jurisdiction Analysis
+          </p>
+<h1 class="font-headline-xl text-headline-xl text-on-surface leading-tight mb-8">
+            The premier jurisdiction for corporate privacy, asset protection, and tax efficiency.
+          </h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl">
+            Wyoming Limited Liability Companies offer the absolute best combination of robust asset protection laws, complete anonymity, and total cost savings. It is the gold standard for modern holding companies, real estate investors, and online enterprises.
+          </p>
+</div>
+<!-- Quick Stats Right Side -->
+<div class="flex flex-col gap-6 w-full lg:w-72 mt-8 lg:mt-0">
+<div class="bg-surface-container-low p-6 rounded-xl shadow-sm flex flex-col gap-2 relative overflow-hidden group hover:-translate-y-1 transition-transform duration-300">
+<div class="absolute -right-4 -bottom-4 opacity-5 group-hover:scale-110 transition-transform duration-500">
+<span class="material-symbols-outlined text-[120px]">account_balance</span>
+</div>
+<span class="font-headline-lg text-headline-lg text-primary">0%</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">State Income Tax</span>
+</div>
+<div class="bg-surface-container-low p-6 rounded-xl shadow-sm flex flex-col gap-2 relative overflow-hidden group hover:-translate-y-1 transition-transform duration-300">
+<div class="absolute -right-4 -bottom-4 opacity-5 group-hover:scale-110 transition-transform duration-500">
+<span class="material-symbols-outlined text-[120px]">shield_lock</span>
+</div>
+<span class="font-headline-lg text-headline-lg text-primary">100%</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Anonymity & Privacy</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- The Three Pillars - Asymmetric Bento Grid -->
+<section class="w-full py-section-gap-md bg-surface-container-lowest">
+<div class="max-w-7xl mx-auto px-6 lg:px-12">
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-gutter">
+<!-- Pillar 1: Privacy (Large spanning card) -->
+<div class="lg:col-span-8 bg-surface-container p-8 lg:p-12 rounded-2xl shadow-sm flex flex-col justify-between group overflow-hidden relative">
+<div class="absolute right-0 top-0 w-1/2 h-full bg-gradient-to-l from-primary-fixed/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none"></div>
+<div class="flex flex-col gap-6 max-w-xl relative z-10">
+<div class="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center shadow-md mb-4">
+<span class="material-symbols-outlined text-on-primary text-[32px]">visibility_off</span>
+</div>
+<h3 class="font-headline-lg text-headline-lg text-on-surface">Anonymity in Public Records</h3>
+<p class="font-body-md text-body-md text-on-surface-variant leading-relaxed">
+              Wyoming LLCs offer exceptional privacy. Unlike many other states, Wyoming does not require the disclosure of member or manager information in public filings. Your personal information remains private and is never entered into any public searchable database.
+            </p>
+</div>
+<!-- Decorative visual -->
+<div class="mt-12 flex items-end gap-2 h-24 opacity-20">
+<div class="w-full bg-primary h-full rounded-t-sm"></div>
+<div class="w-full bg-primary h-3/4 rounded-t-sm"></div>
+<div class="w-full bg-primary h-1/2 rounded-t-sm"></div>
+<div class="w-full bg-primary h-5/6 rounded-t-sm"></div>
+<div class="w-full bg-primary h-1/4 rounded-t-sm"></div>
+<div class="w-full bg-primary h-full rounded-t-sm"></div>
+<div class="w-full bg-primary h-2/3 rounded-t-sm"></div>
+</div>
+</div>
+<!-- Pillar 2: Tax Benefits (Tall card) -->
+<div class="lg:col-span-4 bg-inverse-surface text-on-primary p-8 lg:p-12 rounded-2xl shadow-lg flex flex-col justify-between relative overflow-hidden">
+<div class="absolute -top-24 -right-24 w-64 h-64 bg-primary rounded-full blur-[80px] opacity-50 pointer-events-none"></div>
+<div class="flex flex-col gap-6 relative z-10">
+<div class="w-16 h-16 bg-surface/10 rounded-2xl flex items-center justify-center backdrop-blur-md mb-4">
+<span class="material-symbols-outlined text-on-primary text-[32px]">trending_down</span>
+</div>
+<h3 class="font-headline-md text-headline-md text-on-primary">No State Income Tax</h3>
+<p class="font-body-md text-body-md text-on-primary opacity-80 leading-relaxed">
+              Wyoming has absolutely zero state income tax, corporate tax, or franchise tax. LLCs are pass-through entities for federal tax purposes, providing immense tax efficiency and significant annual savings for business owners worldwide.
+            </p>
+</div>
+</div>
+<!-- Pillar 3: Asset Protection (Wide card) -->
+<div class="lg:col-span-12 bg-surface-container-high p-8 lg:p-12 rounded-2xl shadow-sm flex flex-col lg:flex-row gap-12 items-center justify-between mt-gutter">
+<div class="flex flex-col gap-6 max-w-2xl">
+<div class="flex items-center gap-4 mb-2">
+<div class="w-12 h-12 bg-secondary rounded-xl flex items-center justify-center shadow-sm">
+<span class="material-symbols-outlined text-on-secondary text-[24px]">gavel</span>
+</div>
+<span class="font-label-md text-label-md text-secondary uppercase tracking-widest">Fortress Security</span>
+</div>
+<h3 class="font-headline-lg text-headline-lg text-on-surface">Charging Order Protection</h3>
+<p class="font-body-md text-body-md text-on-surface-variant leading-relaxed">
+              Wyoming offers unparalleled asset protection laws. Strong charging order protection ensures that personal creditors cannot seize your LLC assets, and LLC creditors cannot seize your personal assets. Your wealth remains insulated behind a legally tested corporate veil.
+            </p>
+</div>
+<div class="w-full lg:w-1/3 flex justify-center">
+<!-- Circular Progress Visualization SVG -->
+<svg class="w-48 h-48 text-primary" viewbox="0 0 100 100">
+<circle class="opacity-20" cx="50" cy="50" fill="none" r="40" stroke="currentColor" stroke-dasharray="200" stroke-dashoffset="200" stroke-width="8"></circle>
+<circle class="drop-shadow-md origin-center -rotate-90" cx="50" cy="50" fill="none" r="40" stroke="currentColor" stroke-dasharray="251.2" stroke-dashoffset="0" stroke-linecap="round" stroke-width="8"></circle>
+<text fill="currentColor" font-family="Hanken Grotesk" font-size="20" font-weight="700" text-anchor="middle" x="50" y="55">100%</text>
+<text class="opacity-70" fill="currentColor" font-family="Inter" font-size="8" font-weight="600" text-anchor="middle" x="50" y="70">PROTECTED</text>
+</svg>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Deep Dive / Map Section -->
+<section class="w-full py-section-gap-lg relative">
+<div class="max-w-7xl mx-auto px-6 lg:px-12 relative z-10">
+<div class="flex flex-col lg:flex-row gap-12 items-center">
+<!-- Map Container -->
+<div class="w-full lg:w-1/2 relative">
+<div class="w-full h-[600px] rounded-3xl shadow-xl bg-cover bg-center overflow-hidden relative" data-alt="A highly detailed, topographic style rendering of the state of Wyoming, in deep primary navy and silver tones. The map is cleanly designed, modern, with soft cinematic lighting illuminating the borders. It conveys institutional authority and stability." data-location="Wyoming, USA" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuC88XohjGXTKkgWFW3-sRi6jHNIYMHoM2q6qmeNAP_VaKhtIbGeJ4lggU03T0v2LY9DhyjVQIJOAo0-vTBrD-8QOGpcSrppUKy4NtnNtBuJx8l_5Y9_qLPbTW4UtSTS46RU0ZS-KaHWPdydnmKnlplhzhnvnEQI-flcjeLo5IFEjhjEzEDi1_2mRNJtZ4rOm0PjubGWHrppzITvCwxa1V4AZylVvscHF-zhrlsin9opeu4ohY4yfUbOaA')">
+<!-- Scrim for contrast -->
+<div class="absolute inset-0 bg-gradient-to-t from-inverse-surface/80 via-transparent to-transparent"></div>
+<div class="absolute bottom-8 left-8 right-8 text-on-primary">
+<p class="font-label-sm text-label-sm uppercase tracking-widest opacity-80 mb-2">Jurisdiction Base</p>
+<p class="font-headline-md text-headline-md">Operate globally. Protect locally.</p>
+</div>
+</div>
+<!-- Floating card overlapping map -->
+<div class="absolute -right-8 top-1/4 bg-surface-pure p-6 rounded-xl shadow-xl max-w-xs hidden lg:flex flex-col gap-3">
+<span class="material-symbols-outlined text-secondary text-[28px]">flight_takeoff</span>
+<p class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">No Residency Required</p>
+<p class="font-body-md text-body-md text-on-surface">Manage your Wyoming LLC from anywhere in the world. You do not need a physical presence in the state.</p>
+</div>
+</div>
+<!-- Right side copy -->
+<div class="w-full lg:w-1/2 flex flex-col gap-8 lg:pl-12">
+<h2 class="font-headline-lg text-headline-lg text-on-surface">Operational Flexibility Built for Modern Business.</h2>
+<div class="flex flex-col gap-8">
+<div class="flex gap-4 items-start group">
+<div class="mt-1 w-8 h-8 rounded-full bg-surface-container-high flex items-center justify-center shrink-0 group-hover:bg-primary group-hover:text-on-primary transition-colors duration-300">
+<span class="font-label-sm text-label-sm">01</span>
+</div>
+<div class="flex flex-col gap-2">
+<h4 class="font-headline-md text-headline-md text-on-surface text-[20px]">Single-Member LLCs Allowed</h4>
+<p class="font-body-md text-body-md text-on-surface-variant">Complete control remains with you. No need to bring on unnecessary partners or boards.</p>
+</div>
+</div>
+<div class="flex gap-4 items-start group">
+<div class="mt-1 w-8 h-8 rounded-full bg-surface-container-high flex items-center justify-center shrink-0 group-hover:bg-primary group-hover:text-on-primary transition-colors duration-300">
+<span class="font-label-sm text-label-sm">02</span>
+</div>
+<div class="flex flex-col gap-2">
+<h4 class="font-headline-md text-headline-md text-on-surface text-[20px]">No Minimum Capital</h4>
+<p class="font-body-md text-body-md text-on-surface-variant">Start immediately without proving large reserve funds or meeting arbitrary capital thresholds.</p>
+</div>
+</div>
+<div class="flex gap-4 items-start group">
+<div class="mt-1 w-8 h-8 rounded-full bg-surface-container-high flex items-center justify-center shrink-0 group-hover:bg-primary group-hover:text-on-primary transition-colors duration-300">
+<span class="font-label-sm text-label-sm">03</span>
+</div>
+<div class="flex flex-col gap-2">
+<h4 class="font-headline-md text-headline-md text-on-surface text-[20px]">Low Maintenance Fees</h4>
+<p class="font-body-md text-body-md text-on-surface-variant">Maintaining your company in future years is exceptionally affordable with only a $60 annual report required by the state.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Knowledge Base / FAQs -->
+<section class="w-full py-section-gap-lg bg-surface-container-low">
+<div class="max-w-4xl mx-auto px-6 lg:px-12 flex flex-col gap-12">
+<div class="flex flex-col gap-4 text-center items-center">
+<h2 class="font-headline-lg text-headline-lg text-on-surface">Knowledge Base</h2>
+<p class="font-body-md text-body-md text-on-surface-variant max-w-xl">
+          Authoritative answers to the most common questions regarding privacy, formation, and operational requirements.
+        </p>
+</div>
+<!-- FAQ Container -->
+<div class="flex flex-col gap-12" id="faq-accordion-container">
+<!-- Privacy & Anonymity Group -->
+<div class="flex flex-col gap-6">
+<p class="font-label-sm text-label-sm text-primary uppercase tracking-widest">Privacy & Anonymity</p>
+<div class="flex flex-col gap-4">
+<!-- FAQ Item -->
+<div class="bg-surface-pure rounded-xl shadow-sm overflow-hidden">
+<button aria-expanded="false" class="w-full px-6 py-5 flex items-center justify-between text-left focus:outline-none group faq-btn">
+<span class="font-headline-md text-headline-md text-[18px] text-on-surface group-hover:text-primary transition-colors">Are Wyoming LLCs private and anonymous?</span>
+<span class="material-symbols-outlined text-outline-variant transition-transform duration-300 faq-icon">expand_more</span>
+</button>
+<div class="faq-content max-h-0 opacity-0 overflow-hidden transition-all duration-300 ease-in-out px-6">
+<p class="font-body-md text-body-md text-on-surface-variant pb-6">
+                  Yes, Wyoming LLCs offer exceptional privacy and anonymity. Unlike many other states, Wyoming does not require the disclosure of member or manager information in public filings. Your personal information remains private and is not entered into any public database.
+                </p>
+</div>
+</div>
+<!-- FAQ Item -->
+<div class="bg-surface-pure rounded-xl shadow-sm overflow-hidden">
+<button aria-expanded="false" class="w-full px-6 py-5 flex items-center justify-between text-left focus:outline-none group faq-btn">
+<span class="font-headline-md text-headline-md text-[18px] text-on-surface group-hover:text-primary transition-colors">Is my information entered into any public database?</span>
+<span class="material-symbols-outlined text-outline-variant transition-transform duration-300 faq-icon">expand_more</span>
+</button>
+<div class="faq-content max-h-0 opacity-0 overflow-hidden transition-all duration-300 ease-in-out px-6">
+<p class="font-body-md text-body-md text-on-surface-variant pb-6">
+                  No, your personal information is not entered into any public database when you form a Wyoming LLC. The Secretary of State only knows who organized the company (which is us as your registered agent), but your name does not appear on the formation documents and is not made public.
+                </p>
+</div>
+</div>
+<!-- FAQ Item -->
+<div class="bg-surface-pure rounded-xl shadow-sm overflow-hidden">
+<button aria-expanded="false" class="w-full px-6 py-5 flex items-center justify-between text-left focus:outline-none group faq-btn">
+<span class="font-headline-md text-headline-md text-[18px] text-on-surface group-hover:text-primary transition-colors">Can I use my Wyoming LLC to own an LLC in another state?</span>
+<span class="material-symbols-outlined text-outline-variant transition-transform duration-300 faq-icon">expand_more</span>
+</button>
+<div class="faq-content max-h-0 opacity-0 overflow-hidden transition-all duration-300 ease-in-out px-6">
+<p class="font-body-md text-body-md text-on-surface-variant pb-6">
+                  Yes, you can use your anonymous Wyoming LLC as the publicly listed owner of another LLC in a different state. For example, while Florida requires public disclosure of LLC ownership, your Wyoming LLC can be listed as the owner, maintaining your personal anonymity.
+                </p>
+</div>
+</div>
+</div>
+</div>
+<!-- General Group -->
+<div class="flex flex-col gap-6">
+<p class="font-label-sm text-label-sm text-primary uppercase tracking-widest">General Requirements</p>
+<div class="flex flex-col gap-4">
+<!-- FAQ Item -->
+<div class="bg-surface-pure rounded-xl shadow-sm overflow-hidden">
+<button aria-expanded="false" class="w-full px-6 py-5 flex items-center justify-between text-left focus:outline-none group faq-btn">
+<span class="font-headline-md text-headline-md text-[18px] text-on-surface group-hover:text-primary transition-colors">How much does it cost to file an LLC in Wyoming?</span>
+<span class="material-symbols-outlined text-outline-variant transition-transform duration-300 faq-icon">expand_more</span>
+</button>
+<div class="faq-content max-h-0 opacity-0 overflow-hidden transition-all duration-300 ease-in-out px-6">
+<p class="font-body-md text-body-md text-on-surface-variant pb-6">
+                  Our formation service starts at $99 plus state fees. The Wyoming state filing fee is $102 when filed online. This includes all necessary documents, first-year registered agent service, and ongoing support to get your LLC up and running quickly.
+                </p>
+</div>
+</div>
+<!-- FAQ Item -->
+<div class="bg-surface-pure rounded-xl shadow-sm overflow-hidden">
+<button aria-expanded="false" class="w-full px-6 py-5 flex items-center justify-between text-left focus:outline-none group faq-btn">
+<span class="font-headline-md text-headline-md text-[18px] text-on-surface group-hover:text-primary transition-colors">Can a Wyoming LLC have an out-of-state address?</span>
+<span class="material-symbols-outlined text-outline-variant transition-transform duration-300 faq-icon">expand_more</span>
+</button>
+<div class="faq-content max-h-0 opacity-0 overflow-hidden transition-all duration-300 ease-in-out px-6">
+<p class="font-body-md text-body-md text-on-surface-variant pb-6">
+                  Yes, Wyoming LLCs can have members and managers located anywhere in the world. You don't need to be a Wyoming resident or have a physical presence in the state. We provide a Wyoming registered agent address to satisfy state requirements.
+                </p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- CTA Section -->
+<section class="w-full py-section-gap-lg px-6 lg:px-12 bg-surface">
+<div class="max-w-7xl mx-auto bg-primary rounded-[2rem] p-12 lg:p-24 shadow-2xl relative overflow-hidden flex flex-col items-center text-center">
+<!-- Decorative background rings -->
+<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] border border-on-primary/10 rounded-full pointer-events-none"></div>
+<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] border border-on-primary/5 rounded-full pointer-events-none"></div>
+<div class="relative z-10 flex flex-col items-center gap-8 max-w-3xl">
+<h2 class="font-headline-xl text-headline-xl text-on-primary leading-tight">
+          Establish Your Wyoming LLC Today.
+        </h2>
+<p class="font-body-lg text-body-lg text-on-primary/80 max-w-2xl">
+          Secure your privacy, shield your assets, and eliminate state income tax. Join over 100,000 businesses operating safely under Wyoming jurisdiction.
+        </p>
+<div class="flex flex-col sm:flex-row gap-4 mt-4">
+<button class="bg-secondary text-on-secondary px-8 py-4 rounded-full font-label-md text-label-md hover:brightness-110 transition-all shadow-md flex items-center justify-center gap-2">
+            Start Your Business
+            <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+</button>
+<button class="bg-transparent border border-on-primary/30 text-on-primary px-8 py-4 rounded-full font-label-md text-label-md hover:bg-on-primary/10 transition-all flex items-center justify-center gap-2">
+            View Pricing Options
+          </button>
+</div>
+</div>
+</div>
+</section>
+<!-- FAQ Interactive Script -->
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const faqButtons = document.querySelectorAll('.faq-btn');
+      
+      faqButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          const content = btn.nextElementSibling;
+          const icon = btn.querySelector('.faq-icon');
+          const isExpanded = btn.getAttribute('aria-expanded') === 'true';
+          
+          // Close all others (optional accordion behavior)
+          faqButtons.forEach(otherBtn => {
+            if (otherBtn !== btn) {
+              otherBtn.setAttribute('aria-expanded', 'false');
+              otherBtn.nextElementSibling.style.maxHeight = null;
+              otherBtn.nextElementSibling.style.opacity = '0';
+              otherBtn.querySelector('.faq-icon').style.transform = 'rotate(0deg)';
+            }
+          });
+
+          // Toggle current
+          btn.setAttribute('aria-expanded', !isExpanded);
+          if (!isExpanded) {
+            content.style.maxHeight = content.scrollHeight + "px";
+            content.style.opacity = "1";
+            icon.style.transform = "rotate(180deg)";
+          } else {
+            content.style.maxHeight = null;
+            content.style.opacity = "0";
+            icon.style.transform = "rotate(0deg)";
+          }
+        });
+      });
+    });
+  </script>
+</div>
