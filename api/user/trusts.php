@@ -39,31 +39,6 @@ function user_trust_service_extra_select(PDO $db): string {
     return $extra;
 }
 
-function enrich_user_trust_row(array $trust): array {
-    $trustData = is_array($trust['trust_data'] ?? null) ? $trust['trust_data'] : [];
-    if (!is_array($trust['trust_data'] ?? null) && !empty($trust['trust_data'])) {
-        $trustData = json_decode($trust['trust_data'], true) ?? [];
-    }
-    $trust['trust_data'] = $trustData;
-    $trust['trust_name'] = $trustData['trust_name'] ?? null;
-    $trust['total_estimated_value'] = isset($trustData['total_estimated_value'])
-        ? (float) $trustData['total_estimated_value']
-        : null;
-    $trust['business_info'] = is_array($trustData['business_info'] ?? null) ? $trustData['business_info'] : [];
-    $trust['personal_info'] = is_array($trustData['personal_info'] ?? null) ? $trustData['personal_info'] : [];
-    $trust['trust_type'] = $trustData['trust_type'] ?? ($trust['service_key'] ?? null);
-    $trust['beneficiaries'] = $trustData['beneficiaries'] ?? [];
-    $trust['assets'] = $trustData['assets'] ?? [];
-    $trust['entrusted_coins'] = $trustData['entrusted_coins'] ?? [];
-    $trust['service_meta'] = build_trust_service_meta($trust);
-    $trust['assets_summary'] = compute_trust_assets_summary($trust['assets']);
-    $trust['declared_value_funding'] = trust_declared_value_funding_applies($trustData)
-        ? get_trust_declared_value_funding($trustData)
-        : ['amount_usd' => 0, 'status' => 'not_applicable', 'funded_amount_usd' => 0, 'transaction_id' => null];
-    $trust['declared_funded_value'] = get_trust_declared_funded_value($trustData);
-    return $trust;
-}
-
 function user_trusts_has_payment_method_id_column($db) {
     static $cached = null;
     if ($cached !== null) return $cached;
@@ -153,7 +128,7 @@ function handleUpdateUserTrust() {
     }
 
     $db = getDatabase();
-    $stmt = $db->prepare('SELECT id, trust_data FROM user_trusts WHERE id = :id AND user_id = :user_id LIMIT 1');
+    $stmt = $db->prepare('SELECT id, status, trust_data FROM user_trusts WHERE id = :id AND user_id = :user_id LIMIT 1');
     $stmt->execute([':id' => $trustId, ':user_id' => $userId]);
     $row = $stmt->fetch();
     if (!$row) {
@@ -164,6 +139,7 @@ function handleUpdateUserTrust() {
     if (!empty($row['trust_data'])) {
         $trustData = json_decode($row['trust_data'], true) ?? [];
     }
+    $currentStatus = strtolower((string) ($row['status'] ?? ''));
 
     $updatesMade = false;
     $statusUpdate = null;
@@ -235,17 +211,36 @@ function handleUpdateUserTrust() {
     }
 
     if (isset($payload['status'])) {
+        if ($currentStatus === 'pending') {
+            send_json(['success' => false, 'message' => 'Trust registration is pending admin approval. Status changes are not available yet.'], 403);
+        }
+
         $status = sanitize_text($payload['status']);
-        $allowedStatuses = ['active', 'inactive', 'pending', 'suspended', 'liquidated'];
-        if (!in_array(strtolower($status), $allowedStatuses)) {
+        $allowedStatuses = ['active', 'inactive'];
+        if (!in_array(strtolower($status), $allowedStatuses, true)) {
             send_json(['success' => false, 'message' => 'Invalid status. Allowed: ' . implode(', ', $allowedStatuses)], 400);
         }
-        $statusUpdate = strtolower($status);
+        $requestedStatus = strtolower($status);
+
+        if ($requestedStatus === 'active' && in_array($currentStatus, ['pending', 'inactive'], true)) {
+            send_json(['success' => false, 'message' => 'Trust activation requires admin approval.'], 403);
+        }
+        if ($requestedStatus === 'inactive' && $currentStatus !== 'active') {
+            send_json(['success' => false, 'message' => 'Only active trusts can be set to inactive.'], 403);
+        }
+
+        $statusUpdate = $requestedStatus;
         $updatesMade = true;
     }
 
     if (!empty($payload['liquidate'])) {
-        $db = getDatabase();
+        if ($currentStatus === 'pending') {
+            send_json(['success' => false, 'message' => 'Trust registration is pending admin approval. Liquidation is not available yet.'], 403);
+        }
+        if ($currentStatus !== 'active') {
+            send_json(['success' => false, 'message' => 'Only active trusts can be liquidated.'], 403);
+        }
+
         $svcStmt = $db->prepare(
             'SELECT ts.service_key' . (trust_services_has_liquidation_fee_column($db) ? ', ts.liquidation_fee' : '') . '
              FROM user_trusts ut INNER JOIN trust_services ts ON ts.id = ut.trust_service_id
@@ -261,9 +256,6 @@ function handleUpdateUserTrust() {
             send_json(['success' => false, 'message' => 'Irrevocable trusts cannot be liquidated'], 403);
         }
 
-        $statusStmt = $db->prepare('SELECT status FROM user_trusts WHERE id = :id AND user_id = :user_id LIMIT 1');
-        $statusStmt->execute([':id' => $trustId, ':user_id' => $userId]);
-        $currentStatus = strtolower((string) ($statusStmt->fetchColumn() ?: ''));
         if ($currentStatus === 'liquidated') {
             send_json(['success' => false, 'message' => 'This trust has already been liquidated'], 409);
         }
@@ -496,7 +488,7 @@ function handleCreateUserTrust() {
         
         if ($trustService['is_free']) {
             $paymentStatus = 'completed';
-            $status = 'active';
+            $status = 'pending';
             $resolvedPaymentMethodId = null;
         } else {
             if ($paymentMethodId > 0) {
@@ -568,9 +560,8 @@ function handleCreateUserTrust() {
         
         // Return detailed error for debugging (in production, you might want to hide this)
         send_json([
-            'success' => false, 
-            'message' => 'Failed to create trust: ' . $errorMsg,
-            'error_details' => $errorMsg
+            'success' => false,
+            'message' => 'Failed to create trust. Please try again or contact support.',
         ], 500);
     }
 }

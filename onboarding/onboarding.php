@@ -1407,8 +1407,8 @@ function renderReviewStep() {
     return `
         <div class="w-full">
             <div class="flex flex-col gap-2 mb-6">
-                <h1 class="text-primary text-4xl font-black leading-tight tracking-tight">Final Step: Review & Secure Your Trust</h1>
-                <p class="text-on-surface-variant text-lg font-normal leading-normal">Confirm your details and choose a payment method to finalize your trust.</p>
+                <h1 class="text-primary text-4xl font-black leading-tight tracking-tight">Final Step: ${isFree ? 'Review & Register Your Trust' : 'Review & Secure Your Trust'}</h1>
+                <p class="text-on-surface-variant text-lg font-normal leading-normal">${isFree ? 'Confirm your details, then register your trust.' : 'Confirm your details and choose a payment method to finalize your trust.'}</p>
             </div>
             <div class="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
                 <div class="lg:col-span-3 flex flex-col gap-6">
@@ -1589,17 +1589,17 @@ function renderReviewStep() {
                         <div class="p-6 border-b border-outline-variant/20">
                             <h2 class="text-primary text-xl font-bold flex items-center gap-2">
                                 <?php echo wt_icon('payments', 'text-secondary'); ?>
-                                ${isFree ? 'Free Checkout' : 'Payment'}
+                                ${isFree ? 'Registration' : 'Payment'}
                             </h2>
                             <p class="text-on-surface-variant text-sm mt-1">
-                                ${isFree ? 'This service is free. No payment method is required.' : 'Pick a payment method, review the details, then confirm.'}
+                                ${isFree ? 'No payment is required. Register your trust when you are ready.' : 'Pick a payment method, review the details, then confirm.'}
                             </p>
                         </div>
                         <div class="p-6" id="paymentFlowContainer">
                             ${isFree ? `
                                 <div class="rounded-xl border border-green-200 dark:border-green-900 bg-green-50 dark:bg-green-900/20 p-5">
                                     <p class="font-bold text-primary">No payment required</p>
-                                    <p class="text-sm text-on-surface-variant mt-1">Click <strong>Complete Free Checkout</strong> to create your trust and go to your dashboard.</p>
+                                    <p class="text-sm text-on-surface-variant mt-1">Click <strong>Register My Trust</strong> in the order summary. You will see a confirmation, then we will open your new trust.</p>
                                 </div>
                             ` : (
                                 paymentStage === 'details'
@@ -1631,25 +1631,25 @@ function renderReviewStep() {
                         <div class="p-6 space-y-4">
                             <div class="flex justify-between text-sm">
                                 <span class="text-on-surface-variant">Trust Formation Fee</span>
-                                <span class="text-primary font-medium">$${price.toFixed(2)}</span>
+                                <span class="text-primary font-medium">${isFree ? 'Free' : '$' + price.toFixed(2)}</span>
                             </div>
                             <div class="pt-4 border-t border-outline-variant/20 flex justify-between items-center">
                                 <span class="text-primary font-black text-lg">Total Amount</span>
-                                <span class="text-secondary font-black text-2xl tracking-tighter">$${price.toFixed(2)}</span>
+                                <span class="text-secondary font-black text-2xl tracking-tighter">${isFree ? 'Free' : '$' + price.toFixed(2)}</span>
                             </div>
                         </div>
                         <div class="px-6 pb-6">
                             ${isFree ? `
-                                <button onclick="completeFreeCheckout()" class="w-full bg-secondary text-on-secondary hover:opacity-90 font-bold py-4 px-6 rounded-xl transition-all shadow-lg flex items-center justify-center gap-3">
+                                <button id="freeCheckoutBtn" type="button" onclick="completeFreeCheckout()" class="w-full bg-secondary text-on-secondary hover:opacity-90 font-bold py-4 px-6 rounded-xl transition-all shadow-lg flex items-center justify-center gap-3 disabled:opacity-60 disabled:cursor-not-allowed">
                                     <?php echo wt_icon('check-circle', 'w-5 h-5'); ?>
-                                    Complete Free Checkout
+                                    <span>Register My Trust</span>
                                 </button>
                             ` : (
                                 paymentStage === 'details'
                                     ? `
-                                        <button onclick="confirmPaymentAndCreateTrust()" class="w-full bg-secondary text-on-secondary hover:opacity-90 font-bold py-4 px-6 rounded-xl transition-all shadow-lg flex items-center justify-center gap-3">
+                                        <button id="confirmPaymentBtn" type="button" onclick="confirmPaymentAndCreateTrust()" class="w-full bg-secondary text-on-secondary hover:opacity-90 font-bold py-4 px-6 rounded-xl transition-all shadow-lg flex items-center justify-center gap-3 disabled:opacity-60 disabled:cursor-not-allowed">
                                             <?php echo wt_icon('shield', 'w-5 h-5'); ?>
-                                            I’ve made this payment
+                                            <span>I’ve made this payment</span>
                                         </button>
                                         <button onclick="backToPaymentSelection()" class="w-full mt-3 border border-outline-variant/30 hover:bg-surface-container-low text-primary font-semibold py-3 px-6 rounded-xl">
                                             Change payment method
@@ -1659,7 +1659,7 @@ function renderReviewStep() {
                                         ? `
                                             <button onclick="doneToDashboard()" class="w-full bg-secondary text-on-secondary hover:opacity-90 font-bold py-4 px-6 rounded-xl transition-all shadow-lg flex items-center justify-center gap-3">
                                                 <?php echo wt_icon('dashboard', 'w-5 h-5'); ?>
-                                                Done — Go to Dashboard
+                                                View My Trust
                                             </button>
                                         `
                                         : `
@@ -2670,40 +2670,99 @@ function renderPaymentConfirmed() {
                 <p class="text-sm text-on-surface-variant mt-1">Your trust has been created. Payment will be approved once received by the admin.</p>
             </div>
             <button onclick="doneToDashboard()" class="w-full bg-secondary text-on-secondary hover:opacity-90 font-bold py-3 px-5 rounded-xl shadow">
-                Done — Go to Dashboard
+                View My Trust
             </button>
         </div>
     `;
 }
 
+function getTrustManageUrl(trustId) {
+    if (trustId) {
+        return `../dashboard/user/manage-trust.php?id=${encodeURIComponent(trustId)}`;
+    }
+    return '../dashboard/user/dashboard.php';
+}
+
+function setTrustCheckoutButtonLoading(loading, buttonId) {
+    const btn = buttonId ? document.getElementById(buttonId) : null;
+    if (!btn) return;
+    btn.disabled = loading;
+    if (loading) {
+        if (!btn.dataset.defaultLabel) {
+            btn.dataset.defaultLabel = btn.innerHTML;
+        }
+        btn.innerHTML = `<span class="inline-flex items-center justify-center gap-2"><span class="inline-block w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin"></span><span>Registering your trust...</span></span>`;
+    } else if (btn.dataset.defaultLabel) {
+        btn.innerHTML = btn.dataset.defaultLabel;
+    }
+}
+
+async function showTrustRegistrationSuccess(trustId, options = {}) {
+    const trustName = options.trustName || onboardingData.trust_name || 'Your trust';
+    const minDurationMs = Math.max(5000, Number(options.minDurationMs) || 5000);
+    const redirectUrl = getTrustManageUrl(trustId);
+
+    clearOnboardingStorage();
+
+    const existing = document.getElementById('trustRegistrationSuccessOverlay');
+    if (existing) existing.remove();
+
+    const overlay = document.createElement('div');
+    overlay.id = 'trustRegistrationSuccessOverlay';
+    overlay.className = 'fixed inset-0 z-[9999] flex items-center justify-center bg-navy-900/50 backdrop-blur-sm p-6';
+    overlay.innerHTML = `
+        <div class="bg-surface-container-lowest rounded-2xl border border-outline-variant/30 shadow-2xl max-w-md w-full p-8 text-center">
+            <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/30 mb-5 mx-auto">
+                ${typeof wtIcon === 'function' ? wtIcon('check-circle', 'w-9 h-9 text-green-600') : ''}
+            </div>
+            <div class="animate-spin rounded-full h-10 w-10 border-4 border-secondary border-t-transparent mx-auto mb-5"></div>
+            <h2 class="text-xl font-bold text-primary mb-2">Trust Registered Successfully</h2>
+            <p class="text-on-surface-variant text-sm"><strong>${escapeHtml(trustName)}</strong> has been registered.</p>
+            <p class="text-on-surface-variant text-xs mt-4">Opening your trust workspace...</p>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+    document.body.style.overflow = 'hidden';
+
+    await new Promise(resolve => setTimeout(resolve, minDurationMs));
+    window.location.href = redirectUrl;
+}
+
 async function confirmPaymentAndCreateTrust() {
     onboardingData.payment_confirmed = true;
     saveOnboardingToStorage();
-    const result = await createTrust({ redirect: false });
-    if (result && result.success) {
-        onboardingData.payment_stage = 'confirmed';
-        onboardingData.created_trust_id = result.trust_id || null;
-        saveOnboardingToStorage();
-        loadStep(ONBOARDING_STEP.REVIEW);
+    setTrustCheckoutButtonLoading(true, 'confirmPaymentBtn');
+    try {
+        const result = await createTrust({ redirect: false });
+        if (result && result.success) {
+            onboardingData.payment_stage = 'confirmed';
+            onboardingData.created_trust_id = result.trust_id || null;
+            await showTrustRegistrationSuccess(result.trust_id, { trustName: onboardingData.trust_name });
+        }
+    } finally {
+        setTrustCheckoutButtonLoading(false, 'confirmPaymentBtn');
     }
 }
 
 function doneToDashboard() {
     const trustId = onboardingData.created_trust_id;
-    const needsFunding = isCatalogTrustSelected() && (parseFloat(onboardingData.total_estimated_value) || 0) > 0;
     clearOnboardingStorage();
-    if (needsFunding && trustId) {
-        window.location.href = `../dashboard/user/checkout.php?type=trust_value&trust_id=${trustId}`;
-        return;
-    }
-    window.location.href = '../dashboard/user/dashboard.php';
+    window.location.href = getTrustManageUrl(trustId);
 }
 
 async function completeFreeCheckout() {
     onboardingData.payment_confirmed = false;
     onboardingData.payment_stage = 'select';
     saveOnboardingToStorage();
-    await createTrust({ redirect: true });
+    setTrustCheckoutButtonLoading(true, 'freeCheckoutBtn');
+    try {
+        const result = await createTrust({ redirect: false });
+        if (result && result.success) {
+            await showTrustRegistrationSuccess(result.trust_id, { trustName: onboardingData.trust_name });
+        }
+    } finally {
+        setTrustCheckoutButtonLoading(false, 'freeCheckoutBtn');
+    }
 }
 
 function copyToClipboard(text, methodId) {
@@ -2900,15 +2959,7 @@ async function createTrust(options = { redirect: true }) {
             onboardingData.created_trust_id = newTrustId;
 
             if (options && options.redirect) {
-                clearOnboardingStorage();
-                if (isCatalogTrustSelected()) {
-                    const totalValue = parseFloat(onboardingData.total_estimated_value) || 0;
-                    if (totalValue > 0 && newTrustId) {
-                        window.location.href = `../dashboard/user/checkout.php?type=trust_value&trust_id=${newTrustId}`;
-                        return { success: true, trust_id: newTrustId };
-                    }
-                }
-                window.location.href = '../dashboard/user/dashboard.php';
+                await showTrustRegistrationSuccess(newTrustId, { trustName: onboardingData.trust_name });
             }
             return { success: true, trust_id: newTrustId };
         } else {

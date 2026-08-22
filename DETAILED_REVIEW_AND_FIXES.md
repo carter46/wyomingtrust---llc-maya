@@ -359,7 +359,7 @@ async function editUser(userId) {
 2. ✅ Validates `trust_service_id`
 3. ✅ Verifies trust service exists and is active
 4. ✅ Determines status and payment_status:
-   - If `is_free = 1`: `status = 'active'`, `payment_status = 'completed'`
+   - If `is_free = 1`: `status = 'pending'`, `payment_status = 'completed'` (admin approval required before active)
    - If `is_free = 0`: `status = 'pending'`, `payment_status = 'pending'`
 5. ✅ Stores `trust_data` as JSON
 6. ✅ Returns created trust with ID
@@ -368,8 +368,8 @@ async function editUser(userId) {
 - ✅ Trust service prices stored in `trust_services` table
 - ✅ `is_free` flag determines if payment is required
 - ✅ Payment status tracked in `user_trusts.payment_status`
-- ✅ Free trusts are automatically activated
-- ✅ Paid trusts remain pending until payment
+- ✅ Free trusts remain pending until admin approves registration in User Management
+- ✅ Paid trusts remain pending until payment is approved in Trust Payments
 
 **Status**: ✅ **VERIFIED**
 

@@ -61,6 +61,7 @@ function renderTrustPaymentsContent() {
 </div>
 
 <script src="includes/modal.js"></script>
+<script src="includes/trust-detail-render.js"></script>
 <script>
 let allPayments = [];
 let allDeposits = [];
@@ -708,129 +709,41 @@ function renderPayments(payments) {
     container.innerHTML = html;
 }
 
-function viewDetails(trustId) {
+async function viewDetails(trustId) {
     const payment = allPayments.find(p => p.id == trustId);
     if (!payment) {
         showToast('Payment not found', 'error');
         return;
     }
-    
-    const trustData = payment.trust_data || {};
-    const personalInfo = trustData.personal_info || {};
-    const businessInfo = trustData.business_info || {};
-    const beneficiaries = trustData.beneficiaries || [];
-    const paymentInfo = trustData.payment_info || {};
 
-    const personFirst = personalInfo.first_name || '';
-    const personLast = personalInfo.last_name || '';
-    const personName = [personFirst, personLast].filter(Boolean).join(' ').trim() || personalInfo.full_name || '';
-    const hasPersonalBlock = !!(personName || personalInfo.email || personalInfo.phone || personalInfo.street);
-    const hasBusinessBlock = !!(
-        trustData.trust_name ||
-        businessInfo.company_name ||
-        businessInfo.formation_state ||
-        businessInfo.business_ending ||
-        trustData.total_estimated_value != null
-    );
+    try {
+        const response = await fetch(`../../api/admin/user-trusts.php?id=${trustId}`);
+        const data = await response.json();
+        if (!data.success || !data.trust) {
+            showToast(data.message || 'Failed to load trust details', 'error');
+            return;
+        }
 
-    const endingLabels = {
-        none: 'Prefer no ending',
-        llc: 'LLC',
-        limited_liability_company: 'Limited Liability Company',
-        corp: 'Corp',
-        corporation: 'Corporation',
-        inc: 'Inc',
-        incorporated: 'Incorporated'
-    };
-    const endingLabel = endingLabels[businessInfo.business_ending] || businessInfo.business_ending || '';
-    const companyDisplay = businessInfo.company_name
-        ? (businessInfo.business_ending && businessInfo.business_ending !== 'none' && endingLabel
-            ? `${businessInfo.company_name} ${endingLabel}`
-            : businessInfo.company_name)
-        : '';
-    
-    const detailsHtml = `
-        <div class="space-y-4">
-            <div>
-                <h4 class="font-bold text-sm text-navy-900 dark:text-white mb-2">Trust Information</h4>
-                <div class="space-y-1 text-sm">
-                    <div><span class="text-slate-500 dark:text-slate-400">Trust ID:</span> <span class="font-mono">#${payment.id}</span></div>
-                    <div><span class="text-slate-500 dark:text-slate-400">Service:</span> ${escapeHtml(payment.service_name || 'N/A')}</div>
-                    <div><span class="text-slate-500 dark:text-slate-400">Amount:</span> <span class="font-semibold">$${parseFloat(payment.price || 0).toFixed(2)}</span></div>
-                    <div><span class="text-slate-500 dark:text-slate-400">Payment Method:</span> ${escapeHtml(payment.payment_method_name || 'N/A')}</div>
-                    <div><span class="text-slate-500 dark:text-slate-400">Status:</span> <span class="px-2 py-0.5 rounded text-xs bg-amber-100 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400">Pending</span></div>
-                </div>
-            </div>
-            
-            <div>
-                <h4 class="font-bold text-sm text-navy-900 dark:text-white mb-2">User Information</h4>
-                <div class="space-y-1 text-sm">
-                    <div><span class="text-slate-500 dark:text-slate-400">Name:</span> ${escapeHtml(payment.user_name || 'N/A')}</div>
-                    <div><span class="text-slate-500 dark:text-slate-400">Email:</span> ${escapeHtml(payment.user_email || 'N/A')}</div>
-                </div>
-            </div>
+        const trust = data.trust;
+        const trustData = payment.trust_data || trust.trust_data || {};
+        trust.trust_data = trustData;
+        trust.payment_method_name = trust.payment_method_name || payment.payment_method_name;
+        trust.user_name = trust.user_name || payment.user_name;
+        trust.user_email = trust.user_email || payment.user_email;
 
-            ${hasBusinessBlock ? `
-            <div>
-                <h4 class="font-bold text-sm text-navy-900 dark:text-white mb-2">Business Information</h4>
-                <div class="space-y-1 text-sm">
-                    ${trustData.trust_name ? `<div><span class="text-slate-500 dark:text-slate-400">Trust Name:</span> ${escapeHtml(trustData.trust_name)}</div>` : ''}
-                    ${businessInfo.company_name ? `<div><span class="text-slate-500 dark:text-slate-400">Company Name:</span> ${escapeHtml(businessInfo.company_name)}</div>` : ''}
-                    ${endingLabel ? `<div><span class="text-slate-500 dark:text-slate-400">Business Ending:</span> ${escapeHtml(endingLabel)}</div>` : ''}
-                    ${companyDisplay ? `<div><span class="text-slate-500 dark:text-slate-400">Display Name:</span> ${escapeHtml(companyDisplay)}</div>` : ''}
-                    ${businessInfo.formation_state ? `<div><span class="text-slate-500 dark:text-slate-400">Formation State / Jurisdiction:</span> ${escapeHtml(businessInfo.formation_state)}</div>` : ''}
-                    ${trustData.total_estimated_value != null && trustData.total_estimated_value !== '' ? `<div><span class="text-slate-500 dark:text-slate-400">Total Asset Value:</span> $${Number(trustData.total_estimated_value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>` : ''}
-                </div>
-            </div>
-            ` : ''}
-            
-            ${hasPersonalBlock ? `
-            <div>
-                <h4 class="font-bold text-sm text-navy-900 dark:text-white mb-2">Personal Information</h4>
-                <div class="space-y-1 text-sm">
-                    ${personFirst || personLast ? `
-                        <div><span class="text-slate-500 dark:text-slate-400">First Name:</span> ${escapeHtml(personFirst || 'N/A')}</div>
-                        <div><span class="text-slate-500 dark:text-slate-400">Last Name:</span> ${escapeHtml(personLast || 'N/A')}</div>
-                    ` : `
-                        <div><span class="text-slate-500 dark:text-slate-400">Name:</span> ${escapeHtml(personName || 'N/A')}</div>
-                    `}
-                    ${personalInfo.email ? `<div><span class="text-slate-500 dark:text-slate-400">Email:</span> ${escapeHtml(personalInfo.email)}</div>` : ''}
-                    ${personalInfo.phone ? `<div><span class="text-slate-500 dark:text-slate-400">Phone:</span> ${escapeHtml(personalInfo.phone)}</div>` : ''}
-                    ${personalInfo.street ? `<div><span class="text-slate-500 dark:text-slate-400">Address:</span> ${escapeHtml([personalInfo.street, personalInfo.city, personalInfo.state, personalInfo.zip].filter(Boolean).join(', '))}</div>` : ''}
-                </div>
-            </div>
-            ` : ''}
-            
-            ${beneficiaries.length > 0 ? `
-            <div>
-                <h4 class="font-bold text-sm text-navy-900 dark:text-white mb-2">Beneficiaries (${beneficiaries.length})</h4>
-                <div class="space-y-2 text-sm">
-                    ${beneficiaries.map((ben, idx) => `
-                        <div class="p-2 bg-slate-50 dark:bg-navy-700/50 rounded">
-                            <div class="font-medium">${escapeHtml(ben.name || 'N/A')}</div>
-                            <div class="text-xs text-slate-500 dark:text-slate-400">${escapeHtml(ben.relationship || 'N/A')} - ${parseFloat(ben.allocation || 0).toFixed(1)}%</div>
-                        </div>
-                    `).join('')}
-                </div>
-            </div>
-            ` : ''}
-            
-            ${paymentInfo.amount ? `
-            <div>
-                <h4 class="font-bold text-sm text-navy-900 dark:text-white mb-2">Payment Details</h4>
-                <div class="space-y-1 text-sm">
-                    <div><span class="text-slate-500 dark:text-slate-400">Amount:</span> $${parseFloat(paymentInfo.amount || 0).toFixed(2)}</div>
-                    <div><span class="text-slate-500 dark:text-slate-400">Confirmed:</span> ${paymentInfo.user_confirmed ? 'Yes' : 'No'}</div>
-                    ${paymentInfo.confirmed_at ? `<div><span class="text-slate-500 dark:text-slate-400">Confirmed At:</span> ${new Date(paymentInfo.confirmed_at).toLocaleString()}</div>` : ''}
-                </div>
-            </div>
-            ` : ''}
-        </div>
-    `;
-    
-    showModal('Trust Payment Details', detailsHtml, [
-        { label: 'Close', onclick: 'closeModal()', class: 'bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white' }
-    ]);
+        const detailsHtml = TrustDetailRender.renderTrustDetailHtml(trust, {
+            showUserInfo: true,
+            showPaymentDetails: true,
+            showValueSplit: true,
+        });
+
+        showModal('Trust Payment Details', detailsHtml, [
+            { label: 'Close', onclick: () => closeModal(), class: 'bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white' }
+        ]);
+    } catch (error) {
+        console.error('Error loading trust details:', error);
+        showToast('Error loading trust details', 'error');
+    }
 }
 
 function approvePayment(trustId) {

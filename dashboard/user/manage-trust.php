@@ -17,8 +17,8 @@ if ($trustId <= 0) {
 <h1 class="font-headline-lg text-headline-lg text-primary mb-2">My Trusts</h1>
 <p class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl">View and manage your trusts.</p>
 </div>
-<a href="../../onboarding/onboarding.php" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-on-primary font-bold hover:bg-primary/90 h-10 transition-colors">
-<?php echo wt_icon('add', 'text-sm'); ?>
+<a href="../../onboarding/onboarding.php" class="inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-primary text-on-primary text-xs sm:text-sm font-bold hover:bg-primary/90 h-8 sm:h-10 transition-colors">
+<?php echo wt_icon('add', 'text-xs sm:text-sm'); ?>
 Create New Trust
 </a>
 </section>
@@ -41,6 +41,10 @@ function escapeHtml(text) {
 function renderListTrustAction(trust) {
     const meta = trust.service_meta || {};
     if (meta.is_irrevocable) {
+        return '';
+    }
+    const status = (trust.status || 'pending').toString().toLowerCase();
+    if (status === 'pending') {
         return '';
     }
     const fee = parseFloat(meta.liquidation_fee || 0);
@@ -294,13 +298,13 @@ include __DIR__ . '/includes/layout.php';
 <p id="trustName" class="font-headline-lg text-headline-lg text-primary leading-tight">Loading...</p>
 <p id="trustId" class="text-on-surface-variant text-sm font-mono font-medium">ID: Loading...</p>
 </div>
-<div class="flex gap-2 items-center no-print">
-<button onclick="window.location.href='../../onboarding/onboarding.php'" class="flex items-center justify-center rounded-lg h-10 px-4 bg-primary text-on-primary text-sm font-bold gap-2 hover:bg-primary/90 transition-all">
-<?php echo wt_icon('add', 'text-sm'); ?>
+<div class="flex flex-wrap gap-2 items-center no-print w-full sm:w-auto">
+<button onclick="window.location.href='../../onboarding/onboarding.php'" class="flex items-center justify-center rounded-lg h-8 sm:h-10 px-2.5 sm:px-4 bg-primary text-on-primary text-xs sm:text-sm font-bold gap-1 sm:gap-2 hover:bg-primary/90 transition-all">
+<?php echo wt_icon('add', 'text-xs sm:text-sm'); ?>
 <span>Create New Trust</span>
 </button>
-<button onclick="window.location.href='manage-trust.php'" class="flex items-center justify-center rounded-lg h-10 px-4 bg-primary-container text-on-primary text-sm font-bold gap-2 hover:bg-primary transition-all">
-<?php echo wt_icon('arrow-back', 'text-sm'); ?>
+<button onclick="window.location.href='manage-trust.php'" class="flex items-center justify-center rounded-lg h-8 sm:h-10 px-2.5 sm:px-4 bg-primary-container text-on-primary text-xs sm:text-sm font-bold gap-1 sm:gap-2 hover:bg-primary transition-all">
+<?php echo wt_icon('arrow-back', 'text-xs sm:text-sm'); ?>
 <span>Back to Trusts</span>
 </button>
 </div>
@@ -316,11 +320,25 @@ include __DIR__ . '/includes/layout.php';
 <span id="portfolioAllocation" class="text-xs text-on-surface-variant shrink-0">0% allocation</span>
 </div>
 </div>
-<div class="dashboard-metric-card flex flex-col gap-2 rounded-xl p-5 border border-outline-variant bg-surface-container-lowest shadow-sm">
+<div id="totalValueCard" class="dashboard-metric-card flex flex-col gap-2 rounded-xl p-5 border border-outline-variant bg-surface-container-lowest shadow-sm">
 <p class="text-on-surface-variant text-xs font-bold uppercase tracking-wider">Total Value</p>
 <div class="dashboard-metric-value-wrap">
 <p id="totalValue" class="dashboard-metric-value text-primary tracking-tight" data-fit-max="28" data-fit-min="11">$0.00</p>
 </div>
+</div>
+<div id="declaredValueCard" class="dashboard-metric-card flex flex-col gap-2 rounded-xl p-5 border border-outline-variant bg-surface-container-lowest shadow-sm hidden">
+<p class="text-on-surface-variant text-xs font-bold uppercase tracking-wider">Declared Value</p>
+<div class="dashboard-metric-value-wrap">
+<p id="declaredUnverifiedValue" class="dashboard-metric-value text-primary tracking-tight" data-fit-max="28" data-fit-min="11">$0.00</p>
+</div>
+<p id="declaredUnverifiedHint" class="text-xs text-amber-700 font-semibold">Unverified — not yet deposited</p>
+</div>
+<div id="verifiedFundedCard" class="dashboard-metric-card flex flex-col gap-2 rounded-xl p-5 border border-outline-variant bg-surface-container-lowest shadow-sm hidden">
+<p class="text-on-surface-variant text-xs font-bold uppercase tracking-wider">Verified / Funded Value</p>
+<div class="dashboard-metric-value-wrap">
+<p id="verifiedFundedValue" class="dashboard-metric-value text-primary tracking-tight" data-fit-max="28" data-fit-min="11">$0.00</p>
+</div>
+<p class="text-xs text-on-surface-variant">Verified assets</p>
 </div>
 <div class="dashboard-metric-card flex flex-col gap-2 rounded-xl p-5 border border-outline-variant bg-surface-container-lowest shadow-sm">
 <p class="text-on-surface-variant text-xs font-bold uppercase tracking-wider">Beneficiaries</p>
@@ -337,20 +355,27 @@ include __DIR__ . '/includes/layout.php';
 </div>
 </section>
 
-<section class="flex items-center gap-4 mb-8 bg-surface-container-low p-4 rounded-xl border border-outline-variant no-print">
-<p class="text-primary text-sm font-bold mr-2">Quick Actions:</p>
-<button onclick="exportTrustReport()" class="flex items-center gap-2 px-3 py-2 bg-surface-container-lowest border border-outline-variant rounded-lg text-sm font-semibold text-primary hover:bg-secondary/10 transition-colors">
-<?php echo wt_icon('share', 'text-secondary'); ?>
-Export Report
+<div id="pendingRegistrationBanner" class="hidden mb-8 rounded-xl border border-secondary/30 bg-secondary/10 p-4">
+<p class="text-sm font-bold text-primary">Your trust registration is pending admin approval.</p>
+<p class="text-xs text-on-surface-variant mt-1">You can review your trust details below. Some actions will be available once an administrator approves your trust.</p>
+</div>
+
+<section class="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2 sm:gap-3 mb-8 bg-surface-container-low p-3 sm:p-4 rounded-xl border border-outline-variant no-print">
+<p class="text-primary text-xs sm:text-sm font-bold shrink-0">Quick Actions:</p>
+<div class="flex flex-wrap gap-2">
+<button onclick="exportTrustReport()" class="flex items-center gap-1.5 px-2.5 py-1.5 sm:px-3 sm:py-2 bg-surface-container-lowest border border-outline-variant rounded-lg text-xs sm:text-sm font-semibold text-primary hover:bg-secondary/10 transition-colors">
+<?php echo wt_icon('share', 'w-3.5 h-3.5 sm:w-4 sm:h-4 text-secondary shrink-0'); ?>
+<span>Export Report</span>
 </button>
-<button onclick="printTrustDetails()" class="flex items-center gap-2 px-3 py-2 bg-surface-container-lowest border border-outline-variant rounded-lg text-sm font-semibold text-primary hover:bg-secondary/10 transition-colors">
-<?php echo wt_icon('print', 'text-secondary'); ?>
-Print Details
+<button onclick="printTrustDetails()" class="flex items-center gap-1.5 px-2.5 py-1.5 sm:px-3 sm:py-2 bg-surface-container-lowest border border-outline-variant rounded-lg text-xs sm:text-sm font-semibold text-primary hover:bg-secondary/10 transition-colors">
+<?php echo wt_icon('print', 'w-3.5 h-3.5 sm:w-4 sm:h-4 text-secondary shrink-0'); ?>
+<span>Print Details</span>
 </button>
-<button onclick="shareWithAdvisor()" class="flex items-center gap-2 px-3 py-2 bg-surface-container-lowest border border-outline-variant rounded-lg text-sm font-semibold text-primary hover:bg-secondary/10 transition-colors">
-<?php echo wt_icon('group', 'text-secondary'); ?>
-Share with Advisor
+<button onclick="shareWithAdvisor()" class="flex items-center gap-1.5 px-2.5 py-1.5 sm:px-3 sm:py-2 bg-surface-container-lowest border border-outline-variant rounded-lg text-xs sm:text-sm font-semibold text-primary hover:bg-secondary/10 transition-colors">
+<?php echo wt_icon('group', 'w-3.5 h-3.5 sm:w-4 sm:h-4 text-secondary shrink-0'); ?>
+<span>Share with Advisor</span>
 </button>
+</div>
 </section>
 
 <section class="mb-8">
@@ -398,7 +423,7 @@ Edit Name
 <p class="text-on-surface-variant text-sm">Current Status: <span id="statusBadge" class="font-bold text-on-surface">Loading...</span></p>
 </div>
 </div>
-<button onclick="changeStatus()" class="flex min-w-[120px] cursor-pointer items-center justify-center rounded-lg h-9 px-4 bg-primary-container text-on-primary text-sm font-bold hover:bg-primary transition-all">
+<button id="changeStatusBtn" onclick="changeStatus()" class="flex min-w-[120px] cursor-pointer items-center justify-center rounded-lg h-9 px-4 bg-primary-container text-on-primary text-sm font-bold hover:bg-primary transition-all">
 Change Status
 </button>
 </div>
@@ -466,7 +491,7 @@ Add Beneficiary
 </div>
 <p class="text-error/70 text-sm mb-6 max-w-2xl" id="dangerZoneDesc">Actions in this section are permanent and may require legal authorization. Proceed with extreme caution.</p>
 <div class="flex flex-wrap gap-4" id="dangerZoneActions">
-<button onclick="suspendTrust()" class="px-6 py-2.5 rounded-lg bg-surface-container-lowest border border-error/20 text-error text-sm font-bold hover:bg-error hover:text-on-primary transition-all shadow-sm">
+<button id="suspendTrustBtn" onclick="suspendTrust()" class="px-6 py-2.5 rounded-lg bg-surface-container-lowest border border-error/20 text-error text-sm font-bold hover:bg-error hover:text-on-primary transition-all shadow-sm">
 Suspend Trust
 </button>
 <button onclick="archiveTrust()" id="liquidateTrustBtn" class="px-6 py-2.5 rounded-lg bg-error text-on-primary text-sm font-bold hover:bg-error/90 transition-all shadow-md">
@@ -604,7 +629,7 @@ Liquidate Trust
 <p class="font-label-md text-label-md text-on-surface-variant text-xs sm:text-sm">Trust Status</p>
 <p id="cryptoStatusBadge" class="font-body-lg text-body-lg font-bold text-primary">Loading...</p>
 </div>
-<button type="button" onclick="changeStatus()" class="text-secondary font-label-md text-label-md hover:underline text-sm shrink-0 self-start sm:self-center">Change</button>
+<button id="cryptoChangeStatusBtn" type="button" onclick="changeStatus()" class="text-secondary font-label-md text-label-md hover:underline text-sm shrink-0 self-start sm:self-center">Change</button>
 </div>
 </div>
 </div>
@@ -655,7 +680,7 @@ Liquidate Trust
 Warning: The following actions are irreversible and may require additional legal authorization under Wyoming Digital Asset statutes. Please proceed with extreme caution.
 </p>
 <div class="flex flex-col gap-3">
-<button type="button" onclick="suspendTrust()" class="w-full py-3 px-4 rounded-lg border-2 border-error text-error font-bold text-xs sm:text-sm hover:bg-error hover:text-on-primary transition-colors text-center whitespace-nowrap">
+<button type="button" id="cryptoSuspendTrustBtn" onclick="suspendTrust()" class="w-full py-3 px-4 rounded-lg border-2 border-error text-error font-bold text-xs sm:text-sm hover:bg-error hover:text-on-primary transition-colors text-center whitespace-nowrap">
 Suspend Trust
 </button>
 <button type="button" onclick="archiveTrust()" id="cryptoLiquidateTrustBtn" class="w-full py-3 px-4 rounded-lg bg-error text-on-primary font-bold text-xs sm:text-sm hover:opacity-90 transition-opacity text-center shadow-md whitespace-nowrap">
@@ -1027,6 +1052,7 @@ async function loadTrustData() {
             if (isCryptoLayout) syncCryptoHeader(trust);
 
             updateStatusUI(trust);
+            updatePendingRegistrationBanner(trust);
             updateTrustPermissionsUI(trust);
             syncBusinessInfoUI(trust);
             await updateTrustMetrics(trust);
@@ -1231,8 +1257,12 @@ async function editTrustName() {
 }
 
 async function changeStatus() {
-    const currentStatus = currentTrust?.status || 'active';
-    const newStatus = currentStatus.toLowerCase() === 'active' ? 'inactive' : 'active';
+    const currentStatus = (currentTrust?.status || 'active').toString().toLowerCase();
+    if (currentStatus !== 'active') {
+        await showAlertModal('Not Available', 'Trust activation requires admin approval.', 'warning');
+        return;
+    }
+    const newStatus = 'inactive';
     const confirmed = await showConfirmModal(
         'Change Trust Status',
         `Are you sure you want to change the trust status from "${currentStatus}" to "${newStatus}"?`,
@@ -1266,6 +1296,11 @@ function addBeneficiary() {
 }
 
 async function suspendTrust() {
+    const currentStatus = (currentTrust?.status || '').toString().toLowerCase();
+    if (currentStatus !== 'active') {
+        await showAlertModal('Not Available', 'Only active trusts can be suspended.', 'warning');
+        return;
+    }
     const confirmed = await showConfirmModal(
         'Suspend Trust',
         'Are you sure you want to suspend this trust? The trust status will be changed to inactive. This action may be reversible.',
@@ -1282,6 +1317,15 @@ async function archiveTrust() {
     const meta = currentTrust?.service_meta || {};
     if (meta.is_irrevocable) {
         await showAlertModal('Not Allowed', 'Irrevocable trusts cannot be deleted or liquidated.', 'error');
+        return;
+    }
+    const currentStatus = (currentTrust?.status || '').toString().toLowerCase();
+    if (currentStatus === 'pending') {
+        await showAlertModal('Not Available', 'Trust registration is pending admin approval. Liquidation is not available yet.', 'warning');
+        return;
+    }
+    if (currentStatus !== 'active') {
+        await showAlertModal('Not Available', 'Only active trusts can be liquidated.', 'warning');
         return;
     }
     const fee = parseFloat(meta.liquidation_fee || 0);
@@ -1344,11 +1388,17 @@ async function updateTrustMetrics(trust) {
     const portfolioCard = document.getElementById('portfolioAssetsCard');
     const metricsSection = document.getElementById('trustMetricsSection');
     const valueEl = document.getElementById('totalValue');
+    const totalValueCard = document.getElementById('totalValueCard');
+    const declaredCard = document.getElementById('declaredValueCard');
+    const verifiedCard = document.getElementById('verifiedFundedCard');
 
     if (meta.is_crypto) {
         if (portfolioCard) portfolioCard.classList.remove('hidden');
+        if (totalValueCard) totalValueCard.classList.remove('hidden');
+        if (declaredCard) declaredCard.classList.add('hidden');
+        if (verifiedCard) verifiedCard.classList.add('hidden');
         if (metricsSection) {
-            metricsSection.classList.remove('lg:grid-cols-3');
+            metricsSection.classList.remove('lg:grid-cols-3', 'lg:grid-cols-5');
             metricsSection.classList.add('lg:grid-cols-4');
         }
         await updateCryptoMetrics(trust, valueEl);
@@ -1356,22 +1406,59 @@ async function updateTrustMetrics(trust) {
     }
 
     if (portfolioCard) portfolioCard.classList.add('hidden');
-    if (metricsSection) {
-        metricsSection.classList.remove('lg:grid-cols-4');
-        metricsSection.classList.add('lg:grid-cols-3');
-    }
 
     if (meta.supports_assets) {
-        updateCatalogMetrics(trust, valueEl);
-    } else if (valueEl) {
-        valueEl.textContent = formatUsd(0);
+        if (totalValueCard) totalValueCard.classList.add('hidden');
+        if (declaredCard) declaredCard.classList.remove('hidden');
+        if (verifiedCard) verifiedCard.classList.remove('hidden');
+        if (metricsSection) {
+            metricsSection.classList.remove('lg:grid-cols-3', 'lg:grid-cols-4');
+            metricsSection.classList.add('lg:grid-cols-5');
+        }
+        updateCatalogMetrics(trust);
+        return;
     }
+
+    if (totalValueCard) totalValueCard.classList.remove('hidden');
+    if (declaredCard) declaredCard.classList.add('hidden');
+    if (verifiedCard) verifiedCard.classList.add('hidden');
+    if (metricsSection) {
+        metricsSection.classList.remove('lg:grid-cols-4', 'lg:grid-cols-5');
+        metricsSection.classList.add('lg:grid-cols-3');
+    }
+    if (valueEl) valueEl.textContent = formatUsd(0);
 }
 
-function updateCatalogMetrics(trust, valueEl) {
-    const declaredFunded = parseFloat(trust.declared_funded_value ?? 0) || 0;
-    const catalogFunded = parseFloat(trust.assets_summary?.total_funded_value ?? 0) || 0;
-    if (valueEl) valueEl.textContent = formatUsd(declaredFunded + catalogFunded);
+function updateCatalogMetrics(trust) {
+    const unverified = parseFloat(trust.declared_unverified_value ?? 0) || 0;
+    const verified = parseFloat(trust.verified_funded_value ?? 0) || 0;
+    const declaredEl = document.getElementById('declaredUnverifiedValue');
+    const verifiedEl = document.getElementById('verifiedFundedValue');
+    const declaredCard = document.getElementById('declaredValueCard');
+    const hintEl = document.getElementById('declaredUnverifiedHint');
+
+    if (declaredEl) declaredEl.textContent = formatUsd(unverified);
+    if (verifiedEl) verifiedEl.textContent = formatUsd(verified);
+
+    if (declaredCard) {
+        if (unverified <= 0 && verified > 0) {
+            declaredCard.classList.add('hidden');
+        } else {
+            declaredCard.classList.remove('hidden');
+        }
+    }
+
+    if (hintEl) {
+        const fundingStatus = (trust.declared_value_funding?.status || 'unfunded').toString();
+        if (fundingStatus === 'pending') {
+            hintEl.textContent = 'Deposit pending admin approval';
+        } else if (fundingStatus === 'rejected') {
+            hintEl.textContent = 'Unverified — deposit rejected, please resubmit';
+        } else {
+            hintEl.textContent = 'Unverified — not yet deposited';
+        }
+    }
+
     if (typeof window.fitDashboardAmounts === 'function') window.fitDashboardAmounts();
 }
 
@@ -1568,7 +1655,7 @@ function renderDeclaredValueFundingBanner(trust) {
         ? `Declared trust value deposit of ${formatUsd(amount)} is pending admin approval.`
         : status === 'rejected'
             ? `Declared trust value deposit of ${formatUsd(amount)} was rejected. Please submit payment again.`
-            : `Deposit ${formatUsd(amount)} to fund your declared total asset value.`;
+            : `Deposit ${formatUsd(amount)} to verify your declared total asset value.`;
 
     banner.innerHTML = `
         <p class="text-sm text-on-surface">${escapeHtml(label)}</p>
@@ -1655,10 +1742,15 @@ async function saveBeneficiaries() {
         return;
     }
     try {
+        const token = await getCsrfToken();
         const res = await fetch('../../api/user/trusts.php', {
             method: 'PATCH',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ id: trustId, beneficiaries: beneficiariesState })
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': token || '',
+            },
+            credentials: 'same-origin',
+            body: JSON.stringify({ id: trustId, beneficiaries: beneficiariesState, csrf_token: token }),
         });
         const data = await res.json();
         if (data.success && data.trust) {
@@ -1683,10 +1775,15 @@ async function saveBeneficiaries() {
 
 async function updateTrustName(newName) {
     try {
+        const token = await getCsrfToken();
         const res = await fetch('../../api/user/trusts.php', {
             method: 'PATCH',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ id: trustId, trust_name: newName })
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': token || '',
+            },
+            credentials: 'same-origin',
+            body: JSON.stringify({ id: trustId, trust_name: newName, csrf_token: token }),
         });
         const data = await res.json();
         if (data.success && data.trust) {
@@ -1701,6 +1798,13 @@ async function updateTrustName(newName) {
         console.error(e);
         await showAlertModal('Error', 'Error updating trust name', 'error');
     }
+}
+
+function updatePendingRegistrationBanner(trust) {
+    const banner = document.getElementById('pendingRegistrationBanner');
+    if (!banner) return;
+    const statusRaw = (trust?.status || '').toString().toLowerCase();
+    banner.classList.toggle('hidden', statusRaw !== 'pending');
 }
 
 function updateStatusUI(trust) {
@@ -1760,14 +1864,35 @@ function updateStatusUI(trust) {
     if (cryptoDotEl) {
         cryptoDotEl.className = 'w-3 h-3 rounded-full ' + (statusRaw === 'active' ? 'bg-deep-forest animate-pulse' : statusRaw === 'pending' ? 'bg-secondary animate-pulse' : 'bg-outline-variant');
     }
+
+    const canChangeStatus = statusRaw === 'active';
+    ['changeStatusBtn', 'cryptoChangeStatusBtn'].forEach((id) => {
+        const btn = document.getElementById(id);
+        if (btn) btn.classList.toggle('hidden', !canChangeStatus);
+    });
+
+    const isPending = statusRaw === 'pending';
+    ['liquidateTrustBtn', 'cryptoLiquidateTrustBtn'].forEach((id) => {
+        const btn = document.getElementById(id);
+        if (btn) btn.disabled = isPending;
+    });
+    ['suspendTrustBtn', 'cryptoSuspendTrustBtn'].forEach((id) => {
+        const btn = document.getElementById(id);
+        if (btn) btn.classList.toggle('hidden', statusRaw !== 'active');
+    });
 }
 
 async function updateTrustStatus(newStatus) {
     try {
+        const token = await getCsrfToken();
         const res = await fetch('../../api/user/trusts.php', {
             method: 'PATCH',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ id: trustId, status: newStatus })
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': token || '',
+            },
+            credentials: 'same-origin',
+            body: JSON.stringify({ id: trustId, status: newStatus, csrf_token: token }),
         });
         const data = await res.json();
         if (data.success && data.trust) {

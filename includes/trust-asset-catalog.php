@@ -424,14 +424,10 @@ function get_trust_asset_usd_value(array $asset): float {
 }
 
 /**
- * Declared lump-sum funding applies only when the trust has no catalog assets yet.
+ * Declared lump-sum funding applies when the trust has a declared value amount,
+ * independent of catalog assets (they are tracked separately).
  */
 function trust_declared_value_funding_applies(array $trustData): bool {
-    $assets = is_array($trustData['assets'] ?? null) ? $trustData['assets'] : [];
-    if (count($assets) > 0) {
-        return false;
-    }
-
     $funding = get_trust_declared_value_funding($trustData);
 
     return (float) ($funding['amount_usd'] ?? 0) > 0;
@@ -468,6 +464,58 @@ function get_trust_declared_funded_value(array $trustData): float {
         return (float) ($funding['funded_amount_usd'] ?? $funding['amount_usd'] ?? 0);
     }
     return 0.0;
+}
+
+function get_trust_declared_unverified_value(array $trustData): float {
+    if (!trust_declared_value_funding_applies($trustData)) {
+        return 0.0;
+    }
+    $funding = get_trust_declared_value_funding($trustData);
+    if (($funding['status'] ?? '') === 'funded') {
+        return 0.0;
+    }
+    return round((float) ($funding['amount_usd'] ?? 0), 2);
+}
+
+function get_trust_verified_funded_value(array $trustData): float {
+    $assets = is_array($trustData['assets'] ?? null) ? $trustData['assets'] : [];
+    $summary = compute_trust_assets_summary($assets);
+    return round(get_trust_declared_funded_value($trustData) + (float) ($summary['total_funded_value'] ?? 0), 2);
+}
+
+function can_approve_free_trust_registration(array $trust): bool {
+    $isFree = (int) ($trust['is_free'] ?? 0) === 1;
+    $status = strtolower((string) ($trust['status'] ?? ''));
+    $paymentStatus = strtolower((string) ($trust['payment_status'] ?? ''));
+    return $isFree && $status === 'pending' && $paymentStatus === 'completed';
+}
+
+function enrich_user_trust_row(array $trust): array {
+    $trustData = is_array($trust['trust_data'] ?? null) ? $trust['trust_data'] : [];
+    if (!is_array($trust['trust_data'] ?? null) && !empty($trust['trust_data'])) {
+        $trustData = json_decode($trust['trust_data'], true) ?? [];
+    }
+    $trust['trust_data'] = $trustData;
+    $trust['trust_name'] = $trustData['trust_name'] ?? null;
+    $trust['total_estimated_value'] = isset($trustData['total_estimated_value'])
+        ? (float) $trustData['total_estimated_value']
+        : null;
+    $trust['business_info'] = is_array($trustData['business_info'] ?? null) ? $trustData['business_info'] : [];
+    $trust['personal_info'] = is_array($trustData['personal_info'] ?? null) ? $trustData['personal_info'] : [];
+    $trust['trust_type'] = $trustData['trust_type'] ?? ($trust['service_key'] ?? null);
+    $trust['beneficiaries'] = $trustData['beneficiaries'] ?? [];
+    $trust['assets'] = $trustData['assets'] ?? [];
+    $trust['entrusted_coins'] = $trustData['entrusted_coins'] ?? [];
+    $trust['service_meta'] = build_trust_service_meta($trust);
+    $trust['assets_summary'] = compute_trust_assets_summary($trust['assets']);
+    $trust['declared_value_funding'] = trust_declared_value_funding_applies($trustData)
+        ? get_trust_declared_value_funding($trustData)
+        : ['amount_usd' => 0, 'status' => 'not_applicable', 'funded_amount_usd' => 0, 'transaction_id' => null];
+    $trust['declared_funded_value'] = get_trust_declared_funded_value($trustData);
+    $trust['declared_unverified_value'] = get_trust_declared_unverified_value($trustData);
+    $trust['verified_funded_value'] = get_trust_verified_funded_value($trustData);
+    $trust['can_approve_registration'] = can_approve_free_trust_registration($trust);
+    return $trust;
 }
 
 function find_trust_asset_index(array $assets, string $assetId): ?int {
