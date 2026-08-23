@@ -212,7 +212,7 @@ function handleUpdateUserTrust() {
 
     if (isset($payload['status'])) {
         if ($currentStatus === 'pending') {
-            send_json(['success' => false, 'message' => 'LLC registration is pending admin approval. Status changes are not available yet.'], 403);
+            send_json(['success' => false, 'message' => 'LLC registration is pending approval. Status changes are not available yet.'], 403);
         }
 
         $status = sanitize_text($payload['status']);
@@ -223,7 +223,7 @@ function handleUpdateUserTrust() {
         $requestedStatus = strtolower($status);
 
         if ($requestedStatus === 'active' && in_array($currentStatus, ['pending', 'inactive'], true)) {
-            send_json(['success' => false, 'message' => 'LLC activation requires admin approval.'], 403);
+            send_json(['success' => false, 'message' => 'LLC activation requires approval.'], 403);
         }
         if ($requestedStatus === 'inactive' && $currentStatus !== 'active') {
             send_json(['success' => false, 'message' => 'Only active LLCs can be set to inactive.'], 403);
@@ -235,7 +235,7 @@ function handleUpdateUserTrust() {
 
     if (!empty($payload['liquidate'])) {
         if ($currentStatus === 'pending') {
-            send_json(['success' => false, 'message' => 'LLC registration is pending admin approval. Liquidation is not available yet.'], 403);
+            send_json(['success' => false, 'message' => 'LLC registration is pending approval. Liquidation is not available yet.'], 403);
         }
         if ($currentStatus !== 'active') {
             send_json(['success' => false, 'message' => 'Only active LLCs can be liquidated.'], 403);
@@ -269,7 +269,7 @@ function handleUpdateUserTrust() {
                 send_json([
                     'success' => false,
                     'message' => $submitted
-                        ? 'Liquidation fee payment is pending admin approval.'
+                        ? 'Liquidation fee payment is pending approval.'
                         : 'Liquidation fee payment is required. Please complete checkout first.',
                     'redirect_checkout' => !$submitted,
                     'payment_pending' => (bool) $submitted,

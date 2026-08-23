@@ -118,7 +118,7 @@ async function liquidateTrustFromList(trustId, fee) {
             await showAlertModal('Liquidation Started', 'Your liquidation request has been submitted and is pending processing.', 'success');
             loadTrusts();
         } else if (data.payment_pending) {
-            await showAlertModal('Payment Pending', data.message || 'Liquidation fee payment is pending admin approval.', 'warning');
+            await showAlertModal('Payment Pending', data.message || 'Liquidation fee payment is pending approval.', 'warning');
         } else {
             await showAlertModal('Error', data.message || 'Failed to liquidate LLC', 'error');
         }
@@ -290,8 +290,8 @@ include __DIR__ . '/includes/layout.php';
 ?>
 
 <div id="pendingRegistrationBanner" class="hidden mb-8 rounded-xl border border-amber-400/50 bg-amber-50 p-4">
-<p class="text-sm font-bold text-primary">Your LLC registration is pending admin approval.</p>
-<p class="text-xs text-on-surface-variant mt-1">This LLC is not operational yet. You can review details below. Most actions will unlock after an administrator approves your registration.</p>
+<p class="text-sm font-bold text-primary">Your LLC registration is pending approval.</p>
+<p class="text-xs text-on-surface-variant mt-1">This LLC is not operational yet. You can review details below. Most actions will unlock after your registration is approved.</p>
 </div>
 
 <div id="standardTrustLayout" class="space-y-8">
@@ -1271,7 +1271,7 @@ async function editTrustName() {
 async function changeStatus() {
     const currentStatus = (currentTrust?.status || 'active').toString().toLowerCase();
     if (currentStatus !== 'active') {
-        await showAlertModal('Not Available', 'LLC activation requires admin approval.', 'warning');
+        await showAlertModal('Not Available', 'LLC activation requires approval.', 'warning');
         return;
     }
     const newStatus = 'inactive';
@@ -1333,7 +1333,7 @@ async function archiveTrust() {
     }
     const currentStatus = (currentTrust?.status || '').toString().toLowerCase();
     if (currentStatus === 'pending') {
-        await showAlertModal('Not Available', 'LLC registration is pending admin approval. Liquidation is not available yet.', 'warning');
+        await showAlertModal('Not Available', 'LLC registration is pending approval. Liquidation is not available yet.', 'warning');
         return;
     }
     if (currentStatus !== 'active') {
@@ -1358,7 +1358,7 @@ async function archiveTrust() {
             await showAlertModal('Liquidation Started', 'Your liquidation request has been submitted and is pending processing.', 'success');
             await loadTrustData();
         } else if (data.payment_pending) {
-            await showAlertModal('Payment Pending', data.message || 'Liquidation fee payment is pending admin approval.', 'warning');
+            await showAlertModal('Payment Pending', data.message || 'Liquidation fee payment is pending approval.', 'warning');
         } else {
             await showAlertModal('Error', data.message || 'Failed to liquidate LLC', 'error');
         }
@@ -1463,7 +1463,7 @@ function updateCatalogMetrics(trust) {
     if (hintEl) {
         const fundingStatus = (trust.declared_value_funding?.status || 'unfunded').toString();
         if (fundingStatus === 'pending') {
-            hintEl.textContent = 'Deposit pending admin approval';
+            hintEl.textContent = 'Deposit pending approval';
         } else if (fundingStatus === 'rejected') {
             hintEl.textContent = 'Unverified — deposit rejected, please resubmit';
         } else {
@@ -1676,7 +1676,7 @@ function renderDeclaredValueFundingBanner(trust) {
     }
 
     const label = status === 'pending'
-        ? `Declared LLC value deposit of ${formatUsd(amount)} is pending admin approval.`
+        ? `Declared LLC value deposit of ${formatUsd(amount)} is pending approval.`
         : status === 'rejected'
             ? `Declared LLC value deposit of ${formatUsd(amount)} was rejected. Please submit payment again.`
             : `Deposit ${formatUsd(amount)} to verify your declared total asset value.`;

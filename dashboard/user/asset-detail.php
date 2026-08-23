@@ -13,8 +13,8 @@ $extra_styles = '.card-shadow { box-shadow: 0 4px 20px rgba(4, 22, 39, 0.05); }'
 include __DIR__ . '/includes/layout.php';
 ?>
 
-<section class="flex flex-wrap items-center justify-between gap-4 mb-6">
-<div>
+<section class="flex flex-col gap-4 mb-6 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+<div class="min-w-0">
 <?php if ($trustIdParam > 0): ?>
 <a href="manage-trust.php?id=<?php echo $trustIdParam; ?>" class="inline-flex items-center gap-1 text-secondary font-label-md text-label-md hover:underline mb-3">
 <?php echo wt_icon('arrow-back', 'w-4 h-4'); ?> Back to LLC
@@ -23,23 +23,26 @@ include __DIR__ . '/includes/layout.php';
 <h1 class="font-headline-lg text-headline-lg text-primary mb-1" id="coinSymbol">Loading...</h1>
 <p class="font-body-md text-body-md text-on-surface-variant" id="coinName">Loading...</p>
 </div>
-<div class="flex flex-wrap gap-3 no-print">
-<button type="button" id="depositBtn" class="inline-flex items-center gap-2 bg-secondary text-on-secondary px-6 py-3 rounded-xl font-label-md font-bold hover:opacity-90 transition-opacity">
-<?php echo wt_icon('receive', 'w-5 h-5'); ?> Deposit
+<div class="flex flex-row items-stretch gap-1.5 sm:gap-3 w-full sm:w-auto no-print">
+<button type="button" id="depositBtn" class="flex-1 min-w-0 inline-flex items-center justify-center gap-1 sm:gap-2 bg-secondary text-on-secondary px-2 sm:px-6 py-2.5 sm:py-3 rounded-xl text-[11px] sm:text-sm font-bold hover:opacity-90 transition-opacity">
+<?php echo wt_icon('receive', 'w-4 h-4 sm:w-5 sm:h-5'); ?> <span class="truncate">Receive</span>
 </button>
-<button type="button" id="liquidateBtn" class="hidden inline-flex items-center gap-2 bg-primary text-on-primary px-6 py-3 rounded-xl font-label-md font-bold hover:opacity-90 transition-opacity">
-<?php echo wt_icon('send', 'w-5 h-5'); ?> Liquidate
-</button>
-<a id="linkWalletBtn" href="link-wallet.php" class="inline-flex items-center gap-2 bg-surface-container-lowest border border-outline-variant text-primary px-6 py-3 rounded-xl font-label-md font-bold hover:bg-surface-container transition-colors">
-<?php echo wt_icon('link', 'w-5 h-5'); ?> Link Wallet
+<a id="swapBtn" href="swap.php" class="flex-1 min-w-0 inline-flex items-center justify-center gap-1 sm:gap-2 bg-primary text-on-primary px-2 sm:px-6 py-2.5 sm:py-3 rounded-xl text-[11px] sm:text-sm font-bold hover:opacity-90 transition-opacity">
+<?php echo wt_icon('swap', 'w-4 h-4 sm:w-5 sm:h-5'); ?> <span class="truncate">Swap</span>
 </a>
+<a id="linkWalletBtn" href="link-wallet.php" class="flex-1 min-w-0 inline-flex items-center justify-center gap-1 sm:gap-2 bg-surface-container-lowest border border-outline-variant text-primary px-2 sm:px-6 py-2.5 sm:py-3 rounded-xl text-[11px] sm:text-sm font-bold hover:bg-surface-container transition-colors">
+<?php echo wt_icon('link', 'w-4 h-4 sm:w-5 sm:h-5'); ?> <span class="truncate">Link Wallet</span>
+</a>
+<button type="button" id="liquidateBtn" class="hidden flex-1 min-w-0 inline-flex items-center justify-center gap-1 sm:gap-2 bg-primary text-on-primary px-2 sm:px-6 py-2.5 sm:py-3 rounded-xl text-[11px] sm:text-sm font-bold hover:opacity-90 transition-opacity">
+<?php echo wt_icon('send', 'w-4 h-4 sm:w-5 sm:h-5'); ?> <span class="truncate">Liquidate</span>
+</button>
 </div>
 </section>
 
 <section class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
 <div class="bg-surface-container-lowest rounded-2xl p-6 border border-outline-variant card-shadow flex flex-col justify-center min-w-0 dashboard-metric-card">
 <p class="text-xs font-bold uppercase tracking-wider text-on-surface-variant mb-3">Live Price</p>
-<div class="text-center md:text-left min-w-0">
+<div class="text-left min-w-0">
 <div class="dashboard-metric-value-wrap">
 <div class="dashboard-metric-value text-primary mb-2" id="currentPrice" data-fit-max="36" data-fit-max-mobile="22" data-fit-min="14">$0.00</div>
 </div>
@@ -49,13 +52,13 @@ include __DIR__ . '/includes/layout.php';
 </div>
 <div class="bg-surface-container-lowest rounded-2xl p-6 border border-outline-variant card-shadow flex flex-col justify-center min-w-0 dashboard-metric-card">
 <p class="text-xs font-bold uppercase tracking-wider text-on-surface-variant mb-3">My Balance</p>
-<div class="text-center md:text-left min-w-0">
-<div class="flex items-center justify-center md:justify-start gap-3 mb-4">
+<div class="text-left min-w-0">
+<div class="flex items-center justify-start gap-3 mb-4">
 <img src="" alt="Crypto Logo" class="w-12 h-12 rounded-full shrink-0" id="balanceLogo" onerror="this.style.display='none'">
 <div class="text-xl font-bold text-primary" id="balanceSymbol">--</div>
 </div>
 <div class="dashboard-metric-value-wrap">
-<div class="dashboard-metric-value text-primary mb-2" id="balanceAmount" data-fit-max="30" data-fit-max-mobile="20" data-fit-min="12">0.00000000</div>
+<div class="dashboard-metric-value text-primary mb-2" id="balanceAmount" data-fit-max="30" data-fit-max-mobile="20" data-fit-min="12">0.000</div>
 </div>
 <div class="dashboard-metric-value-wrap">
 <div class="dashboard-metric-value text-on-surface-variant" id="balanceUSD" data-fit-max="22" data-fit-max-mobile="16" data-fit-min="11">USD $0.00</div>
@@ -87,7 +90,7 @@ include __DIR__ . '/includes/layout.php';
 <div id="tabContent">
 <div id="holdingsTab" class="tab-content">
 <div class="bg-surface-container-lowest rounded-2xl p-6 border border-outline-variant card-shadow">
-<p class="text-on-surface-variant text-center text-sm">Your balance and live price are shown above. Use Deposit to add funds or Link Wallet to connect an external wallet.</p>
+<p class="text-on-surface-variant text-center text-sm">Your balance and live price are shown above. Use Receive to add funds, Swap to exchange, or Link Wallet to connect an external wallet.</p>
 </div>
 </div>
 <div id="historyTab" class="tab-content hidden">
@@ -118,13 +121,27 @@ const urlParams = new URLSearchParams(window.location.search);
 const coinKey = urlParams.get('coin_key') || 'bitcoin';
 const trustId = <?php echo $trustIdParam; ?>;
 
-(function initLinkWalletHref() {
+(function initActionHrefs() {
     const link = document.getElementById('linkWalletBtn');
-    if (!link) return;
-    const params = new URLSearchParams({ coin_key: coinKey });
-    if (trustId > 0) params.set('trust_id', String(trustId));
-    link.href = `link-wallet.php?${params.toString()}`;
+    if (link) {
+        const params = new URLSearchParams({ coin_key: coinKey });
+        if (trustId > 0) params.set('trust_id', String(trustId));
+        link.href = `link-wallet.php?${params.toString()}`;
+    }
+    const swap = document.getElementById('swapBtn');
+    if (swap) {
+        const params = new URLSearchParams({ coin_key: coinKey });
+        if (trustId > 0) params.set('trust_id', String(trustId));
+        swap.href = `swap.php?${params.toString()}`;
+    }
 })();
+
+/** Zero → 0.000; otherwise trim trailing zeros (keep meaningful digits). */
+function formatAssetBalance(amount) {
+    const num = Number(amount);
+    if (!Number.isFinite(num) || Math.abs(num) < 1e-12) return '0.000';
+    return num.toFixed(8).replace(/\.?0+$/, '');
+}
 
 function updateActionButtons() {
     const liquidateBtn = document.getElementById('liquidateBtn');
@@ -194,7 +211,7 @@ async function handleLiquidate() {
         }
 
         if (data.already_submitted && data.payment_status === 'pending') {
-            alert('Your liquidation fee payment is pending admin approval. You will be able to liquidate once it is approved.');
+            alert('Your liquidation fee payment is pending approval. You will be able to liquidate once it is approved.');
             return;
         }
 
@@ -247,7 +264,8 @@ async function loadUserBalance() {
 }
 
 function updateBalanceDisplay() {
-    document.getElementById('balanceAmount').textContent = `${assetBalance.toFixed(8)} ${currentAsset.symbol}`;
+    const symbol = (currentAsset && currentAsset.symbol) ? currentAsset.symbol : '';
+    document.getElementById('balanceAmount').textContent = `${formatAssetBalance(assetBalance)}${symbol ? ' ' + symbol : ''}`;
     const usdValue = assetBalance * currentPrice;
     document.getElementById('balanceUSD').textContent = `USD $${usdValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     updateActionButtons();
@@ -280,11 +298,61 @@ function setupEventListeners() {
             document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
             document.getElementById(tabName + 'Tab').classList.remove('hidden');
             if (tabName === 'history') loadTransactionHistory();
+            if (tabName === 'about') loadCoinAbout();
         });
     });
 
     document.getElementById('depositBtn').addEventListener('click', handleDeposit);
     document.getElementById('liquidateBtn').addEventListener('click', handleLiquidate);
+}
+
+async function loadCoinAbout() {
+    const el = document.getElementById('coinAbout');
+    if (!el || !currentAsset) return;
+    if (el.dataset.loaded === '1') return;
+
+    el.innerHTML = '<p>Loading coin information...</p>';
+    try {
+        const id = encodeURIComponent(currentAsset.id || coinKey);
+        const response = await fetch(
+            `../../api/coingecko.php?path=/coins/${id}&localization=false&tickers=false&market_data=false&community_data=false&developer_data=false&sparkline=false`,
+            { credentials: 'same-origin' }
+        );
+        if (!response.ok) throw new Error('Unable to load coin details');
+        const data = await response.json();
+        if (data && data.error) throw new Error(data.error);
+
+        const rawHtml = (data.description && data.description.en) ? data.description.en : '';
+        const tmp = document.createElement('div');
+        tmp.innerHTML = rawHtml;
+        const text = (tmp.textContent || tmp.innerText || '').replace(/\s+\n/g, '\n').trim();
+
+        if (!text) {
+            el.innerHTML = `<p class="text-sm">No description is available for ${escapeHtml(currentAsset.name || currentAsset.symbol || 'this coin')}.</p>`;
+            el.dataset.loaded = '1';
+            return;
+        }
+
+        const truncated = text.length > 2500 ? text.slice(0, 2500).trim() + '…' : text;
+        const homepage = Array.isArray(data.links && data.links.homepage)
+            ? (data.links.homepage.find(Boolean) || '')
+            : '';
+        el.innerHTML = `
+            <h3 class="font-bold text-primary mb-2">${escapeHtml(data.name || currentAsset.name || '')}</h3>
+            <p class="text-sm leading-relaxed whitespace-pre-wrap text-on-surface">${escapeHtml(truncated)}</p>
+            ${homepage ? `<p class="mt-4 text-sm"><a class="text-secondary hover:underline" href="${escapeHtml(homepage)}" target="_blank" rel="noopener noreferrer">Official website</a></p>` : ''}
+        `;
+        el.dataset.loaded = '1';
+    } catch (error) {
+        console.error('Error loading coin about:', error);
+        el.innerHTML = `<p class="text-sm text-error">Could not load coin information. Please try again later.</p>`;
+    }
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text == null ? '' : String(text);
+    return div.innerHTML;
 }
 
 function getCachedAssetPrice(coinId) {
@@ -478,12 +546,6 @@ async function loadTransactionHistory() {
 }
 
 setInterval(fetchAssetData, 30000);
-
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
 
 document.addEventListener('DOMContentLoaded', initializePage);
 </script>

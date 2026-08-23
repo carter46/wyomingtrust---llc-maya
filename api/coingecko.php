@@ -27,7 +27,9 @@ $path = isset($_GET['path']) ? $_GET['path'] : '/simple/price';
 
 // Whitelist allowed paths
 $allowed = ['/simple/price','/coins/markets','/coins/bitcoin/market_chart','/coins/ethereum/market_chart'];
-if (!in_array($path, $allowed) && !preg_match('#^/coins/[^/]+/market_chart$#', $path)) {
+$isCoinDetail = (bool) preg_match('#^/coins/[a-z0-9\-]+$#i', $path);
+$isMarketChart = (bool) preg_match('#^/coins/[^/]+/market_chart$#', $path);
+if (!in_array($path, $allowed, true) && !$isMarketChart && !$isCoinDetail) {
   http_response_code(400);
   header('Content-Type: application/json');
   echo json_encode(['error' => 'Path not allowed']);

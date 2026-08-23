@@ -90,8 +90,10 @@ async function loadAssets() {
         if (data.success && data.assets) {
             userAssets = data.assets.filter(a => parseFloat(a.balance || 0) > 0);
             if (userAssets.length > 0) {
-                fromAsset = userAssets[0];
-                toAsset = userAssets.length > 1 ? userAssets[1] : userAssets[0];
+                const prefKey = new URLSearchParams(window.location.search).get('coin_key') || '';
+                const preferred = prefKey ? userAssets.find(a => a.coin_key === prefKey) : null;
+                fromAsset = preferred || userAssets[0];
+                toAsset = userAssets.find(a => a.coin_key !== fromAsset.coin_key) || userAssets[0];
                 updateAssetSelectors();
             }
             renderAssetModal();

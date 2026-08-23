@@ -184,6 +184,11 @@ $page_title = 'Register Your LLC | ' . $site_name;
             border-radius: 50%;
             background: #115cb9;
         }
+        #onboardingContent input::placeholder,
+        #onboardingContent textarea::placeholder {
+            color: rgba(68, 71, 76, 0.35);
+            opacity: 1;
+        }
     </style>
 </head>
 <body class="bg-background text-on-background font-body-md min-h-screen">
@@ -737,6 +742,14 @@ async function loadStep(step) {
         console.error('Failed to load onboarding step:', error);
         showOnboardingError(error && error.message ? error.message : 'Failed to load this step.');
     }
+
+    // New steps often replace content while the previous page was scrolled down —
+    // always reset so the next step starts at the top of the viewport.
+    try {
+        window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+        document.documentElement.scrollTop = 0;
+        document.body.scrollTop = 0;
+    } catch (e) { /* ignore */ }
 }
 
 
@@ -859,7 +872,6 @@ function renderTrustTypeStep() {
             const isSelected = selectedServiceId > 0 && Number(service.id) === selectedServiceId;
             const { isFree, label } = formatTrustServicePrice(service);
             const title = escapeHtml(service.service_name || service.service_key);
-            const categoryLabel = escapeHtml(getTrustTypeLabel(service.service_key));
             const description = escapeHtml(service.description || 'Select this LLC structure to continue.');
             const icon = getTrustServiceIcon(service.service_key);
             return `
@@ -873,7 +885,6 @@ function renderTrustTypeStep() {
                             <h3 class="text-base sm:text-lg font-bold text-primary">${title}</h3>
                             <span class="text-xs font-bold ${isFree ? 'text-green-600' : 'text-secondary'}">${label}</span>
                         </div>
-                        <p class="text-xs text-on-surface-variant mb-1">${categoryLabel}</p>
                         <p class="text-on-surface-variant text-xs sm:text-sm leading-relaxed line-clamp-2 sm:line-clamp-none">${description}</p>
                     </div>
                     <div class="absolute top-4 right-4 w-5 h-5 rounded-full border-2 ${isSelected ? 'border-secondary bg-secondary' : 'border-outline-variant'} transition-colors shrink-0"></div>
@@ -918,8 +929,8 @@ function renderTrustTypeStep() {
 function renderPersonalInfoStep() {
     const pi = onboardingData.personal_info || {};
     const bi = onboardingData.business_info || {};
-    const inputClass = 'form-input flex w-full rounded-lg text-primary border border-outline-variant bg-surface-container-low focus:ring-2 focus:ring-secondary focus:border-secondary h-14 placeholder:text-on-surface-variant p-4 text-base font-normal';
-    const inputClassSm = 'form-input flex w-full rounded-lg text-primary border border-outline-variant bg-surface-container-low focus:ring-2 focus:ring-secondary focus:border-secondary h-12 placeholder:text-on-surface-variant p-4 text-base font-normal';
+    const inputClass = 'form-input flex w-full rounded-lg text-primary border border-outline-variant bg-surface-container-low focus:ring-2 focus:ring-secondary focus:border-secondary h-14 placeholder:text-on-surface-variant/35 p-4 text-base font-normal';
+    const inputClassSm = 'form-input flex w-full rounded-lg text-primary border border-outline-variant bg-surface-container-low focus:ring-2 focus:ring-secondary focus:border-secondary h-12 placeholder:text-on-surface-variant/35 p-4 text-base font-normal';
     const jurisdictionOptions = US_FORMATIONS.map(j =>
         `<option value="${escapeHtml(j.code)}" ${bi.formation_state === j.code ? 'selected' : ''}>${escapeHtml(j.name)}</option>`
     ).join('');
@@ -1055,7 +1066,7 @@ function renderPersonalInfoStep() {
 
                         <div class="pt-2 flex justify-end">
                             <button type="button" id="continueToBeneficiariesBtn" onclick="savePersonalInfoAndContinue();" class="flex min-w-[180px] cursor-pointer items-center justify-center rounded-lg h-14 px-6 bg-secondary text-on-secondary hover:opacity-90 transition-all text-base font-bold shadow-md shadow-secondary/20 disabled:opacity-60 disabled:cursor-not-allowed">
-                                <span>Continue to Shares &amp; Allocation</span>
+                                <span>Shares &amp; Allocation</span>
                                 <?php echo wt_icon('arrow-forward', 'ml-2 text-sm'); ?>
                             </button>
                         </div>
@@ -1237,7 +1248,7 @@ function renderBeneficiariesStep() {
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-sm font-semibold text-on-surface-variant mb-2">Primary Full Name *</label>
-                                <input type="text" value="${escapeHtml(ben.name || '')}" onchange="updateBeneficiary(${idx}, 'name', this.value)" ${ben.is_myself ? 'readonly' : ''} placeholder="${ben.is_myself ? 'Your name' : 'Jane Doe'}" autocomplete="off" class="w-full px-4 py-2 border border-outline-variant rounded-lg bg-surface-container-low text-primary focus:ring-2 focus:ring-secondary ${ben.is_myself ? 'bg-surface-container cursor-not-allowed' : ''}" required/>
+                                <input type="text" value="${escapeHtml(ben.name || '')}" onchange="updateBeneficiary(${idx}, 'name', this.value)" ${ben.is_myself ? 'readonly' : ''} placeholder="${ben.is_myself ? 'Your name' : 'Jane Doe'}" autocomplete="off" class="w-full px-4 py-2 border border-outline-variant rounded-lg bg-surface-container-low text-primary focus:ring-2 focus:ring-secondary placeholder:text-on-surface-variant/35 ${ben.is_myself ? 'bg-surface-container cursor-not-allowed' : ''}" required/>
                             </div>
                             <div>
                                 <label class="block text-sm font-semibold text-on-surface-variant mb-2">Relationship *</label>
@@ -1253,7 +1264,7 @@ function renderBeneficiariesStep() {
                             </div>
                             <div>
                                 <label class="block text-sm font-semibold text-on-surface-variant mb-2">Email</label>
-                                <input type="email" value="${escapeHtml(ben.email || '')}" onchange="updateBeneficiary(${idx}, 'email', this.value)" ${ben.is_myself ? 'readonly' : ''} placeholder="${ben.is_myself ? 'Your email' : 'jane@example.com'}" autocomplete="off" class="w-full px-4 py-2 border border-outline-variant rounded-lg bg-surface-container-low text-primary focus:ring-2 focus:ring-secondary ${ben.is_myself ? 'bg-surface-container cursor-not-allowed' : ''}"/>
+                                <input type="email" value="${escapeHtml(ben.email || '')}" onchange="updateBeneficiary(${idx}, 'email', this.value)" ${ben.is_myself ? 'readonly' : ''} placeholder="${ben.is_myself ? 'Your email' : 'jane@example.com'}" autocomplete="off" class="w-full px-4 py-2 border border-outline-variant rounded-lg bg-surface-container-low text-primary focus:ring-2 focus:ring-secondary placeholder:text-on-surface-variant/35 ${ben.is_myself ? 'bg-surface-container cursor-not-allowed' : ''}"/>
                             </div>
                             <div>
                                 <label class="block text-sm font-semibold text-on-surface-variant mb-2">Allocation % *</label>
@@ -1298,7 +1309,7 @@ function renderBeneficiariesStep() {
             <div class="mt-8 flex justify-between">
                 <button onclick="previousStep()" class="px-6 py-2 text-on-surface-variant hover:text-primary">Previous</button>
                 <button onclick="validateAndNext()" ${isValid ? '' : 'disabled'} class="px-6 py-2 bg-secondary text-on-secondary rounded-lg font-semibold hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed">
-                    Next: Review & Payment
+                    Continue
                 </button>
             </div>
         </div>
@@ -1361,33 +1372,33 @@ function renderReviewStep() {
                                 </div>
                             </summary>
                             <div class="px-5 pb-5 pt-0 border-t border-outline-variant/20 mt-2">
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
-                                    <div class="md:col-span-2">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-4">
+                                    <div class="md:col-span-2 bg-surface-container-low p-3 rounded-lg">
                                         <p class="text-on-surface-variant text-xs uppercase font-bold tracking-wider">Business Type</p>
-                                        <p class="text-on-background font-medium">${escapeHtml(getBusinessEntityTypeLabel(onboardingData.business_info?.entity_type) || 'Not provided')}</p>
+                                        <p class="text-on-background font-medium mt-1 break-words">${escapeHtml(getBusinessEntityTypeLabel(onboardingData.business_info?.entity_type) || 'Not provided')}</p>
                                     </div>
-                                    <div>
+                                    <div class="bg-surface-container-low p-3 rounded-lg">
                                         <p class="text-on-surface-variant text-xs uppercase font-bold tracking-wider">Company Name</p>
-                                        <p class="text-on-background font-medium">${escapeHtml((onboardingData.business_info && onboardingData.business_info.company_name) || 'Not provided')}</p>
+                                        <p class="text-on-background font-medium mt-1 break-words">${escapeHtml((onboardingData.business_info && onboardingData.business_info.company_name) || 'Not provided')}</p>
                                     </div>
-                                    <div>
+                                    <div class="bg-surface-container-low p-3 rounded-lg">
                                         <p class="text-on-surface-variant text-xs uppercase font-bold tracking-wider">Business Ending</p>
-                                        <p class="text-on-background font-medium">${escapeHtml(getBusinessEndingLabel((onboardingData.business_info && onboardingData.business_info.business_ending) || '') || 'Not provided')}</p>
+                                        <p class="text-on-background font-medium mt-1 break-words">${escapeHtml(getBusinessEndingLabel((onboardingData.business_info && onboardingData.business_info.business_ending) || '') || 'Not provided')}</p>
                                     </div>
                                     ${formatCompanyDisplayName() ? `
-                                    <div class="md:col-span-2">
+                                    <div class="md:col-span-2 bg-surface-container-low p-3 rounded-lg">
                                         <p class="text-on-surface-variant text-xs uppercase font-bold tracking-wider">Display Name</p>
-                                        <p class="text-on-background font-medium">${escapeHtml(formatCompanyDisplayName())}</p>
+                                        <p class="text-on-background font-medium mt-1 break-words">${escapeHtml(formatCompanyDisplayName())}</p>
                                     </div>
                                     ` : ''}
-                                    <div class="md:col-span-2">
+                                    <div class="md:col-span-2 bg-surface-container-low p-3 rounded-lg">
                                         <p class="text-on-surface-variant text-xs uppercase font-bold tracking-wider">Formation State / Jurisdiction</p>
-                                        <p class="text-on-background font-medium">${escapeHtml(getFormationLabel((onboardingData.business_info && onboardingData.business_info.formation_state) || '') || 'Not provided')}</p>
+                                        <p class="text-on-background font-medium mt-1 break-words">${escapeHtml(getFormationLabel((onboardingData.business_info && onboardingData.business_info.formation_state) || '') || 'Not provided')}</p>
                                     </div>
                                     ${isCatalogTrustSelected() ? `
-                                    <div class="md:col-span-2">
+                                    <div class="md:col-span-2 bg-surface-container-low p-3 rounded-lg">
                                         <p class="text-on-surface-variant text-xs uppercase font-bold tracking-wider">Total Asset Value</p>
-                                        <p class="text-on-background font-medium">${onboardingData.total_estimated_value != null && onboardingData.total_estimated_value !== '' ? '$' + Number(onboardingData.total_estimated_value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : 'Not provided'}</p>
+                                        <p class="text-on-background font-medium mt-1 break-words">${onboardingData.total_estimated_value != null && onboardingData.total_estimated_value !== '' ? '$' + Number(onboardingData.total_estimated_value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : 'Not provided'}</p>
                                     </div>
                                     ` : ''}
                                 </div>
@@ -1407,26 +1418,26 @@ function renderReviewStep() {
                                 </div>
                             </summary>
                             <div class="px-5 pb-5 pt-0 border-t border-outline-variant/20 mt-2">
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
-                                    <div>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-4">
+                                    <div class="bg-surface-container-low p-3 rounded-lg">
                                         <p class="text-on-surface-variant text-xs uppercase font-bold tracking-wider">First Name</p>
-                                        <p class="text-on-background font-medium">${escapeHtml(pi.first_name || (pi.full_name ? splitLegacyFullName(pi.full_name).first_name : '') || 'Not provided')}</p>
+                                        <p class="text-on-background font-medium mt-1 break-words">${escapeHtml(pi.first_name || (pi.full_name ? splitLegacyFullName(pi.full_name).first_name : '') || 'Not provided')}</p>
                                     </div>
-                                    <div>
+                                    <div class="bg-surface-container-low p-3 rounded-lg">
                                         <p class="text-on-surface-variant text-xs uppercase font-bold tracking-wider">Last Name</p>
-                                        <p class="text-on-background font-medium">${escapeHtml(pi.last_name || (pi.full_name ? splitLegacyFullName(pi.full_name).last_name : '') || 'Not provided')}</p>
+                                        <p class="text-on-background font-medium mt-1 break-words">${escapeHtml(pi.last_name || (pi.full_name ? splitLegacyFullName(pi.full_name).last_name : '') || 'Not provided')}</p>
                                     </div>
-                                    <div>
+                                    <div class="bg-surface-container-low p-3 rounded-lg">
                                         <p class="text-on-surface-variant text-xs uppercase font-bold tracking-wider">Email</p>
-                                        <p class="text-on-background font-medium">${escapeHtml(pi.email || 'Not provided')}</p>
+                                        <p class="text-on-background font-medium mt-1 break-words">${escapeHtml(pi.email || 'Not provided')}</p>
                                     </div>
-                                    <div>
+                                    <div class="bg-surface-container-low p-3 rounded-lg">
                                         <p class="text-on-surface-variant text-xs uppercase font-bold tracking-wider">Phone</p>
-                                        <p class="text-on-background font-medium">${escapeHtml(pi.phone || 'Not provided')}</p>
+                                        <p class="text-on-background font-medium mt-1 break-words">${escapeHtml(pi.phone || 'Not provided')}</p>
                                     </div>
-                                    <div class="col-span-2">
+                                    <div class="md:col-span-2 bg-surface-container-low p-3 rounded-lg">
                                         <p class="text-on-surface-variant text-xs uppercase font-bold tracking-wider">Contact Address</p>
-                                        <p class="text-on-background font-medium">
+                                        <p class="text-on-background font-medium mt-1 break-words">
                                             ${escapeHtml([pi.street, pi.city, pi.state, pi.zip].filter(Boolean).join(', ') || 'Not provided')}
                                         </p>
                                     </div>
@@ -1450,12 +1461,12 @@ function renderReviewStep() {
                                 <div class="pt-4 space-y-4">
                                     ${onboardingData.beneficiaries.length > 0 ? 
                                         onboardingData.beneficiaries.map(ben => `
-                                            <div class="flex justify-between items-center bg-surface-container-low p-3 rounded-lg">
-                                                <div>
-                                                    <p class="font-medium text-primary">${escapeHtml(ben.name)}${ben.is_myself ? ' <span class="text-sm text-secondary">(Myself)</span>' : ''}</p>
-                                                    <p class="text-sm text-on-surface-variant">${escapeHtml(ben.relationship || '')} - ${ben.email || 'No email'}</p>
+                                            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 bg-surface-container-low p-3 rounded-lg">
+                                                <div class="min-w-0">
+                                                    <p class="font-medium text-primary break-words">${escapeHtml(ben.name)}${ben.is_myself ? ' <span class="text-sm text-secondary">(Myself)</span>' : ''}</p>
+                                                    <p class="text-sm text-on-surface-variant break-words">${escapeHtml(ben.relationship || '')} - ${ben.email || 'No email'}</p>
                                                 </div>
-                                                <span class="font-bold text-primary">${ben.allocation}%</span>
+                                                <span class="font-bold text-primary shrink-0">${ben.allocation}%</span>
                                             </div>
                                         `).join('') :
                                         '<p class="text-on-surface-variant">No share holders added</p>'
@@ -1477,15 +1488,15 @@ function renderReviewStep() {
                                 </div>
                             </summary>
                             <div class="px-5 pb-5 pt-0 border-t border-outline-variant/20 mt-2">
-                                <div class="pt-4 space-y-4">
-                                    <div>
+                                <div class="pt-4 space-y-3">
+                                    <div class="bg-surface-container-low p-3 rounded-lg">
                                         <p class="text-on-surface-variant text-xs uppercase font-bold tracking-wider">LLC Structure</p>
-                                        <p class="text-on-background font-medium">${escapeHtml(trustTypeName)}</p>
+                                        <p class="text-on-background font-medium mt-1 break-words">${escapeHtml(trustTypeName)}</p>
                                     </div>
                                     ${isSmartContractTrustSelected() && (onboardingData.entrusted_coins || []).length ? `
-                                    <div>
+                                    <div class="bg-surface-container-low p-3 rounded-lg">
                                         <p class="text-on-surface-variant text-xs uppercase font-bold tracking-wider">Entrusted Cryptocurrencies</p>
-                                        <p class="text-on-background font-medium">${(onboardingData.entrusted_coins || []).map(k => escapeHtml(k.replace(/_/g, ' '))).join(', ')}</p>
+                                        <p class="text-on-background font-medium mt-1 break-words">${(onboardingData.entrusted_coins || []).map(k => escapeHtml(k.replace(/_/g, ' '))).join(', ')}</p>
                                     </div>
                                     ` : ''}
                                 </div>
