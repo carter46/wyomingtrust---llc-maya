@@ -17,7 +17,7 @@ include __DIR__ . '/includes/layout.php';
 <div>
 <?php if ($trustIdParam > 0): ?>
 <a href="manage-trust.php?id=<?php echo $trustIdParam; ?>" class="inline-flex items-center gap-1 text-secondary font-label-md text-label-md hover:underline mb-3">
-<?php echo wt_icon('arrow-back', 'w-4 h-4'); ?> Back to Trust
+<?php echo wt_icon('arrow-back', 'w-4 h-4'); ?> Back to LLC
 </a>
 <?php endif; ?>
 <h1 class="font-headline-lg text-headline-lg text-primary mb-1" id="coinSymbol">Loading...</h1>

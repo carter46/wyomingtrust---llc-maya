@@ -28,7 +28,7 @@ include __DIR__ . '/includes/layout.php';
 </div>
 </div>
 <div class="dashboard-metric-card bg-surface-container-lowest p-6 rounded-2xl border border-outline-variant card-hover flex flex-col justify-between min-h-[7.5rem]">
-<span class="text-xs md:text-sm uppercase tracking-widest text-on-surface-variant font-bold">Beneficiaries</span>
+<span class="text-xs md:text-sm uppercase tracking-widest text-on-surface-variant font-bold">Share Holders</span>
 <div class="min-w-0">
 <div class="dashboard-metric-value-wrap">
 <p class="dashboard-metric-value text-primary" id="beneficiaryCount" data-fit-max="36" data-fit-min="16">0</p>

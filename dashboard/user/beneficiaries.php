@@ -4,19 +4,19 @@ require_once __DIR__ . '/../../api/helpers.php';
 require_user_page_auth('../../login.php');
 
 $userName = $_SESSION['user_name'] ?? 'User';
-$page_title = 'Beneficiaries | WyomingTrust';
-$active_nav = 'beneficiaries';
+$page_title = 'Share Holders | WyomingTrust';
+$active_nav = 'trusts';
 
 include __DIR__ . '/includes/layout.php';
 ?>
 
 <section>
-<h1 class="font-headline-lg text-headline-lg text-primary mb-2">Beneficiaries</h1>
-<p class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl">View everyone assigned to your trusts, their allocation percentages, and linked trust details.</p>
+<h1 class="font-headline-lg text-headline-lg text-primary mb-2">Share Holders</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl">View everyone assigned to your LLCs, their allocation percentages, and linked LLC details.</p>
 </section>
 
 <section class="bg-surface-container-lowest rounded-2xl border border-outline-variant overflow-hidden shadow-sm">
-<div id="beneficiariesContainer" class="p-10 text-center text-on-surface-variant">Loading beneficiaries...</div>
+<div id="beneficiariesContainer" class="p-10 text-center text-on-surface-variant">Loading share holders...</div>
 </section>
 
 <script>
@@ -66,7 +66,7 @@ function flattenBeneficiaries(trusts) {
 function renderBeneficiaries(rows) {
     const container = document.getElementById('beneficiariesContainer');
     if (!rows.length) {
-        container.innerHTML = '<div class="p-10 text-center text-on-surface-variant">No beneficiaries found. <a href="../../onboarding/onboarding.php" class="text-secondary font-semibold hover:underline">Create a trust</a> to add beneficiaries.</div>';
+        container.innerHTML = '<div class="p-10 text-center text-on-surface-variant">No share holders found. <a href="../../onboarding/onboarding.php" class="text-secondary font-semibold hover:underline">Create an LLC</a> to add share holders.</div>';
         return;
     }
 
@@ -75,9 +75,9 @@ function renderBeneficiaries(rows) {
             <table class="w-full text-left border-collapse">
                 <thead>
                     <tr class="bg-surface-container-low border-b border-outline-variant">
-                        <th class="px-6 md:px-8 py-5 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">Beneficiary</th>
+                        <th class="px-6 md:px-8 py-5 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">Share Holder</th>
                         <th class="px-6 md:px-8 py-5 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">Relationship</th>
-                        <th class="px-6 md:px-8 py-5 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">Trust</th>
+                        <th class="px-6 md:px-8 py-5 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">LLC</th>
                         <th class="px-6 md:px-8 py-5 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">Allocation</th>
                         <th class="px-6 md:px-8 py-5 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest text-right">Action</th>
                     </tr>

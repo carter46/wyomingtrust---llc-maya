@@ -1,0 +1,7 @@
+# Admin dashboard — invalid paths redirect via not-found.php (scoped; not site-wide)
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^ not-found.php [L]
+</IfModule>

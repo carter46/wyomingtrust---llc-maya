@@ -48,11 +48,28 @@ function get_request_method() {
 }
 
 /**
+ * Raw request body (cached). php://input can only be read once per request.
+ */
+function get_raw_request_body() {
+    static $raw = null;
+    static $read = false;
+    if ($read) {
+        return $raw;
+    }
+    $read = true;
+    $raw = file_get_contents('php://input');
+    if ($raw === false) {
+        $raw = '';
+    }
+    return $raw;
+}
+
+/**
  * Get JSON input from request body
  */
 function get_json_input() {
-    $raw = file_get_contents('php://input');
-    if ($raw === false || $raw === '') {
+    $raw = get_raw_request_body();
+    if ($raw === '') {
         return [];
     }
 
@@ -264,16 +281,16 @@ function require_csrf_token() {
         if (!empty($_POST['csrf_token'])) {
             $token = $_POST['csrf_token'];
         }
-        // Check JSON body (API requests)
+        // Check header (preferred for JSON APIs — does not consume body)
         elseif (!empty($_SERVER['HTTP_X_CSRF_TOKEN'])) {
             $token = $_SERVER['HTTP_X_CSRF_TOKEN'];
         }
-        // Try to get from request body for JSON requests
+        // Fall back to JSON body (uses cached raw body so get_json_input still works)
         else {
-            $raw = file_get_contents('php://input');
-            if ($raw) {
+            $raw = get_raw_request_body();
+            if ($raw !== '') {
                 $data = json_decode($raw, true);
-                if (isset($data['csrf_token'])) {
+                if (is_array($data) && isset($data['csrf_token'])) {
                     $token = $data['csrf_token'];
                 }
             }

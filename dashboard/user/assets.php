@@ -5,7 +5,7 @@ require_user_page_auth('../../login.php');
 
 $userName = $_SESSION['user_name'] ?? 'User';
 $page_title = 'My Assets | WyomingTrust';
-$active_nav = '';
+$active_nav = 'crypto-assets';
 
 include __DIR__ . '/includes/layout.php';
 ?>

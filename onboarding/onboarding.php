@@ -230,6 +230,8 @@ $page_title = 'Register Your LLC | ' . $site_name;
 let currentStep = <?php echo (int) $step; ?>;
 const trustId = <?php echo (int) $trustId; ?>;
 let isLoggedIn = <?php echo $isLoggedIn ? 'true' : 'false'; ?>;
+let personalAutofillActive = false;
+let allocationBlinkDone = false;
 // Prefer shared lists from onboarding-data.js (avoids inline-script constant issues)
 const US_JURISDICTIONS = (window.US_JURISDICTIONS || window.US_FORMATIONS || []);
 const BUSINESS_ENDING_OPTIONS = (window.BUSINESS_ENDING_OPTIONS || []);
@@ -246,7 +248,7 @@ const steps = [
     { id: ONBOARDING_STEP.BUSINESS_ENTITY, title: 'Business Type', component: 'businessEntity' },
     { id: ONBOARDING_STEP.TRUST_TYPE, title: 'LLC Structure', component: 'trustType' },
     { id: ONBOARDING_STEP.PERSONAL_INFO, title: 'Business & Personal Info', component: 'personalInfo' },
-    { id: ONBOARDING_STEP.BENEFICIARIES, title: 'Beneficiaries', component: 'beneficiaries' },
+    { id: ONBOARDING_STEP.BENEFICIARIES, title: 'Shares & Allocation', component: 'beneficiaries' },
     { id: ONBOARDING_STEP.REVIEW, title: 'Review & Payment', component: 'review' }
 ];
 
@@ -599,7 +601,7 @@ async function loadAvailableCoins(force = false) {
         try {
             const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
             const timeoutId = controller ? setTimeout(() => controller.abort(), 15000) : null;
-            const response = await fetch('../api/coins.php', controller ? { signal: controller.signal } : undefined);
+            const response = await fetch('../api/coins.php?for=depositable', controller ? { signal: controller.signal } : undefined);
             if (timeoutId) clearTimeout(timeoutId);
 
             let data = null;
@@ -633,22 +635,16 @@ async function loadAvailableCoins(force = false) {
     return coinsLoadPromise;
 }
 
-function refreshCoinSelectionPanel() {
-    const mount = document.getElementById('coinSelectionPanel');
-    if (!mount) return;
-    mount.outerHTML = renderCoinSelectionPanel();
-}
-
-async function ensureCoinsForSmartContract() {
-    if (!isSmartContractTrustSelected()) {
-        refreshCoinSelectionPanel();
+function validateTrustTypeStepAndNext() {
+    if (!onboardingData.trust_service_id) {
+        alert('Please select an LLC structure.');
         return;
     }
-    refreshCoinSelectionPanel();
-    if (coinsLoadState !== 'loaded') {
-        await loadAvailableCoins();
-        refreshCoinSelectionPanel();
+    if (!isSmartContractTrustSelected()) {
+        onboardingData.entrusted_coins = [];
     }
+    saveOnboardingToStorage();
+    void nextStep();
 }
 
 // Get trust service ID from service_key
@@ -700,23 +696,13 @@ async function loadStep(step) {
                 if (trustServices.length === 0) {
                     await loadTrustServices();
                 }
-                // Show trust types immediately — do not block on coins
                 container.innerHTML = renderTrustTypeStep();
-                if (isSmartContractTrustSelected()) {
-                    ensureCoinsForSmartContract();
-                } else {
-                    // Warm the coins cache so Smart Contract selection is instant
-                    loadAvailableCoins().catch(() => {});
-                }
+                // Warm deposit-ready coins cache for later Share Holders step
+                loadAvailableCoins().catch(() => {});
                 break;
             case ONBOARDING_STEP.PERSONAL_INFO:
-                // Never block the form on profile/trust prefills
-                if (isLoggedIn) {
-                    await withTimeout(Promise.all([
-                        prefillPersonalInfoFromProfile(),
-                        prefillPersonalInfoFromLastTrust()
-                    ]), 2500);
-                }
+                // Prefill data into memory only when Autofill is clicked (no silent field fill)
+                personalAutofillActive = false;
                 container.innerHTML = renderPersonalInfoStep();
                 break;
             case ONBOARDING_STEP.BENEFICIARIES:
@@ -910,7 +896,6 @@ function renderTrustTypeStep() {
             <div class="flex flex-col gap-3 sm:gap-4 mb-8">
                 ${serviceCards}
             </div>
-            ${renderCoinSelectionPanel()}
             <div class="bg-secondary-fixed rounded-xl p-4 flex items-start space-x-3 text-on-secondary-fixed-variant border border-secondary/20">
                 <?php echo wt_icon('info', 'text-xl mt-0.5 flex-shrink-0 text-secondary'); ?>
                 <p class="text-sm leading-relaxed">
@@ -954,7 +939,7 @@ function renderPersonalInfoStep() {
                         <div class="h-full rounded-full bg-secondary transition-all duration-500" style="width: 60%;"></div>
                     </div>
                     <div class="flex justify-between items-center">
-                        <p class="text-on-surface-variant text-sm font-normal leading-normal italic">Next: Beneficiaries</p>
+                        <p class="text-on-surface-variant text-sm font-normal leading-normal italic">Next: Shares &amp; Allocation</p>
                     </div>
                 </div>
             </div>
@@ -970,11 +955,6 @@ function renderPersonalInfoStep() {
                             <div>
                                 <h2 class="text-primary text-2xl font-bold tracking-tight">Business Information</h2>
                                 <p class="text-on-surface-variant text-sm mt-1">${escapeHtml(getBusinessEntityTypeLabel(onboardingData.business_info?.entity_type) || 'Business details')} — these details belong to the business entity, not the individual.</p>
-                            </div>
-                            <div class="flex flex-col gap-2">
-                                <label class="text-on-surface-variant text-sm font-semibold leading-normal" for="trustNameInput">LLC Name</label>
-                                <input type="text" id="trustNameInput" value="${escapeHtml(onboardingData.trust_name || '')}" placeholder="Smith Family Holdings LLC" autocomplete="off" class="${inputClass}" required/>
-                                <p class="text-xs text-on-surface-variant">A descriptive name for this LLC. You can change it later from your dashboard.</p>
                             </div>
                             <div class="flex flex-col gap-2">
                                 <label class="text-on-surface-variant text-sm font-semibold leading-normal" for="companyNameInput">Company Name</label>
@@ -1006,9 +986,16 @@ function renderPersonalInfoStep() {
                         </div>
 
                         <div class="bg-surface-container-lowest border border-outline-variant/30 rounded-xl p-8 shadow-sm space-y-6">
-                            <div>
-                                <h2 class="text-primary text-2xl font-bold tracking-tight">Personal Information</h2>
-                                <p class="text-on-surface-variant text-sm mt-1">These details belong to you as an individual.</p>
+                            <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                                <div>
+                                    <h2 class="text-primary text-2xl font-bold tracking-tight">Personal Information</h2>
+                                    <p class="text-on-surface-variant text-sm mt-1">These details belong to you as an individual.</p>
+                                </div>
+                                ${isLoggedIn ? `
+                                <button type="button" id="personalAutofillBtn" onclick="togglePersonalAutofill()" class="shrink-0 px-4 py-2 rounded-lg border border-secondary text-secondary text-sm font-bold hover:bg-secondary/5 transition-colors">
+                                    ${personalAutofillActive ? 'Clear info' : 'Autofill my details'}
+                                </button>
+                                ` : ''}
                             </div>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div class="flex flex-col gap-2">
@@ -1068,7 +1055,7 @@ function renderPersonalInfoStep() {
 
                         <div class="pt-2 flex justify-end">
                             <button type="button" id="continueToBeneficiariesBtn" onclick="savePersonalInfoAndContinue();" class="flex min-w-[180px] cursor-pointer items-center justify-center rounded-lg h-14 px-6 bg-secondary text-on-secondary hover:opacity-90 transition-all text-base font-bold shadow-md shadow-secondary/20 disabled:opacity-60 disabled:cursor-not-allowed">
-                                <span>Continue to Beneficiaries</span>
+                                <span>Continue to Shares &amp; Allocation</span>
                                 <?php echo wt_icon('arrow-forward', 'ml-2 text-sm'); ?>
                             </button>
                         </div>
@@ -1097,7 +1084,7 @@ function renderPersonalInfoStep() {
                                     <?php echo wt_icon('lock', 'text-on-surface-variant text-xl'); ?>
                                     <div>
                                         <p class="text-primary text-sm font-bold">Privacy Protection</p>
-                                        <p class="text-xs text-on-surface-variant mt-1">Beneficiary and grantor names are not public record in Wyoming filings.</p>
+                                        <p class="text-xs text-on-surface-variant mt-1">Share holder and grantor names are not public record in Wyoming filings.</p>
                                     </div>
                                 </div>
                                 <div class="flex items-start gap-3 p-3 rounded-lg hover:bg-surface-container-low transition-colors">
@@ -1143,69 +1130,13 @@ function isCatalogTrustSelected() {
     return key === 'revocable_living_trust' || key === 'irrevocable_trust';
 }
 
-function renderCoinSelectionPanel() {
-    if (!isSmartContractTrustSelected()) {
-        return `<div id="coinSelectionPanel" class="hidden"></div>`;
-    }
-    const selected = onboardingData.entrusted_coins || [];
-
-    if (coinsLoadState === 'loading' || coinsLoadState === 'idle') {
-        return `
-            <div id="coinSelectionPanel" class="mb-10 p-6 border border-outline-variant/30 rounded-2xl bg-surface-container-low">
-                <div class="flex items-center gap-3 text-on-surface-variant text-sm">
-                    <div class="animate-spin rounded-full h-5 w-5 border-2 border-secondary border-t-transparent"></div>
-                    <p>Loading available cryptocurrencies...</p>
-                </div>
-            </div>
-        `;
-    }
-
-    if (coinsLoadState === 'error' || !availableCoins.length) {
-        return `
-            <div id="coinSelectionPanel" class="mb-10 p-6 border border-red-200 rounded-2xl bg-red-50">
-                <p class="text-red-700 text-sm font-semibold mb-2">Could not load cryptocurrencies</p>
-                <p class="text-red-600/80 text-xs mb-4">${escapeHtml(coinsLoadError || 'No coins are available right now.')}</p>
-                <button type="button" onclick="retryLoadCoins()" class="px-4 py-2 rounded-lg bg-secondary text-on-secondary text-sm font-semibold">
-                    Retry
-                </button>
-            </div>
-        `;
-    }
-
-    const coinCards = availableCoins.map(coin => {
-        const coinKey = String(coin.coin_key || '');
-        const isChecked = selected.includes(coinKey);
-        const logo = coin.logo ? `<img src="${escapeHtml(String(coin.logo))}" alt="" class="w-8 h-8 rounded-full object-cover shrink-0" onerror="this.style.display='none'">` : `<span class="w-8 h-8 rounded-full bg-secondary/10 flex items-center justify-center text-xs font-bold shrink-0">${escapeHtml(String((coin.symbol || '?')).slice(0, 3))}</span>`;
-        return `
-            <label class="flex items-center gap-3 p-4 border-2 ${isChecked ? 'border-secondary bg-secondary/5' : 'border-outline-variant/30'} rounded-xl cursor-pointer hover:border-secondary transition-all">
-                <input type="checkbox" class="rounded text-secondary focus:ring-secondary" ${isChecked ? 'checked' : ''} onchange="toggleEntrustedCoin('${escapeHtml(coinKey)}', this.checked)"/>
-                ${logo}
-                <span class="min-w-0">
-                    <span class="block font-bold text-primary text-sm truncate">${escapeHtml(String(coin.display_name || coinKey))}</span>
-                    <span class="block text-xs text-on-surface-variant">${escapeHtml(String(coin.symbol || coinKey.toUpperCase()))}</span>
-                </span>
-            </label>
-        `;
-    }).join('');
-
-    return `
-        <div id="coinSelectionPanel" class="mb-10 p-6 lg:p-8 border-2 border-secondary/20 rounded-2xl bg-surface-container-low">
-            <h2 class="text-xl font-bold text-primary mb-2">Select Cryptocurrencies to Entrust</h2>
-            <p class="text-on-surface-variant text-sm mb-6">Choose which digital assets this LLC structure will hold. After your LLC is created, you can deposit crypto and track balances from your dashboard.</p>
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                ${coinCards}
-            </div>
-            <p class="text-xs text-on-surface-variant mt-4">
-                Selected: <strong id="coinSelectionCount">${selected.length}</strong> coin${selected.length === 1 ? '' : 's'}
-                ${selected.length === 0 ? '<span class="text-red-600"> — select at least one</span>' : ''}
-            </p>
-        </div>
-    `;
-}
-
 async function retryLoadCoins() {
     await loadAvailableCoins(true);
-    refreshCoinSelectionPanel();
+    const modal = document.getElementById('coinAllocateModal');
+    if (modal && !modal.classList.contains('hidden')) {
+        const body = document.getElementById('coinAllocateModalBody');
+        if (body) body.innerHTML = renderCoinAllocateList();
+    }
 }
 
 function toggleEntrustedCoin(coinKey, checked) {
@@ -1224,32 +1155,6 @@ function toggleEntrustedCoin(coinKey, checked) {
         countEl.textContent = String(onboardingData.entrusted_coins.length);
     }
     saveOnboardingToStorage();
-}
-
-function validateTrustTypeStepAndNext() {
-    if (!onboardingData.trust_service_id) {
-        alert('Please select an LLC structure.');
-        return;
-    }
-    if (isSmartContractTrustSelected()) {
-        if (coinsLoadState === 'loading' || coinsLoadState === 'idle') {
-            alert('Please wait for cryptocurrencies to finish loading, then select at least one.');
-            ensureCoinsForSmartContract();
-            return;
-        }
-        if (coinsLoadState === 'error' || !availableCoins.length) {
-            alert('Cryptocurrencies could not be loaded. Please tap Retry and try again.');
-            return;
-        }
-        if (!onboardingData.entrusted_coins || onboardingData.entrusted_coins.length === 0) {
-            alert('Please select at least one cryptocurrency to entrust in this Smart Contract Trust.');
-            return;
-        }
-    } else {
-        onboardingData.entrusted_coins = [];
-    }
-    saveOnboardingToStorage();
-    void nextStep();
 }
 
 function shouldHideExtraBeneficiaries() {
@@ -1293,39 +1198,40 @@ function getActiveBeneficiaries() {
 }
 
 function renderBeneficiariesStep() {
-    const showCryptoWallet = isSmartContractTrustSelected();
     const hideExtras = shouldHideExtraBeneficiaries();
     const activeBeneficiaries = getActiveBeneficiaries();
     const totalAllocation = activeBeneficiaries.reduce((sum, ben) => sum + (parseFloat(ben.allocation) || 0), 0);
     const isValid = Math.abs(totalAllocation - 100) < 0.01;
     const hasMyself = onboardingData.beneficiaries.some(b => b.is_myself);
+    const selectedCoins = onboardingData.entrusted_coins || [];
+    const isSmart = isSmartContractTrustSelected();
     
     return `
         <div class="max-w-3xl mx-auto">
             <div class="mb-8">
-                <h1 class="text-primary text-4xl font-black leading-tight tracking-tight mb-3">Add Beneficiaries</h1>
-                <p class="text-on-surface-variant text-lg font-normal leading-relaxed">Who should receive assets from this LLC?</p>
+                <h1 class="text-primary text-4xl font-black leading-tight tracking-tight mb-3">Shares &amp; Allocation</h1>
+                <p class="text-on-surface-variant text-lg font-normal leading-relaxed">Who holds shares in this LLC, and how are they allocated?</p>
             </div>
             
             <div class="bg-surface-container-lowest border border-outline-variant/30 rounded-xl p-8 shadow-sm mb-6">
                 <div class="flex items-center gap-3 mb-6">
                     <input type="checkbox" id="addMyselfCheckbox" ${hasMyself ? 'checked' : ''} class="w-5 h-5 text-secondary border-outline-variant rounded focus:ring-secondary cursor-pointer"/>
-                    <label for="addMyselfCheckbox" class="text-primary font-semibold text-lg cursor-pointer">Add Myself as Beneficiary</label>
+                    <label for="addMyselfCheckbox" class="text-primary font-semibold text-lg cursor-pointer">Add Myself as Share Holder</label>
                 </div>
-                <p class="text-sm text-on-surface-variant mb-6">Include yourself in the beneficiary list</p>
+                <p class="text-sm text-on-surface-variant mb-6">Include yourself in the share holder list</p>
             </div>
             
             <div id="beneficiariesList" class="space-y-4 mb-6">
                 ${onboardingData.beneficiaries.length === 0 ? `
                     <div class="bg-surface-container-low border-2 border-dashed border-outline-variant rounded-xl p-8 text-center">
-                        <p class="text-on-surface-variant mb-4">No beneficiaries added yet.</p>
-                        <p class="text-sm text-on-surface-variant">Check "Add Myself as Beneficiary" above or click "Add Another Beneficiary" below to get started.</p>
+                        <p class="text-on-surface-variant mb-4">No share holders added yet.</p>
+                        <p class="text-sm text-on-surface-variant">Check "Add Myself as Share Holder" above or click "Add Another Share Holder" below to get started.</p>
                     </div>
                 ` : ''}
                 ${onboardingData.beneficiaries.map((ben, idx) => `
                     <div class="beneficiary-card bg-surface-container-lowest border border-outline-variant/30 rounded-xl p-6 shadow-sm${!ben.is_myself && hideExtras ? ' hidden' : ''}" data-beneficiary-extra="${ben.is_myself ? '0' : '1'}">
                         <div class="flex justify-between items-start mb-4">
-                            <h3 class="text-lg font-bold text-primary">Beneficiary #${idx + 1}${ben.is_myself ? ' <span class="text-sm text-secondary">(Myself)</span>' : ''}</h3>
+                            <h3 class="text-lg font-bold text-primary">Share Holder #${idx + 1}${ben.is_myself ? ' <span class="text-sm text-secondary">(Myself)</span>' : ''}</h3>
                             ${ben.is_myself ? '' : `<button onclick="removeBeneficiary(${idx})" class="text-red-600 hover:text-red-700 font-medium">Remove</button>`}
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1351,22 +1257,34 @@ function renderBeneficiariesStep() {
                             </div>
                             <div>
                                 <label class="block text-sm font-semibold text-on-surface-variant mb-2">Allocation % *</label>
-                                <input type="number" id="allocation_${idx}" data-index="${idx}" min="0" max="100" step="0.01" value="${ben.allocation || ''}" onchange="updateBeneficiary(${idx}, 'allocation', this.value)" oninput="updateBeneficiary(${idx}, 'allocation', this.value)" placeholder="50" class="w-full px-4 py-2 border border-outline-variant rounded-lg bg-surface-container-low text-primary focus:ring-2 focus:ring-secondary" required/>
+                                <input type="number" id="allocation_${idx}" data-index="${idx}" min="0" max="100" step="0.01" value="${ben.allocation || ''}" onchange="updateBeneficiary(${idx}, 'allocation', this.value)" oninput="updateBeneficiary(${idx}, 'allocation', this.value)" placeholder="50" class="allocation-input w-full px-4 py-2 border border-outline-variant rounded-lg bg-surface-container-low text-primary focus:ring-2 focus:ring-secondary" required/>
                             </div>
-                            ${showCryptoWallet ? `
-                            <div class="md:col-span-2">
-                                <label class="block text-sm font-semibold text-on-surface-variant mb-2">Crypto Wallet Address (Optional)</label>
-                                <input type="text" value="${escapeHtml(ben.wallet_address || '')}" onchange="updateBeneficiary(${idx}, 'wallet_address', this.value)" placeholder="0x..." class="w-full px-4 py-2 border border-outline-variant rounded-lg bg-surface-container-low text-primary focus:ring-2 focus:ring-secondary"/>
-                            </div>
-                            ` : ''}
                         </div>
                     </div>
                 `).join('')}
             </div>
             
             <button id="addBeneficiaryBtn" onclick="addNewBeneficiary()" class="w-full py-3 border-2 border-dashed border-outline-variant rounded-lg text-on-surface-variant hover:border-secondary hover:text-primary transition-colors mb-6${hideExtras ? ' hidden' : ''}">
-                + Add Another Beneficiary
+                + Add Another Share Holder
             </button>
+
+            ${isSmart ? `
+            <div class="bg-surface-container-lowest border border-outline-variant/30 rounded-xl p-6 shadow-sm mb-6">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3">
+                    <div>
+                        <h2 class="text-lg font-bold text-primary">Coins to allocate</h2>
+                        <p class="text-sm text-on-surface-variant">Select deposit-ready cryptocurrencies for this Smart Contract LLC.</p>
+                    </div>
+                    <button type="button" onclick="openCoinAllocateModal()" class="px-4 py-2 rounded-lg bg-secondary text-on-secondary text-sm font-bold hover:opacity-90 shrink-0">
+                        Select coins to allocate
+                    </button>
+                </div>
+                <p class="text-sm text-on-surface-variant">
+                    Selected: <strong id="coinSelectionCount">${selectedCoins.length}</strong>
+                    ${selectedCoins.length ? ` — ${selectedCoins.map(k => escapeHtml(String(k).replace(/_/g, ' '))).join(', ')}` : '<span class="text-red-600"> — select at least one</span>'}
+                </p>
+            </div>
+            ` : ''}
             
             <div class="bg-secondary-fixed rounded-xl p-4 border border-secondary/20 mb-6">
                 <p class="text-sm text-on-secondary-fixed-variant">
@@ -1382,6 +1300,18 @@ function renderBeneficiariesStep() {
                 <button onclick="validateAndNext()" ${isValid ? '' : 'disabled'} class="px-6 py-2 bg-secondary text-on-secondary rounded-lg font-semibold hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed">
                     Next: Review & Payment
                 </button>
+            </div>
+        </div>
+        <div id="coinAllocateModal" class="hidden fixed inset-0 z-[80] flex items-center justify-center p-4 bg-primary/40 backdrop-blur-sm">
+            <div class="bg-surface-container-lowest rounded-2xl border border-outline-variant shadow-2xl max-w-2xl w-full max-h-[85vh] overflow-hidden flex flex-col">
+                <div class="flex items-center justify-between p-4 border-b border-outline-variant">
+                    <h3 class="font-bold text-primary text-lg">Select coins to allocate</h3>
+                    <button type="button" onclick="closeCoinAllocateModal()" class="p-2 hover:bg-surface-container rounded-full" aria-label="Close">${typeof wtIcon === 'function' ? wtIcon('close', 'w-5 h-5') : '×'}</button>
+                </div>
+                <div id="coinAllocateModalBody" class="p-4 overflow-y-auto flex-1"></div>
+                <div class="p-4 border-t border-outline-variant flex justify-end gap-2">
+                    <button type="button" onclick="closeCoinAllocateModal()" class="px-4 py-2 rounded-lg border border-outline-variant font-semibold text-primary">Done</button>
+                </div>
             </div>
         </div>
     `;
@@ -1431,14 +1361,10 @@ function renderReviewStep() {
                                 </div>
                             </summary>
                             <div class="px-5 pb-5 pt-0 border-t border-outline-variant/20 mt-2">
-                                <div class="grid grid-cols-2 gap-4 pt-4">
-                                    <div class="col-span-2">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
+                                    <div class="md:col-span-2">
                                         <p class="text-on-surface-variant text-xs uppercase font-bold tracking-wider">Business Type</p>
                                         <p class="text-on-background font-medium">${escapeHtml(getBusinessEntityTypeLabel(onboardingData.business_info?.entity_type) || 'Not provided')}</p>
-                                    </div>
-                                    <div class="col-span-2">
-                                        <p class="text-on-surface-variant text-xs uppercase font-bold tracking-wider">LLC Name</p>
-                                        <p class="text-on-background font-medium">${escapeHtml(onboardingData.trust_name || 'Not provided')}</p>
                                     </div>
                                     <div>
                                         <p class="text-on-surface-variant text-xs uppercase font-bold tracking-wider">Company Name</p>
@@ -1449,17 +1375,17 @@ function renderReviewStep() {
                                         <p class="text-on-background font-medium">${escapeHtml(getBusinessEndingLabel((onboardingData.business_info && onboardingData.business_info.business_ending) || '') || 'Not provided')}</p>
                                     </div>
                                     ${formatCompanyDisplayName() ? `
-                                    <div class="col-span-2">
+                                    <div class="md:col-span-2">
                                         <p class="text-on-surface-variant text-xs uppercase font-bold tracking-wider">Display Name</p>
                                         <p class="text-on-background font-medium">${escapeHtml(formatCompanyDisplayName())}</p>
                                     </div>
                                     ` : ''}
-                                    <div class="col-span-2">
+                                    <div class="md:col-span-2">
                                         <p class="text-on-surface-variant text-xs uppercase font-bold tracking-wider">Formation State / Jurisdiction</p>
                                         <p class="text-on-background font-medium">${escapeHtml(getFormationLabel((onboardingData.business_info && onboardingData.business_info.formation_state) || '') || 'Not provided')}</p>
                                     </div>
                                     ${isCatalogTrustSelected() ? `
-                                    <div class="col-span-2">
+                                    <div class="md:col-span-2">
                                         <p class="text-on-surface-variant text-xs uppercase font-bold tracking-wider">Total Asset Value</p>
                                         <p class="text-on-background font-medium">${onboardingData.total_estimated_value != null && onboardingData.total_estimated_value !== '' ? '$' + Number(onboardingData.total_estimated_value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : 'Not provided'}</p>
                                     </div>
@@ -1481,7 +1407,7 @@ function renderReviewStep() {
                                 </div>
                             </summary>
                             <div class="px-5 pb-5 pt-0 border-t border-outline-variant/20 mt-2">
-                                <div class="grid grid-cols-2 gap-4 pt-4">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
                                     <div>
                                         <p class="text-on-surface-variant text-xs uppercase font-bold tracking-wider">First Name</p>
                                         <p class="text-on-background font-medium">${escapeHtml(pi.first_name || (pi.full_name ? splitLegacyFullName(pi.full_name).first_name : '') || 'Not provided')}</p>
@@ -1513,7 +1439,7 @@ function renderReviewStep() {
                                     <div class="w-8 h-8 rounded-full bg-secondary/10 flex items-center justify-center text-primary">
                                         <?php echo wt_icon('group', 'text-xl'); ?>
                                     </div>
-                                    <p class="text-primary font-semibold">Beneficiaries</p>
+                                    <p class="text-primary font-semibold">Share Holders</p>
                                 </div>
                                 <div class="flex items-center gap-4">
                                     <button type="button" onclick="window.location.href='?step=4'" class="text-secondary text-sm font-bold hover:underline">Edit</button>
@@ -1532,7 +1458,7 @@ function renderReviewStep() {
                                                 <span class="font-bold text-primary">${ben.allocation}%</span>
                                             </div>
                                         `).join('') :
-                                        '<p class="text-on-surface-variant">No beneficiaries added</p>'
+                                        '<p class="text-on-surface-variant">No share holders added</p>'
                                     }
                                 </div>
                             </div>
@@ -1703,19 +1629,62 @@ function selectTrustType(serviceKey, serviceId) {
     if (container) {
         container.innerHTML = renderTrustTypeStep();
     }
-    ensureCoinsForSmartContract();
+}
+
+async function togglePersonalAutofill() {
+    if (!isLoggedIn) return;
+    if (personalAutofillActive) {
+        clearPersonalInfoFields();
+        personalAutofillActive = false;
+        const btn = document.getElementById('personalAutofillBtn');
+        if (btn) btn.textContent = 'Autofill my details';
+        return;
+    }
+    await withTimeout(Promise.all([
+        prefillPersonalInfoFromProfile(),
+        prefillPersonalInfoFromLastTrust()
+    ]), 2500);
+    applyPersonalInfoToFields();
+    personalAutofillActive = true;
+    const btn = document.getElementById('personalAutofillBtn');
+    if (btn) btn.textContent = 'Clear info';
+}
+
+function applyPersonalInfoToFields() {
+    const pi = onboardingData.personal_info || {};
+    const setVal = (id, val) => {
+        const el = document.getElementById(id);
+        if (el) el.value = val || '';
+    };
+    setVal('firstNameInput', pi.first_name || (pi.full_name ? splitLegacyFullName(pi.full_name).first_name : ''));
+    setVal('lastNameInput', pi.last_name || (pi.full_name ? splitLegacyFullName(pi.full_name).last_name : ''));
+    setVal('emailInput', pi.email);
+    setVal('phoneInput', pi.phone);
+    setVal('streetInput', pi.street);
+    setVal('cityInput', pi.city);
+    setVal('stateInput', pi.state);
+    setVal('zipInput', pi.zip);
+}
+
+function clearPersonalInfoFields() {
+    ['firstNameInput', 'lastNameInput', 'emailInput', 'phoneInput', 'streetInput', 'cityInput', 'stateInput', 'zipInput'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+    });
+    onboardingData.personal_info = {
+        first_name: '',
+        last_name: '',
+        email: '',
+        phone: '',
+        street: '',
+        city: '',
+        state: '',
+        zip: ''
+    };
+    saveOnboardingToStorage();
 }
 
 function savePersonalInfo() {
-    const trustNameInput = document.getElementById('trustNameInput');
-    if (trustNameInput) {
-        onboardingData.trust_name = trustNameInput.value.trim();
-    }
-    const totalAssetValueInput = document.getElementById('totalAssetValueInput');
-    if (totalAssetValueInput) {
-        onboardingData.total_estimated_value = totalAssetValueInput.value.trim();
-    }
-
     const companyNameEl = document.getElementById('companyNameInput');
     const formationEl = document.getElementById('formationStateInput');
     const endingEl = document.getElementById('businessEndingInput');
@@ -1725,6 +1694,13 @@ function savePersonalInfo() {
         formation_state: formationEl ? formationEl.value.trim() : (onboardingData.business_info?.formation_state || ''),
         business_ending: endingEl ? endingEl.value.trim() : (onboardingData.business_info?.business_ending || '')
     };
+    // Derive trust_name from company display name (LLC Name field removed)
+    onboardingData.trust_name = formatCompanyDisplayName() || onboardingData.business_info.company_name || '';
+
+    const totalAssetValueInput = document.getElementById('totalAssetValueInput');
+    if (totalAssetValueInput) {
+        onboardingData.total_estimated_value = totalAssetValueInput.value.trim();
+    }
 
     const firstName = document.getElementById('firstNameInput')?.value.trim() || '';
     const lastName = document.getElementById('lastNameInput')?.value.trim() || '';
@@ -1750,14 +1726,13 @@ function savePersonalInfo() {
 }
 
 function validateStep2Fields() {
-    if (!onboardingData.trust_name) {
-        alert('Please enter an LLC name.');
-        return false;
-    }
     const bi = onboardingData.business_info || {};
     if (!bi.company_name) {
         alert('Please enter a company name.');
         return false;
+    }
+    if (!onboardingData.trust_name) {
+        onboardingData.trust_name = formatCompanyDisplayName() || bi.company_name;
     }
     if (!isValidFormationState(bi.formation_state)) {
         alert('Please select a Formation State / Jurisdiction.');
@@ -2254,6 +2229,7 @@ function toggleAddMyself(checked) {
                 wallet_address: '',
                 is_myself: true
             });
+            allocationBlinkDone = false;
         }
     } else {
         // Remove myself
@@ -2283,6 +2259,114 @@ function setupBeneficiariesStep() {
     // Update allocation display on load
     updateAllocationDisplay();
     syncBeneficiaryVisibility();
+    maybeBlinkAllocationInputs();
+}
+
+function needsAllocationEntry() {
+    const active = getActiveBeneficiaries();
+    if (!active.length) return false;
+    return active.some(b => {
+        const a = parseFloat(b.allocation);
+        return !a || Number.isNaN(a) || a <= 0;
+    });
+}
+
+function maybeBlinkAllocationInputs() {
+    if (allocationBlinkDone || !needsAllocationEntry()) return;
+    const inputs = document.querySelectorAll('.allocation-input');
+    if (!inputs.length) return;
+    allocationBlinkDone = true;
+    const first = inputs[0];
+    if (first && typeof first.scrollIntoView === 'function') {
+        first.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    let pulses = 0;
+    const runPulse = () => {
+        inputs.forEach(el => {
+            el.classList.add('ring-2', 'ring-green-500', 'border-green-500');
+        });
+        setTimeout(() => {
+            inputs.forEach(el => {
+                el.classList.remove('ring-2', 'ring-green-500', 'border-green-500');
+            });
+            pulses += 1;
+            if (pulses < 3) {
+                setTimeout(runPulse, 180);
+            }
+        }, 350);
+    };
+    setTimeout(runPulse, 200);
+}
+
+async function openCoinAllocateModal() {
+    const modal = document.getElementById('coinAllocateModal');
+    const body = document.getElementById('coinAllocateModalBody');
+    if (!modal || !body) return;
+    modal.classList.remove('hidden');
+    body.innerHTML = '<p class="text-sm text-on-surface-variant py-6 text-center">Loading deposit-ready coins...</p>';
+    await loadAvailableCoins();
+    if (coinsLoadState === 'error' || !availableCoins.length) {
+        body.innerHTML = `
+            <div class="text-center py-8 px-4">
+                <p class="text-on-surface-variant text-sm mb-2">No deposit-ready coins are configured yet.</p>
+                <p class="text-xs text-on-surface-variant mb-4">An admin must add deposit addresses under Addresses / Coins Management.</p>
+                <button type="button" onclick="retryLoadCoins()" class="px-4 py-2 rounded-lg bg-secondary text-on-secondary text-sm font-semibold">Retry</button>
+            </div>
+        `;
+        return;
+    }
+    body.innerHTML = renderCoinAllocateList();
+}
+
+function renderCoinAllocateList() {
+    const selected = onboardingData.entrusted_coins || [];
+    if (coinsLoadState === 'loading' || coinsLoadState === 'idle') {
+        return '<p class="text-sm text-on-surface-variant py-6 text-center">Loading...</p>';
+    }
+    if (coinsLoadState === 'error' || !availableCoins.length) {
+        return `<p class="text-sm text-on-surface-variant py-6 text-center">${escapeHtml(coinsLoadError || 'No deposit-ready coins available. Ask an admin to configure deposit addresses.')}</p>`;
+    }
+    return `
+        <p class="text-xs text-on-surface-variant mb-4">Only coins with a configured deposit address are shown.</p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            ${availableCoins.map(coin => {
+                const coinKey = String(coin.coin_key || '');
+                const isChecked = selected.includes(coinKey);
+                const logo = coin.logo ? `<img src="${escapeHtml(String(coin.logo))}" alt="" class="w-8 h-8 rounded-full object-cover shrink-0" onerror="this.style.display='none'">` : `<span class="w-8 h-8 rounded-full bg-secondary/10 flex items-center justify-center text-xs font-bold shrink-0">${escapeHtml(String((coin.symbol || '?')).slice(0, 3))}</span>`;
+                return `
+                    <label class="flex items-center gap-3 p-4 border-2 ${isChecked ? 'border-secondary bg-secondary/5' : 'border-outline-variant/30'} rounded-xl cursor-pointer hover:border-secondary transition-all">
+                        <input type="checkbox" class="rounded text-secondary focus:ring-secondary" ${isChecked ? 'checked' : ''} onchange="toggleEntrustedCoin('${escapeHtml(coinKey)}', this.checked); refreshCoinAllocateSelectionSummary();"/>
+                        ${logo}
+                        <span class="min-w-0">
+                            <span class="block font-bold text-primary text-sm truncate">${escapeHtml(String(coin.display_name || coinKey))}</span>
+                            <span class="block text-xs text-on-surface-variant">${escapeHtml(String(coin.symbol || coinKey.toUpperCase()))}</span>
+                        </span>
+                    </label>
+                `;
+            }).join('')}
+        </div>
+    `;
+}
+
+function refreshCoinAllocateSelectionSummary() {
+    const countEl = document.getElementById('coinSelectionCount');
+    const selected = onboardingData.entrusted_coins || [];
+    if (countEl) {
+        const parent = countEl.parentElement;
+        if (parent) {
+            parent.innerHTML = `Selected: <strong id="coinSelectionCount">${selected.length}</strong>${selected.length ? ` — ${selected.map(k => escapeHtml(String(k).replace(/_/g, ' '))).join(', ')}` : '<span class="text-red-600"> — select at least one</span>'}`;
+        }
+    }
+    const body = document.getElementById('coinAllocateModalBody');
+    if (body && !document.getElementById('coinAllocateModal')?.classList.contains('hidden')) {
+        body.innerHTML = renderCoinAllocateList();
+    }
+}
+
+function closeCoinAllocateModal() {
+    const modal = document.getElementById('coinAllocateModal');
+    if (modal) modal.classList.add('hidden');
+    refreshCoinAllocateSelectionSummary();
 }
 
 function ensureDefaultBeneficiary() {
@@ -2311,10 +2395,17 @@ function validateAndNext() {
     for (let i = 0; i < activeBeneficiaries.length; i++) {
         const ben = activeBeneficiaries[i];
         if (!ben.name || !ben.relationship || ben.allocation === '' || ben.allocation === null || ben.allocation === undefined) {
-            alert('Please fill in all required fields for Beneficiary #' + (i + 1));
+            alert('Please fill in all required fields for Share Holder #' + (i + 1));
             return;
         }
     }
+    if (isSmartContractTrustSelected()) {
+        if (!onboardingData.entrusted_coins || onboardingData.entrusted_coins.length === 0) {
+            alert('Please select at least one coin to allocate for this Smart Contract LLC.');
+            return;
+        }
+    }
+    saveOnboardingToStorage();
     void nextStep();
 }
 
@@ -2712,19 +2803,26 @@ async function showTrustRegistrationSuccess(trustId, options = {}) {
     overlay.className = 'fixed inset-0 z-[9999] flex items-center justify-center bg-navy-900/50 backdrop-blur-sm p-6';
     overlay.innerHTML = `
         <div class="bg-surface-container-lowest rounded-2xl border border-outline-variant/30 shadow-2xl max-w-md w-full p-8 text-center">
-            <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/30 mb-5 mx-auto">
-                ${typeof wtIcon === 'function' ? wtIcon('check-circle', 'w-9 h-9 text-green-600') : ''}
-            </div>
-            <div class="animate-spin rounded-full h-10 w-10 border-4 border-secondary border-t-transparent mx-auto mb-5"></div>
-            <h2 class="text-xl font-bold text-primary mb-2">LLC Registered Successfully</h2>
-            <p class="text-on-surface-variant text-sm"><strong>${escapeHtml(trustName)}</strong> has been registered.</p>
-            <p class="text-on-surface-variant text-xs mt-4">Opening your LLC workspace...</p>
+            <div class="animate-spin rounded-full h-12 w-12 border-4 border-secondary border-t-transparent mx-auto mb-5"></div>
+            <h2 id="trustRegSuccessTitle" class="text-xl font-bold text-primary mb-2">Registering your LLC…</h2>
+            <p id="trustRegSuccessBody" class="text-on-surface-variant text-sm"><strong>${escapeHtml(trustName)}</strong> is being submitted.</p>
         </div>
     `;
     document.body.appendChild(overlay);
     document.body.style.overflow = 'hidden';
 
     await new Promise(resolve => setTimeout(resolve, minDurationMs));
+
+    const titleEl = document.getElementById('trustRegSuccessTitle');
+    const bodyEl = document.getElementById('trustRegSuccessBody');
+    const spinner = overlay.querySelector('.animate-spin');
+    if (spinner) {
+        spinner.outerHTML = `<div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-100 mb-5 mx-auto">${typeof wtIcon === 'function' ? wtIcon('check-circle', 'w-9 h-9 text-green-600') : ''}</div>`;
+    }
+    if (titleEl) titleEl.textContent = 'Registration successful. Please await official approval.';
+    if (bodyEl) bodyEl.innerHTML = `<strong>${escapeHtml(trustName)}</strong> has been submitted for approval.`;
+
+    await new Promise(resolve => setTimeout(resolve, 1500));
     window.location.href = redirectUrl;
 }
 
@@ -2840,7 +2938,7 @@ async function createTrust(options = { redirect: true }) {
     
     // Validate all required data
     if (!onboardingData.trust_name) {
-        alert('Please enter an LLC name.');
+        alert('Please complete your company name and business ending.');
         window.location.href = 'onboarding.php?step=3';
         return;
     }
@@ -2871,7 +2969,7 @@ async function createTrust(options = { redirect: true }) {
     
     const activeBeneficiaries = getActiveBeneficiaries();
     if (!activeBeneficiaries.length) {
-        alert('Please add at least one beneficiary.');
+        alert('Please add at least one share holder.');
         window.location.href = 'onboarding.php?step=4';
         return;
     }

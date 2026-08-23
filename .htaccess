@@ -15,6 +15,9 @@
 # Block directory listing
 Options -Indexes
 
+# Scoped 404: dashboard paths special-cased in 404.php; other URLs get a normal 404 page
+ErrorDocument 404 /404.php
+
 # Prevent access to hidden files
 <FilesMatch "^\.">
     Order allow,deny

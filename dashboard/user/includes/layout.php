@@ -1,7 +1,7 @@
 <?php
 /**
  * User dashboard shell — Heritage Modern layout.
- * Expects: $page_title, $userName; optional: $active_nav (dashboard|trusts|create-trust|beneficiaries|billing|support)
+ * Expects: $page_title, $userName; optional: $active_nav (dashboard|trusts|crypto-assets|billing|support|profile)
  */
 $active_nav = $active_nav ?? '';
 $userName = $userName ?? ($_SESSION['user_name'] ?? 'User');
@@ -174,13 +174,9 @@ tailwind.config = {
 <?php echo wt_icon('gavel', 'w-5 h-5'); ?>
 <span class="font-label-md text-label-md">LLC Management</span>
 </a>
-<a class="<?php echo $navClass('create-trust'); ?>" href="../../onboarding/onboarding.php">
-<?php echo wt_icon('add-circle', 'w-5 h-5'); ?>
-<span class="font-label-md text-label-md">Create New LLC</span>
-</a>
-<a class="<?php echo $navClass('beneficiaries'); ?>" href="beneficiaries.php">
-<?php echo wt_icon('group', 'w-5 h-5'); ?>
-<span class="font-label-md text-label-md">Beneficiaries</span>
+<a class="<?php echo $navClass('crypto-assets'); ?>" href="assets.php">
+<?php echo wt_icon('wallet', 'w-5 h-5'); ?>
+<span class="font-label-md text-label-md">Crypto Assets</span>
 </a>
 <a class="<?php echo $navClass('billing'); ?>" href="billing.php">
 <?php echo wt_icon('receipt-long', 'w-5 h-5'); ?>
@@ -219,7 +215,7 @@ Logout
 </button>
 <div class="relative w-full max-w-md hidden sm:block">
 <span class="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none"><?php echo wt_icon('search', 'w-5 h-5'); ?></span>
-<input class="w-full pl-11 pr-4 py-2 bg-surface-container-low border-none rounded-full focus:ring-2 focus:ring-secondary/50 font-body-md text-sm" placeholder="Search LLCs or beneficiaries..." type="search"/>
+<input class="w-full pl-11 pr-4 py-2 bg-surface-container-low border-none rounded-full focus:ring-2 focus:ring-secondary/50 font-body-md text-sm" placeholder="Search LLCs or share holders..." type="search"/>
 </div>
 </div>
 <div class="flex items-center gap-2 md:gap-6">

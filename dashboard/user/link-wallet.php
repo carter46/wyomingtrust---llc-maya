@@ -28,7 +28,7 @@ include __DIR__ . '/includes/layout.php';
 </a>
 <?php elseif ($trustIdParam > 0): ?>
 <a href="manage-trust.php?id=<?php echo $trustIdParam; ?>" class="inline-flex items-center gap-1 text-secondary font-label-md text-label-md hover:underline mb-4">
-<?php echo wt_icon('arrow-back', 'w-4 h-4'); ?> Back to Trust
+<?php echo wt_icon('arrow-back', 'w-4 h-4'); ?> Back to LLC
 </a>
 <?php endif; ?>
 
