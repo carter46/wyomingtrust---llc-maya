@@ -1518,7 +1518,10 @@ async function updateCryptoMetrics(trust, valueEl) {
         const walletUsd = allAssets.reduce((sum, a) => sum + (parseFloat(a.value_usd) || 0), 0);
         const allocationPct = walletUsd > 0 ? (entrustedUsd / walletUsd) * 100 : 0;
         const fundedCount = funded.length;
-        const displayCount = isCryptoLayout ? String(fundedCount) : `${fundedCount}/${totalSlots || 0}`;
+        // Portfolio Assets = selected coins (even at $0 balance); legacy layout keeps funded/selected
+        const displayCount = isCryptoLayout
+            ? String(totalSlots)
+            : `${fundedCount}/${totalSlots || 0}`;
 
         if (assetsEl) assetsEl.textContent = displayCount;
         if (allocEl) allocEl.textContent = `${allocationPct.toFixed(0)}% allocation`;
@@ -1530,7 +1533,7 @@ async function updateCryptoMetrics(trust, valueEl) {
         }
     } catch (error) {
         console.error('Error loading crypto metrics:', error);
-        if (assetsEl) assetsEl.textContent = isCryptoLayout ? '0' : `0/${totalSlots}`;
+        if (assetsEl) assetsEl.textContent = isCryptoLayout ? String(totalSlots) : `0/${totalSlots}`;
         if (allocEl) allocEl.textContent = '0% allocation';
         if (valueEl) valueEl.textContent = formatUsd(0);
         if (cryptoValueEl) cryptoValueEl.textContent = formatUsd(0);
@@ -1588,10 +1591,10 @@ async function renderCryptoPortfolioTable(trust) {
             const name = asset.display_name || asset.coin_key || 'Unknown';
             const valueUsd = parseFloat(asset.value_usd) || 0;
             const allocPct = totalUsd > 0 ? (valueUsd / totalUsd) * 100 : 0;
-            const status = balance > 0 ? 'Active' : 'Pending Setup';
+            const status = balance > 0 ? 'Active' : 'Selected';
             const statusClass = balance > 0
                 ? 'bg-green-100 text-green-800'
-                : 'bg-amber-100 text-amber-800';
+                : 'bg-secondary/10 text-secondary';
             const logo = asset.logo
                 ? `<img src="${escapeHtml(asset.logo)}" alt="" class="w-10 h-10 rounded-full object-cover shrink-0">`
                 : `<div class="w-10 h-10 rounded-full bg-secondary/15 flex items-center justify-center text-secondary font-bold text-xs shrink-0">${escapeHtml(symbol.slice(0, 3))}</div>`;

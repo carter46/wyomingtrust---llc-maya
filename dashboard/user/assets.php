@@ -6,6 +6,16 @@ require_user_page_auth('../../login.php');
 $userName = $_SESSION['user_name'] ?? 'User';
 $page_title = 'My Assets | WyomingTrust';
 $active_nav = 'crypto-assets';
+$extra_styles = '@media (max-width: 767px) {
+    .dashboard-content {
+        padding-top: calc(5rem + 0.25rem) !important;
+        padding-left: 0.75rem !important;
+        padding-right: 0.75rem !important;
+        padding-bottom: 1rem !important;
+    }
+    .dashboard-content > * + * { margin-top: 0.75rem !important; }
+    .assets-metrics-tight .dashboard-metric-card { padding: 0.875rem !important; }
+}';
 
 include __DIR__ . '/includes/layout.php';
 ?>
@@ -25,8 +35,8 @@ include __DIR__ . '/includes/layout.php';
 </a>
 </section>
 
-<section class="space-y-3 sm:space-y-4 mb-2">
-<div class="dashboard-metric-card rounded-2xl p-5 sm:p-8 border border-outline-variant bg-surface-container-lowest shadow-sm text-center">
+<section class="space-y-3 sm:space-y-4 mb-2 assets-metrics-tight">
+<div class="dashboard-metric-card rounded-2xl p-4 sm:p-8 border border-outline-variant bg-surface-container-lowest shadow-sm text-center">
 <div class="flex items-center justify-center gap-2 text-primary mb-2">
 <?php echo wt_icon('wallet', 'w-4 h-4'); ?>
 <p class="text-on-surface-variant text-[11px] sm:text-sm font-medium uppercase tracking-wide">Total Portfolio Value</p>
@@ -431,9 +441,12 @@ function updatePortfolioSummary() {
         const change24h = asset.price_change_24h || cryptoPrices[asset.coin_key]?.usd_24h_change || 0;
         const balance = parseFloat(asset.balance || 0);
         const value = balance * price;
-        
-        if (balance > 0) {
+
+        // Total Assets = selected (set up) coins, even at $0 balance
+        if (asset.is_selected) {
             totalAssets++;
+        }
+        if (balance > 0) {
             totalValue += value;
             totalChange += (value * change24h / 100);
         }

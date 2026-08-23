@@ -18,7 +18,7 @@ include __DIR__ . '/includes/layout.php';
 
 <!-- Key Metrics -->
 <section class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
-<div class="metric-card-gradient p-4 sm:p-6 rounded-2xl card-hover flex flex-col justify-between min-h-[7rem] sm:min-h-[7.5rem] text-on-primary shadow-lg dashboard-metric-card">
+<div class="col-span-2 lg:col-span-1 metric-card-gradient p-4 sm:p-6 rounded-2xl card-hover flex flex-col justify-between min-h-[7rem] sm:min-h-[7.5rem] text-on-primary shadow-lg dashboard-metric-card">
 <span class="text-[10px] sm:text-xs md:text-sm uppercase tracking-widest text-on-primary/70 font-bold">Active LLCs</span>
 <div class="min-w-0">
 <div class="dashboard-metric-value-wrap">
@@ -27,7 +27,7 @@ include __DIR__ . '/includes/layout.php';
 <p class="text-xs sm:text-sm md:text-base text-on-primary/80 mt-1 font-medium">Securely Managed</p>
 </div>
 </div>
-<div class="dashboard-metric-card bg-surface-container-lowest p-4 sm:p-6 rounded-2xl border border-outline-variant card-hover flex flex-col justify-between min-h-[7rem] sm:min-h-[7.5rem]">
+<div class="col-span-2 lg:col-span-1 dashboard-metric-card bg-surface-container-lowest p-4 sm:p-6 rounded-2xl border border-outline-variant card-hover flex flex-col justify-between min-h-[7rem] sm:min-h-[7.5rem]">
 <span class="text-[10px] sm:text-xs md:text-sm uppercase tracking-widest text-on-surface-variant font-bold">Pending LLCs</span>
 <div class="min-w-0">
 <div class="dashboard-metric-value-wrap">
@@ -61,23 +61,27 @@ include __DIR__ . '/includes/layout.php';
 
 <!-- LLC Management (list) -->
 <section>
-<div class="flex items-center justify-between mb-6">
+<div class="bg-surface-container-lowest rounded-2xl border border-outline-variant overflow-hidden">
+<div class="flex items-center justify-between gap-3 px-5 md:px-6 py-4 border-b border-outline-variant/30">
 <h2 class="font-headline-md text-headline-md text-primary">LLC Management</h2>
-<a class="font-label-md text-label-md text-secondary hover:underline underline-offset-4 inline-flex items-center gap-1" href="manage-trust.php">View All <?php echo wt_icon('arrow-forward', 'w-4 h-4'); ?></a>
+<a class="font-label-md text-label-md text-secondary hover:underline underline-offset-4 inline-flex items-center gap-1 shrink-0" href="manage-trust.php">View All <?php echo wt_icon('arrow-forward', 'w-4 h-4'); ?></a>
 </div>
-<div id="trustsContainer" class="bg-surface-container-lowest rounded-2xl border border-outline-variant overflow-hidden divide-y divide-outline-variant/30">
+<div id="trustsContainer" class="divide-y divide-outline-variant/30">
 <div class="p-10 text-center text-on-surface-variant">Loading LLCs...</div>
+</div>
 </div>
 </section>
 
 <!-- Payment History -->
 <section class="pb-20">
-<div class="flex items-center justify-between mb-6">
+<div class="bg-surface-container-lowest rounded-2xl border border-outline-variant overflow-hidden">
+<div class="flex items-center justify-between gap-3 px-5 md:px-6 py-4 border-b border-outline-variant/30">
 <h2 class="font-headline-md text-headline-md text-primary">Payment History</h2>
-<a class="font-label-md text-label-md text-secondary hover:underline underline-offset-4 inline-flex items-center gap-1" href="billing.php">View All <?php echo wt_icon('arrow-forward', 'w-4 h-4'); ?></a>
+<a class="font-label-md text-label-md text-secondary hover:underline underline-offset-4 inline-flex items-center gap-1 shrink-0" href="billing.php">View All <?php echo wt_icon('arrow-forward', 'w-4 h-4'); ?></a>
 </div>
-<div id="paymentsContainer" class="bg-surface-container-lowest rounded-2xl border border-outline-variant overflow-hidden">
+<div id="paymentsContainer">
 <div class="p-10 text-center text-on-surface-variant">Loading payments...</div>
+</div>
 </div>
 </section>
 

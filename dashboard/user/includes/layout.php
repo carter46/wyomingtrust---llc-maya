@@ -127,12 +127,30 @@ tailwind.config = {
 }
 .dashboard-metric-value.font-headline-lg { font-family: "Source Serif 4", serif; }
 .wt-icon { display: inline-block; vertical-align: middle; flex-shrink: 0; width: 1.25rem; height: 1.25rem; }
-.dashboard-shell { width: 100%; max-width: 100vw; overflow-x: hidden; }
+.dashboard-shell { width: 100%; max-width: 100vw; overflow-x: clip; }
 .dashboard-main {
     min-width: 0;
     width: 100%;
     max-width: 100%;
     box-sizing: border-box;
+}
+.dashboard-main > header.dashboard-topbar {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+}
+@media (max-width: 767px) {
+    .dashboard-shell { overflow-x: visible; }
+    .dashboard-main > header.dashboard-topbar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        width: 100%;
+    }
+    .dashboard-main > .dashboard-content {
+        padding-top: calc(5rem + 0.75rem);
+    }
 }
 @media (min-width: 768px) {
     .dashboard-main {
@@ -157,7 +175,7 @@ tailwind.config = {
 <?php echo $extra_head; ?>
 <?php endif; ?>
 </head>
-<body class="bg-surface font-body-md text-on-surface antialiased overflow-x-hidden">
+$body class="bg-surface font-body-md text-on-surface antialiased">
 <div class="dashboard-shell flex min-h-screen">
 <aside class="hidden md:flex flex-col w-72 fixed h-full bg-surface-container-lowest border-r border-outline-variant z-50">
 <div class="p-gutter h-20 flex items-center gap-2.5">
@@ -212,7 +230,7 @@ Logout
 </div>
 </aside>
 <main class="dashboard-main min-h-screen flex flex-col">
-<header class="h-20 glass-effect sticky top-0 z-40 flex items-center justify-between px-gutter md:px-12 border-b border-outline-variant/30 min-w-0 shrink-0">
+<header class="dashboard-topbar h-20 glass-effect sticky top-0 z-40 flex items-center justify-between px-gutter md:px-12 border-b border-outline-variant/30 min-w-0 shrink-0">
 <div class="flex items-center flex-1 max-w-xl">
 <button type="button" class="md:hidden mr-4 p-2 hover:bg-surface-container rounded-full" onclick="toggleMobileNav()" aria-label="Open menu">
 <?php echo wt_icon('menu', 'w-6 h-6'); ?>

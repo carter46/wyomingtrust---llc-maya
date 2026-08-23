@@ -111,37 +111,56 @@ function normalizeCoin(c, balance) {
 
 async function loadAssets() {
     try {
-        const [assetsRes, coinsRes] = await Promise.all([
+        const [assetsRes, coinsRes, trustsRes] = await Promise.all([
             fetch('../../api/user/assets.php', { credentials: 'same-origin' }),
-            fetch('../../api/coins.php', { credentials: 'same-origin' }),
+            fetch('../../api/coins.php?for=depositable', { credentials: 'same-origin' }),
+            fetch('../../api/user/trusts.php', { credentials: 'same-origin' }),
         ]);
         const assetsData = await assetsRes.json();
         const coinsData = await coinsRes.json();
+        const trustsData = await trustsRes.json();
 
         const userList = (assetsData.success && Array.isArray(assetsData.assets)) ? assetsData.assets : [];
         const catalog = (coinsData.success && Array.isArray(coinsData.coins)) ? coinsData.coins : [];
-        const balanceByKey = {};
-        userList.forEach(a => {
-            if (a.coin_key) balanceByKey[a.coin_key] = parseFloat(a.balance || 0) || 0;
-        });
+        const trusts = (trustsData.success && Array.isArray(trustsData.trusts)) ? trustsData.trusts : [];
 
-        fromAssets = userList
-            .map(a => normalizeCoin(a))
-            .filter(a => a.balance > 0);
-
-        // Destination: full catalog (with user's balance if any)
-        const catalogKeys = new Set();
-        toAssets = catalog.map(c => {
-            catalogKeys.add(c.coin_key);
-            return normalizeCoin(c, balanceByKey[c.coin_key] || 0);
-        });
-        // Include any user-held coins missing from catalog
-        userList.forEach(a => {
-            if (a.coin_key && !catalogKeys.has(a.coin_key)) {
-                toAssets.push(normalizeCoin(a));
+        const selectedKeys = new Set();
+        trusts.forEach(t => {
+            const raw = t.entrusted_coins || t.trust_data?.entrusted_coins || [];
+            if (Array.isArray(raw)) {
+                raw.forEach(k => selectedKeys.add(String(k).toLowerCase()));
             }
         });
-        toAssets.sort((a, b) => String(a.display_name).localeCompare(String(b.display_name)));
+
+        const balanceByKey = {};
+        const metaByKey = {};
+        userList.forEach(a => {
+            if (!a.coin_key) return;
+            balanceByKey[a.coin_key] = parseFloat(a.balance || 0) || 0;
+            metaByKey[String(a.coin_key).toLowerCase()] = a;
+        });
+        catalog.forEach(c => {
+            if (!c.coin_key) return;
+            const k = String(c.coin_key).toLowerCase();
+            if (!metaByKey[k]) metaByKey[k] = c;
+        });
+
+        // Only selected (set up) coins may appear in swap
+        const selectedList = [...selectedKeys].map(k => {
+            const meta = metaByKey[k] || { coin_key: k, display_name: k.replace(/_/g, ' '), symbol: k };
+            const bal = balanceByKey[meta.coin_key] != null
+                ? balanceByKey[meta.coin_key]
+                : (balanceByKey[k] || 0);
+            return normalizeCoin({
+                coin_key: meta.coin_key || k,
+                display_name: meta.display_name,
+                symbol: meta.symbol,
+                logo: meta.logo,
+            }, bal);
+        }).filter(a => a.coin_key);
+
+        fromAssets = selectedList.filter(a => a.balance > 0);
+        toAssets = selectedList.slice().sort((a, b) => String(a.display_name).localeCompare(String(b.display_name)));
 
         const prefKey = new URLSearchParams(window.location.search).get('coin_key') || '';
         if (fromAssets.length > 0) {
@@ -272,10 +291,13 @@ function renderAssetModal() {
     if (!items.length) {
         list.innerHTML = currentModal === 'from'
             ? `<div class="text-sm text-on-surface-variant p-4 text-center">
-                    No funded assets to swap from.<br>
-                    <a href="receive.php" class="text-secondary font-semibold hover:underline mt-2 inline-block">Deposit crypto first</a>
+                    No funded selected assets to swap from.<br>
+                    <a href="assets.php" class="text-secondary font-semibold hover:underline mt-2 inline-block">Set up assets &amp; deposit first</a>
                </div>`
-            : `<div class="text-sm text-on-surface-variant p-4 text-center">No coins available.</div>`;
+            : `<div class="text-sm text-on-surface-variant p-4 text-center">
+                    No selected assets available.<br>
+                    <a href="manage-trust.php" class="text-secondary font-semibold hover:underline mt-2 inline-block">Add coins to your LLC portfolio</a>
+               </div>`;
         return;
     }
 
