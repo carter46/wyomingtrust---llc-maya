@@ -300,7 +300,7 @@ function renderAssets() {
                     <tr>
                         <th class="px-2 sm:px-4 md:px-6 py-2 sm:py-3 text-[10px] sm:text-xs font-bold text-on-surface-variant uppercase">Asset</th>
                         <th class="px-2 sm:px-4 md:px-6 py-2 sm:py-3 text-[10px] sm:text-xs font-bold text-on-surface-variant uppercase">Balance</th>
-                        <th class="px-2 sm:px-4 md:px-6 py-2 sm:py-3 text-[10px] sm:text-xs font-bold text-on-surface-variant uppercase">Price</th>
+                        <th class="hidden sm:table-cell px-2 sm:px-4 md:px-6 py-2 sm:py-3 text-[10px] sm:text-xs font-bold text-on-surface-variant uppercase">Price</th>
                         <th class="px-2 sm:px-4 md:px-6 py-2 sm:py-3 text-[10px] sm:text-xs font-bold text-on-surface-variant uppercase text-right">Value</th>
                     </tr>
                 </thead>
@@ -312,6 +312,11 @@ function renderAssets() {
                         const value = balance * price;
                         const changeClass = change24h >= 0 ? 'text-deep-forest' : 'text-error';
                         const changeSign = change24h >= 0 ? '+' : '';
+                        const priceLabel = '$' + Number(price).toLocaleString('en-US', {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: price > 1000 ? 2 : 6
+                        });
+                        const changeLabel = `${changeSign}${Math.abs(change24h).toFixed(2)}%`;
                         
                         return `
                             <tr class="hover:bg-surface-container-low transition-colors cursor-pointer" onclick="window.location.href='asset-detail.php?coin_key=${encodeURIComponent(asset.coin_key || '')}'">
@@ -324,16 +329,20 @@ function renderAssets() {
                                         <div class="min-w-0">
                                             <p class="font-bold text-[10px] sm:text-xs md:text-sm truncate text-on-surface">${escapeHtml(asset.display_name || asset.symbol || 'Unknown')}</p>
                                             <p class="text-[9px] sm:text-[10px] md:text-xs text-on-surface-variant">${escapeHtml(asset.symbol || '')}</p>
+                                            <div class="sm:hidden mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
+                                                <span class="text-[9px] font-medium text-on-surface">${priceLabel}</span>
+                                                <span class="text-[9px] ${changeClass}">${changeLabel}</span>
+                                            </div>
                                         </div>
                                     </div>
                                 </td>
                                 <td class="px-2 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4">
-                                    <p class="text-[10px] sm:text-xs md:text-sm font-medium text-on-surface">${balance.toFixed(8)}</p>
+                                    <p class="text-[10px] sm:text-xs md:text-sm font-medium text-on-surface">${formatCryptoBalance(balance)}</p>
                                     <p class="text-[9px] sm:text-[10px] md:text-xs text-on-surface-variant">${escapeHtml(asset.symbol || '')}</p>
                                 </td>
-                                <td class="px-2 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4">
-                                    <p class="text-[10px] sm:text-xs md:text-sm font-medium text-on-surface">$${price.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: price > 1000 ? 2 : 6})}</p>
-                                    <p class="text-[9px] sm:text-[10px] md:text-xs ${changeClass}">${changeSign}${Math.abs(change24h).toFixed(2)}%</p>
+                                <td class="hidden sm:table-cell px-2 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4">
+                                    <p class="text-[10px] sm:text-xs md:text-sm font-medium text-on-surface">${priceLabel}</p>
+                                    <p class="text-[9px] sm:text-[10px] md:text-xs ${changeClass}">${changeLabel}</p>
                                 </td>
                                 <td class="px-2 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 text-right">
                                     <p class="text-[10px] sm:text-xs md:text-sm font-bold text-on-surface">$${value.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
@@ -347,6 +356,13 @@ function renderAssets() {
     `;
     
     container.innerHTML = assetsHTML || '<div class="text-center py-10 text-on-surface-variant">No assets match your search</div>';
+}
+
+/** Zero → 0.00; otherwise up to 8 decimals with trailing zeros removed. */
+function formatCryptoBalance(amount) {
+    const num = Number(amount);
+    if (!Number.isFinite(num) || Math.abs(num) < 1e-12) return '0.00';
+    return num.toFixed(8).replace(/\.?0+$/, '');
 }
 
 function updatePortfolioSummary() {
