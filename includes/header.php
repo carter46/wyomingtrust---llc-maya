@@ -11,7 +11,7 @@ $nav_active = function ($page) use ($current_page) {
 };
 $login_href = asset_url('login.php');
 $onboarding_href = asset_url('onboarding/onboarding.php');
-$favicon_href = asset_url('Storage/images/logo_ant.webp');
+$favicon_href = site_favicon_url();
 $default_title = $site_name . ' | ' . $site_tagline;
 ?>
 <!DOCTYPE html>
@@ -20,7 +20,9 @@ $default_title = $site_name . ' | ' . $site_tagline;
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title><?php echo isset($page_title) ? escape_html($page_title) : escape_html($default_title); ?></title>
-<link rel="icon" href="<?php echo escape_html($favicon_href); ?>" type="image/webp"/>
+<?php if ($favicon_href): ?>
+<link rel="icon" href="<?php echo escape_html($favicon_href); ?>"/>
+<?php endif; ?>
 <style>
 @layer base {
   html, body { margin: 0; padding: 0; }
@@ -142,10 +144,8 @@ tailwind.config = {
 <?php
 $logo_class = 'flex items-center gap-2 group';
 $logo_text_class = 'font-headline-md text-headline-md text-primary tracking-tight';
-$logo_img_class = 'h-10 w-auto max-w-[180px] object-contain';
-$logo_show_text = false;
+$logo_img_class = 'h-14 w-auto max-w-[240px] object-contain';
 include __DIR__ . '/components/site-logo.php';
-unset($logo_show_text);
 ?>
 <nav class="hidden lg:flex items-center gap-8">
 <div class="relative group">

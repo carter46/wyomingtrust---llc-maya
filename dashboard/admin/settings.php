@@ -42,14 +42,14 @@ function renderSettingsContent() {
                 <div>
                     <label class="block text-xs sm:text-sm font-semibold text-navy-900 dark:text-white mb-2">Site Logo</label>
                     <div id="logoPreview" class="mb-3 min-h-[4rem]"></div>
-                    <input type="file" id="logoFile" name="logo" accept="image/png,image/jpeg,image/jpg,image/svg+xml" class="w-full text-sm text-slate-600 dark:text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-primary file:text-navy-900 file:font-semibold">
-                    <p class="text-xs text-slate-500 mt-1">PNG, JPG, or SVG. Max 2MB. Leave empty to keep current logo.</p>
+                    <input type="file" id="logoFile" name="logo" accept="image/png,image/jpeg,image/jpg,image/webp,image/svg+xml" class="w-full text-sm text-slate-600 dark:text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-primary file:text-navy-900 file:font-semibold">
+                    <p class="text-xs text-slate-500 mt-1">PNG, JPEG, or WEBP. Max 2MB. Leave empty to keep current logo.</p>
                 </div>
                 <div>
                     <label class="block text-xs sm:text-sm font-semibold text-navy-900 dark:text-white mb-2">Site Favicon</label>
                     <div id="faviconPreview" class="mb-3 min-h-[4rem]"></div>
-                    <input type="file" id="faviconFile" name="favicon" accept="image/png,image/x-icon,image/svg+xml,.ico" class="w-full text-sm text-slate-600 dark:text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-primary file:text-navy-900 file:font-semibold">
-                    <p class="text-xs text-slate-500 mt-1">PNG, ICO, or SVG. Max 500KB. Recommended 32×32px.</p>
+                    <input type="file" id="faviconFile" name="favicon" accept="image/png,image/jpeg,image/jpg,image/webp,image/x-icon,image/svg+xml,.ico" class="w-full text-sm text-slate-600 dark:text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-primary file:text-navy-900 file:font-semibold">
+                    <p class="text-xs text-slate-500 mt-1">PNG, JPEG, WEBP, ICO, or SVG. Max 500KB. Recommended 32×32px.</p>
                 </div>
             </div>
         </div>

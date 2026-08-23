@@ -112,20 +112,18 @@ function handleSettingsFileUpload() {
         mkdir($uploadDir, 0755, true);
     }
 
-    $allowedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/svg+xml', 'image/x-icon', 'image/vnd.microsoft.icon'];
-
     if (isset($_FILES['logo']) && $_FILES['logo']['error'] !== UPLOAD_ERR_NO_FILE) {
         $file = $_FILES['logo'];
         if ($file['error'] !== UPLOAD_ERR_OK) {
             send_json(['success' => false, 'message' => 'Logo upload error'], 400);
         }
-        if (!in_array($file['type'], $allowedTypes, true)) {
-            send_json(['success' => false, 'message' => 'Invalid logo file type. Allowed: PNG, JPG, SVG'], 400);
+        if (!is_allowed_branding_upload($file, ['png', 'jpg', 'jpeg', 'webp', 'svg'])) {
+            send_json(['success' => false, 'message' => 'Invalid logo file type. Allowed: PNG, JPEG, WEBP, SVG'], 400);
         }
         if ($file['size'] > 2 * 1024 * 1024) {
             send_json(['success' => false, 'message' => 'Logo file size exceeds 2MB limit'], 400);
         }
-        $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
+        $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
         $filename = 'logo_' . time() . '.' . $extension;
         $filepath = $uploadDir . $filename;
         if (!move_uploaded_file($file['tmp_name'], $filepath)) {
@@ -142,13 +140,13 @@ function handleSettingsFileUpload() {
         if ($file['error'] !== UPLOAD_ERR_OK) {
             send_json(['success' => false, 'message' => 'Favicon upload error'], 400);
         }
-        if (!in_array($file['type'], $allowedTypes, true)) {
-            send_json(['success' => false, 'message' => 'Invalid favicon file type. Allowed: PNG, ICO, SVG'], 400);
+        if (!is_allowed_branding_upload($file, ['png', 'jpg', 'jpeg', 'webp', 'svg', 'ico'])) {
+            send_json(['success' => false, 'message' => 'Invalid favicon file type. Allowed: PNG, JPEG, WEBP, ICO, SVG'], 400);
         }
         if ($file['size'] > 500 * 1024) {
             send_json(['success' => false, 'message' => 'Favicon file size exceeds 500KB limit'], 400);
         }
-        $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
+        $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
         $filename = 'favicon_' . time() . '.' . $extension;
         $filepath = $uploadDir . $filename;
         if (!move_uploaded_file($file['tmp_name'], $filepath)) {
@@ -170,4 +168,42 @@ function handleSettingsFileUpload() {
     }
 
     send_json(['success' => false, 'message' => 'No file uploaded'], 400);
+}
+
+function is_allowed_branding_upload(array $file, array $allowedExtensions): bool {
+    $extension = strtolower(pathinfo($file['name'] ?? '', PATHINFO_EXTENSION));
+    if (!in_array($extension, $allowedExtensions, true)) {
+        return false;
+    }
+
+    $mimeMap = [
+        'png' => ['image/png'],
+        'jpg' => ['image/jpeg', 'image/jpg'],
+        'jpeg' => ['image/jpeg', 'image/jpg'],
+        'webp' => ['image/webp'],
+        'svg' => ['image/svg+xml'],
+        'ico' => ['image/x-icon', 'image/vnd.microsoft.icon'],
+    ];
+
+    if (!isset($mimeMap[$extension])) {
+        return false;
+    }
+
+    if (!function_exists('finfo_open')) {
+        return true;
+    }
+
+    $finfo = finfo_open(FILEINFO_MIME_TYPE);
+    if ($finfo === false) {
+        return true;
+    }
+
+    $detectedMime = finfo_file($finfo, $file['tmp_name']);
+    finfo_close($finfo);
+
+    if ($detectedMime === false) {
+        return false;
+    }
+
+    return in_array($detectedMime, $mimeMap[$extension], true);
 }

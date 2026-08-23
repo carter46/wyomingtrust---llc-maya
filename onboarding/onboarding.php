@@ -37,6 +37,7 @@ if ($isLoggedIn) {
 $site_settings = get_site_settings();
 $site_name = $site_settings['site_name'] ?? 'WyomingTrust';
 $page_title = 'Register Your LLC | ' . $site_name;
+$favicon_href = site_favicon_url();
 ?>
 <!DOCTYPE html>
 <html class="scroll-smooth" lang="en">
@@ -44,7 +45,9 @@ $page_title = 'Register Your LLC | ' . $site_name;
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title><?php echo htmlspecialchars($page_title); ?></title>
-<link rel="icon" href="<?php echo escape_html(asset_url('Storage/images/logo_ant.webp')); ?>" type="image/webp"/>
+<?php if ($favicon_href): ?>
+<link rel="icon" href="<?php echo escape_html($favicon_href); ?>"/>
+<?php endif; ?>
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 <script src="../assets/js/wt-icons.js"></script>
 <script src="../assets/js/onboarding-data.js"></script>

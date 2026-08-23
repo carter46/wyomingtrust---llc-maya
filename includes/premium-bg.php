@@ -160,7 +160,7 @@ function wt_premium_bg_css(): string {
 .premium-bg-page .dashboard-content .bg-surface-container-lowest.rounded-2xl.border.border-outline-variant.card-shadow,
 .premium-bg-page .dashboard-content .bg-surface-container-lowest.rounded-2xl.border.border-outline-variant.shadow-sm,
 .premium-bg-page .dashboard-content .bg-surface-container-lowest.rounded-2xl.border.border-outline-variant.overflow-hidden {
-    background: linear-gradient(145deg, #030b14 0%, #061525 52%, #0a2036 100%) !important;
+    background: linear-gradient(145deg, #041627 0%, #082238 52%, #0c3258 100%) !important;
     border-color: rgba(255, 255, 255, 0.06) !important;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.22) !important;
 }
@@ -304,6 +304,33 @@ function wt_premium_bg_css(): string {
 }
 .premium-bg-page .dashboard-content .asset-action-btn svg {
     stroke: #ffffff !important;
+}
+CSS;
+}
+
+/**
+ * Softer premium background for auth pages (login): keeps gradient + landscape
+ * without the heavy overlay of the full premium dark theme.
+ */
+function wt_premium_auth_bg_css(): string {
+    return wt_premium_bg_css() . <<<'CSS'
+
+.bg-premium-auth {
+    background: linear-gradient(135deg, #1a2740 0%, #243449 48%, #152238 100%);
+}
+.bg-premium-auth::before {
+    opacity: 0.18;
+}
+.bg-premium-auth::after {
+    background:
+        radial-gradient(circle at top right, rgba(64, 89, 170, 0.28) 0%, transparent 46%),
+        radial-gradient(circle at bottom left, rgba(0, 35, 111, 0.16) 0%, transparent 46%),
+        linear-gradient(135deg, rgba(26, 39, 64, 0.72) 0%, rgba(30, 45, 72, 0.76) 52%, rgba(18, 28, 48, 0.8) 100%);
+}
+.bg-premium-auth > main,
+.bg-premium-auth > footer {
+    position: relative;
+    z-index: 1;
 }
 CSS;
 }

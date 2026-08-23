@@ -353,6 +353,28 @@ function get_site_settings() {
 }
 
 /**
+ * Admin-uploaded site logo URL, or null when none is configured.
+ */
+function site_logo_url(): ?string {
+    $settings = get_site_settings();
+    if (!empty($settings['logo'])) {
+        return asset_url($settings['logo']);
+    }
+    return null;
+}
+
+/**
+ * Admin-uploaded favicon URL, or null when none is configured.
+ */
+function site_favicon_url(): ?string {
+    $settings = get_site_settings();
+    if (!empty($settings['favicon'])) {
+        return asset_url($settings['favicon']);
+    }
+    return null;
+}
+
+/**
  * Resolve a project-relative asset path from the current script location.
  */
 function asset_url($relativePath) {
