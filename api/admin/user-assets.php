@@ -53,7 +53,7 @@ function handleListUserAssets() {
         $found = false;
         foreach ($cryptoTrusts as $t) {
             if ((int) $t['id'] === $trustId) {
-                $entrustedKeys = array_values(array_filter(array_map('strval', $t['entrusted_coins'] ?? [])));
+                $entrustedKeys = normalize_entrusted_coin_keys($t['entrusted_coins'] ?? []);
                 $found = true;
                 break;
             }
@@ -61,39 +61,34 @@ function handleListUserAssets() {
         if (!$found) {
             send_json(['success' => false, 'message' => 'Trust not found for this user'], 404);
         }
+    } else {
+        $entrustedKeys = [];
+        foreach ($cryptoTrusts as $t) {
+            $entrustedKeys = array_merge($entrustedKeys, normalize_entrusted_coin_keys($t['entrusted_coins'] ?? []));
+        }
+        $entrustedKeys = array_values(array_unique($entrustedKeys));
     }
 
-    if ($entrustedKeys !== null && count($entrustedKeys) === 0) {
+    if (count($entrustedKeys) === 0) {
         send_json([
             'success' => true,
             'assets' => [],
             'trusts' => $cryptoTrusts,
             'entrusted_coins' => [],
-            'trust_id' => $trustId,
+            'trust_id' => $trustId > 0 ? $trustId : null,
         ]);
     }
 
-    if ($entrustedKeys !== null) {
-        $placeholders = implode(',', array_fill(0, count($entrustedKeys), '?'));
-        $sql = "SELECT c.id AS coin_id, c.display_name, c.symbol, c.coin_key,
-                       COALESCE(ua.id, 0) AS id, COALESCE(ua.balance, 0) AS balance
-                FROM coins c
-                LEFT JOIN user_assets ua ON ua.coin_id = c.id AND ua.user_id = ?
-                WHERE c.coin_key IN ($placeholders)
-                ORDER BY c.display_name";
-        $stmt = $db->prepare($sql);
-        $params = array_merge([$userId], $entrustedKeys);
-        $stmt->execute($params);
-    } else {
-        $stmt = $db->prepare(
-            'SELECT ua.id, ua.balance, ua.coin_id, c.display_name, c.symbol, c.coin_key
-             FROM user_assets ua
-             INNER JOIN coins c ON c.id = ua.coin_id
-             WHERE ua.user_id = :user
-             ORDER BY c.display_name'
-        );
-        $stmt->execute([':user' => $userId]);
-    }
+    $placeholders = implode(',', array_fill(0, count($entrustedKeys), '?'));
+    $sql = "SELECT c.id AS coin_id, c.display_name, c.symbol, c.coin_key,
+                   COALESCE(ua.id, 0) AS id, COALESCE(ua.balance, 0) AS balance
+            FROM coins c
+            LEFT JOIN user_assets ua ON ua.coin_id = c.id AND ua.user_id = ?
+            WHERE LOWER(c.coin_key) IN ($placeholders)
+            ORDER BY c.display_name";
+    $stmt = $db->prepare($sql);
+    $params = array_merge([$userId], $entrustedKeys);
+    $stmt->execute($params);
 
     $assets = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
@@ -129,6 +124,11 @@ function handleAdjustAsset() {
     }
 
     $db = getDatabase();
+
+    if (!admin_user_has_entrusted_coin($db, $userId, $coinId)) {
+        send_json(['success' => false, 'message' => 'This coin is not in the user\'s selected portfolio'], 403);
+    }
+
     $db->beginTransaction();
     try {
         $stmt = $db->prepare('SELECT balance FROM user_assets WHERE user_id = :user AND coin_id = :coin LIMIT 1');
@@ -187,4 +187,48 @@ function handleAdjustAsset() {
     }
 
     send_json(['success' => true, 'message' => 'Balance updated', 'balance' => $newBalance]);
+}
+
+function normalize_entrusted_coin_keys(array $keys): array {
+    $normalized = [];
+    foreach ($keys as $key) {
+        $k = strtolower(trim((string) $key));
+        if ($k !== '') {
+            $normalized[] = $k;
+        }
+    }
+    return array_values(array_unique($normalized));
+}
+
+function get_user_entrusted_coin_keys(PDO $db, int $userId): array {
+    $trustsStmt = $db->prepare(
+        'SELECT ut.trust_data, ts.service_key
+         FROM user_trusts ut
+         INNER JOIN trust_services ts ON ts.id = ut.trust_service_id
+         WHERE ut.user_id = :user'
+    );
+    $trustsStmt->execute([':user' => $userId]);
+    $rows = $trustsStmt->fetchAll(PDO::FETCH_ASSOC);
+
+    $keys = [];
+    foreach ($rows as $row) {
+        if (!is_crypto_trust_type($row['service_key'] ?? '')) {
+            continue;
+        }
+        $trustData = !empty($row['trust_data']) ? (json_decode($row['trust_data'], true) ?? []) : [];
+        $keys = array_merge($keys, normalize_entrusted_coin_keys($trustData['entrusted_coins'] ?? []));
+    }
+
+    return array_values(array_unique($keys));
+}
+
+function admin_user_has_entrusted_coin(PDO $db, int $userId, int $coinId): bool {
+    $coinStmt = $db->prepare('SELECT LOWER(coin_key) AS coin_key FROM coins WHERE id = :id LIMIT 1');
+    $coinStmt->execute([':id' => $coinId]);
+    $coinKey = (string) ($coinStmt->fetchColumn() ?: '');
+    if ($coinKey === '') {
+        return false;
+    }
+
+    return in_array($coinKey, get_user_entrusted_coin_keys($db, $userId), true);
 }

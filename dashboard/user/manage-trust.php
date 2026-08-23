@@ -196,7 +196,6 @@ async function loadTrusts() {
                         </div>
                         <div class="flex gap-2">
                             <a href="manage-trust.php?id=${t.id}" class="px-4 py-2 rounded-lg bg-primary text-on-primary font-bold hover:bg-primary/90 h-10 flex items-center">Manage</a>
-                            ${renderListTrustAction(t, allAssets)}
                         </div>
                     </div>
                 </div>

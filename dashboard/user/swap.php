@@ -31,7 +31,10 @@ include __DIR__ . '/includes/layout.php';
 <span id="fromAssetName" class="font-bold text-on-surface">Select Asset</span>
 <?php echo wt_icon('chevron-down', 'ml-auto text-on-surface-variant'); ?>
 </div>
-<input type="number" id="fromAmount" step="0.00000001" placeholder="0.00" oninput="calculateSwap()" class="w-full px-4 py-3 border border-outline-variant rounded-lg bg-surface-container-lowest text-sm text-on-surface">
+<div class="flex gap-2 items-center">
+<input type="number" id="fromAmount" step="0.00000001" placeholder="0.00" oninput="calculateSwap()" class="flex-1 px-4 py-3 border border-outline-variant rounded-lg bg-surface-container-lowest text-sm text-on-surface">
+<button type="button" onclick="setMaxFromAmount()" class="px-4 py-3 bg-surface-container-low rounded-lg hover:bg-surface-container text-xs font-semibold text-on-surface">MAX</button>
+</div>
 <p class="text-xs text-on-surface-variant mt-2">Balance: <span id="fromBalance">--</span></p>
 </div>
 <div class="flex justify-center my-4">
@@ -240,6 +243,13 @@ function updateAssetSelectors() {
         toLogo.classList.add('hidden');
         document.getElementById('toAssetName').textContent = 'Select Asset';
     }
+    calculateSwap();
+}
+
+function setMaxFromAmount() {
+    if (!fromAsset) return;
+    const balance = parseFloat(fromAsset.balance || 0);
+    document.getElementById('fromAmount').value = balance.toFixed(8);
     calculateSwap();
 }
 

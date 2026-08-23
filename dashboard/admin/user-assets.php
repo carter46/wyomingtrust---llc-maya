@@ -36,9 +36,9 @@ function renderUserAssetsContent() {
             <div id="trustSelectWrap" class="hidden">
                 <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Trust (entrusted coins)</label>
                 <select id="selectedTrust" onchange="loadUserAssets()" class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-navy-700 text-slate-900 dark:text-white">
-                    <option value="">-- All user assets --</option>
+                    <option value="">-- All selected coins --</option>
                 </select>
-                <p class="text-xs text-slate-500 mt-1">Select a trust to show only coins chosen during onboarding.</p>
+                <p class="text-xs text-slate-500 mt-1">Only coins the user selected during onboarding are shown. Pick a trust to filter further.</p>
             </div>
         </div>
     </div>
@@ -127,7 +127,7 @@ async function loadUserAssets() {
             if (userTrusts.length > 0) {
                 trustWrap.classList.remove('hidden');
                 const currentTrust = trustId || '';
-                trustSelect.innerHTML = '<option value="">-- All user assets --</option>' +
+                trustSelect.innerHTML = '<option value="">-- All selected coins --</option>' +
                     userTrusts.map(t => `<option value="${t.id}" ${String(t.id) === String(currentTrust) ? 'selected' : ''}>${escapeHtml(t.trust_name || 'Trust')} (#${t.id}) — ${(t.entrusted_coins || []).length} coins</option>`).join('');
             } else {
                 trustWrap.classList.add('hidden');
@@ -139,8 +139,8 @@ async function loadUserAssets() {
             const coinSelect = document.getElementById('selectedCoin');
             if (userAssets.length === 0) {
                 coinSelect.innerHTML = trustId
-                    ? '<option value="">-- No entrusted coins for this trust --</option>'
-                    : '<option value="">-- No assets found --</option>';
+                    ? '<option value="">-- No selected coins for this trust --</option>'
+                    : '<option value="">-- No selected coins for this user --</option>';
             } else {
                 coinSelect.innerHTML = '<option value="">-- Select Coin --</option>' + 
                     userAssets.map(asset => `<option value="${asset.coin_id}">${escapeHtml(asset.display_name)} (${escapeHtml(asset.symbol)}) - Balance: ${parseFloat(asset.balance).toFixed(8)}</option>`).join('');
@@ -161,13 +161,13 @@ function renderUserAssets(assets, trustId) {
     const container = document.getElementById('userAssetsContainer');
     const heading = document.querySelector('#userAssetsSection h2');
     if (heading) {
-        heading.textContent = trustId ? 'Entrusted Coins (Trust Portfolio)' : 'User Assets';
+        heading.textContent = trustId ? 'Selected Coins (Trust Portfolio)' : 'Selected Coins (All Trusts)';
     }
     
     if (!assets || assets.length === 0) {
         container.innerHTML = trustId
-            ? '<div class="text-center py-8 text-slate-500">No entrusted coins configured for this trust</div>'
-            : '<div class="text-center py-8 text-slate-500">No assets found for this user</div>';
+            ? '<div class="text-center py-8 text-slate-500">No selected coins for this trust</div>'
+            : '<div class="text-center py-8 text-slate-500">No selected coins for this user</div>';
         return;
     }
     

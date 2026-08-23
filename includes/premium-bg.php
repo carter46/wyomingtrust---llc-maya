@@ -120,12 +120,50 @@ function wt_premium_bg_css(): string {
 .premium-bg-page .dashboard-content a.text-secondary:hover {
     color: #dce1ff;
 }
-.premium-bg-page #mobile-nav .bg-surface-container-lowest {
-    background: rgba(18, 28, 42, 0.98);
-    color: #ffffff;
+.premium-bg-page #mobile-nav > div:last-child {
+    background: #ffffff !important;
+    color: #041627 !important;
+    border-right: 1px solid #c4c6cd;
 }
-.premium-bg-page #mobile-nav a:not(.bg-primary):not(.text-primary) {
-    color: rgba(255, 255, 255, 0.85);
+.premium-bg-page #mobile-nav .font-headline-md {
+    color: #041627 !important;
+}
+.premium-bg-page #mobile-nav nav a:not(.bg-primary):not(.text-primary),
+.premium-bg-page #mobile-nav .border-t + div a:not(.bg-primary):not(.text-primary):not(.text-error) {
+    color: #44474c !important;
+}
+.premium-bg-page #mobile-nav nav a:not(.bg-primary):not(.text-primary):hover,
+.premium-bg-page #mobile-nav .border-t + div a:not(.bg-primary):not(.text-primary):not(.text-error):hover {
+    background-color: #edeeef !important;
+    color: #44474c !important;
+}
+.premium-bg-page #mobile-nav nav a.bg-primary\/10.text-primary,
+.premium-bg-page #mobile-nav .border-t + div a.bg-primary\/10.text-primary {
+    color: #115cb9 !important;
+    background-color: rgba(17, 92, 185, 0.1) !important;
+}
+.premium-bg-page #mobile-nav .border-outline-variant,
+.premium-bg-page #mobile-nav .border-t {
+    border-color: #c4c6cd !important;
+}
+.premium-bg-page #mobile-nav a.text-error {
+    color: #ba1a1a !important;
+}
+.premium-bg-page #mobile-nav a.text-error:hover {
+    background-color: rgba(255, 218, 214, 0.35) !important;
+}
+.premium-bg-page #mobile-nav nav a:not(.bg-primary) svg,
+.premium-bg-page #mobile-nav .border-t + div a:not(.text-error) svg {
+    stroke: #44474c !important;
+}
+.premium-bg-page #mobile-nav nav a.bg-primary svg {
+    stroke: #ffffff !important;
+}
+.premium-bg-page #mobile-nav button:hover {
+    background-color: #edeeef !important;
+}
+.premium-bg-page #mobile-nav button svg {
+    stroke: #44474c !important;
 }
 
 /* --- Topbar: white icons / menu toggle on dark header --- */
