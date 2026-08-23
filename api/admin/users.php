@@ -28,13 +28,41 @@ function handleListUsers() {
     
     $stmt = $db->query(
         'SELECT u.id, u.full_name, u.email, u.email_verified, u.created_at, u.updated_at,
-                COUNT(DISTINCT ut.id) AS trusts_count
+                COUNT(DISTINCT ut.id) AS trusts_count,
+                SUM(CASE WHEN LOWER(ut.status) = \'pending\' THEN 1 ELSE 0 END) AS pending_count,
+                SUM(CASE WHEN LOWER(ut.status) = \'active\' THEN 1 ELSE 0 END) AS active_count,
+                SUM(CASE WHEN LOWER(ut.status) = \'inactive\' OR LOWER(ut.payment_status) = \'rejected\' THEN 1 ELSE 0 END) AS rejected_count
          FROM users u
          LEFT JOIN user_trusts ut ON ut.user_id = u.id
          GROUP BY u.id, u.full_name, u.email, u.email_verified, u.created_at, u.updated_at
          ORDER BY u.created_at DESC'
     );
-    $users = $stmt->fetchAll();
+    $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    foreach ($users as &$user) {
+        $user['id'] = (int) ($user['id'] ?? 0);
+        $user['trusts_count'] = (int) ($user['trusts_count'] ?? 0);
+        $user['email_verified'] = (int) ($user['email_verified'] ?? 0);
+        $pending = (int) ($user['pending_count'] ?? 0);
+        $active = (int) ($user['active_count'] ?? 0);
+        $rejected = (int) ($user['rejected_count'] ?? 0);
+        unset($user['pending_count'], $user['active_count'], $user['rejected_count']);
+
+        // Aggregate LLC status for the user row (pending > rejected > approved > none)
+        if ($user['trusts_count'] <= 0) {
+            $user['llc_status'] = 'none';
+        } elseif ($pending > 0) {
+            $user['llc_status'] = 'pending';
+        } elseif ($rejected > 0 && $active <= 0) {
+            $user['llc_status'] = 'rejected';
+        } elseif ($active > 0) {
+            $user['llc_status'] = 'approved';
+        } else {
+            // e.g. only liquidated/suspended — treat as previously approved
+            $user['llc_status'] = 'approved';
+        }
+    }
+    unset($user);
     
     send_json(['success' => true, 'users' => $users]);
 }

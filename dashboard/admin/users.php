@@ -20,7 +20,7 @@ function renderUsersContent() {
     <button onclick="showCreateUserModal()" class="bg-primary text-navy-900 px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg font-semibold text-sm sm:text-base hover:opacity-90 w-full sm:w-auto">Create New User</button>
 </div>
 <div id="messageContainer" class="mb-3 sm:mb-4"></div>
-<div class="bg-white dark:bg-navy-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+<div class="bg-white dark:bg-navy-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
 <div id="usersContainer" class="p-4 sm:p-6">
 <div class="text-center py-8 sm:py-10 text-slate-500 text-sm sm:text-base">Loading users...</div>
 </div>
@@ -52,41 +52,30 @@ function renderUsers(users) {
         container.innerHTML = '<div class="text-center py-8 sm:py-10 text-slate-500 text-sm sm:text-base">No users found</div>';
         return;
     }
-    
+
     const html = `
         <!-- Desktop Table View -->
-        <div class="hidden md:block overflow-x-auto">
+        <div class="hidden md:block overflow-x-auto overflow-y-visible">
             <table class="w-full text-left">
                 <thead class="bg-slate-50 dark:bg-navy-700">
                     <tr>
                         <th class="px-4 sm:px-6 py-3 text-xs font-bold uppercase text-slate-500">Name</th>
                         <th class="px-4 sm:px-6 py-3 text-xs font-bold uppercase text-slate-500">Email</th>
-                        <th class="px-4 sm:px-6 py-3 text-xs font-bold uppercase text-slate-500">Verified</th>
+                        <th class="px-4 sm:px-6 py-3 text-xs font-bold uppercase text-slate-500">LLC Status</th>
                         <th class="px-4 sm:px-6 py-3 text-xs font-bold uppercase text-slate-500">LLCs</th>
                         <th class="px-4 sm:px-6 py-3 text-xs font-bold uppercase text-slate-500">Created</th>
-                        <th class="px-4 sm:px-6 py-3 text-xs font-bold uppercase text-slate-500">Actions</th>
+                        <th class="px-4 sm:px-6 py-3 text-xs font-bold uppercase text-slate-500 text-right">Actions</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-200 dark:divide-navy-700">
                     ${users.map(user => `
                         <tr class="hover:bg-slate-50 dark:hover:bg-navy-700/50">
-                            <td class="px-4 sm:px-6 py-3 sm:py-4 text-sm">${escapeHtml(user.full_name)}</td>
-                            <td class="px-4 sm:px-6 py-3 sm:py-4 text-sm">${escapeHtml(user.email)}</td>
-                            <td class="px-4 sm:px-6 py-3 sm:py-4">
-                                <span class="px-2 py-1 rounded text-xs ${user.email_verified ? 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400' : 'bg-amber-100 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400'}">
-                                    ${user.email_verified ? 'Verified' : 'Unverified'}
-                                </span>
-                            </td>
+                            <td class="px-4 sm:px-6 py-3 sm:py-4 text-sm font-medium text-navy-900 dark:text-white">${escapeHtml(user.full_name)}</td>
+                            <td class="px-4 sm:px-6 py-3 sm:py-4 text-sm text-slate-600 dark:text-slate-300">${escapeHtml(user.email)}</td>
+                            <td class="px-4 sm:px-6 py-3 sm:py-4">${llcStatusBadge(user.llc_status)}</td>
                             <td class="px-4 sm:px-6 py-3 sm:py-4 text-sm">${user.trusts_count || 0}</td>
                             <td class="px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-slate-500">${new Date(user.created_at).toLocaleDateString()}</td>
-                            <td class="px-4 sm:px-6 py-3 sm:py-4">
-                                <div class="flex flex-wrap gap-2">
-                                    ${(user.trusts_count || 0) > 0 ? `<button onclick="viewUserTrusts(${user.id})" class="text-emerald-600 hover:underline text-xs sm:text-sm">View LLC</button>` : ''}
-                                    <button onclick="editUser(${user.id})" class="text-primary hover:underline text-xs sm:text-sm">Edit</button>
-                                    <button onclick="resetPassword(${user.id})" class="text-blue-600 hover:underline text-xs sm:text-sm">Reset</button>
-                                    <button onclick="deleteUser(${user.id})" class="text-red-600 hover:underline text-xs sm:text-sm">Delete</button>
-                                </div>
-                            </td>
+                            <td class="px-4 sm:px-6 py-3 sm:py-4 text-right overflow-visible">${renderUserActionsMenu(user)}</td>
                         </tr>
                     `).join('')}
                 </tbody>
@@ -96,24 +85,19 @@ function renderUsers(users) {
         <div class="md:hidden space-y-4">
             ${users.map(user => `
                 <div class="bg-slate-50 dark:bg-navy-700/50 rounded-lg p-4 border border-slate-200 dark:border-slate-600">
-                    <div class="flex items-start justify-between mb-3">
+                    <div class="flex items-start justify-between gap-3 mb-3">
                         <div class="flex-1 min-w-0">
                             <h3 class="font-bold text-sm text-navy-900 dark:text-white truncate">${escapeHtml(user.full_name)}</h3>
                             <p class="text-xs text-slate-500 dark:text-slate-400 truncate mt-1">${escapeHtml(user.email)}</p>
                         </div>
-                        <span class="px-2 py-1 rounded text-xs flex-shrink-0 ml-2 ${user.email_verified ? 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400' : 'bg-amber-100 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400'}">
-                            ${user.email_verified ? 'Verified' : 'Unverified'}
-                        </span>
+                        <div class="flex items-center gap-2 flex-shrink-0">
+                            ${llcStatusBadge(user.llc_status)}
+                            ${renderUserActionsMenu(user)}
+                        </div>
                     </div>
-                    <div class="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mb-3">
+                    <div class="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
                         <span>LLCs: <strong>${user.trusts_count || 0}</strong></span>
                         <span>${new Date(user.created_at).toLocaleDateString()}</span>
-                    </div>
-                    <div class="flex flex-wrap gap-2 pt-3 border-t border-slate-200 dark:border-slate-600">
-                        ${(user.trusts_count || 0) > 0 ? `<button onclick="viewUserTrusts(${user.id})" class="text-emerald-600 hover:underline text-xs">View LLC</button>` : ''}
-                        <button onclick="editUser(${user.id})" class="text-primary hover:underline text-xs">Edit</button>
-                        <button onclick="resetPassword(${user.id})" class="text-blue-600 hover:underline text-xs">Reset Password</button>
-                        <button onclick="deleteUser(${user.id})" class="text-red-600 hover:underline text-xs">Delete</button>
                     </div>
                 </div>
             `).join('')}
@@ -121,6 +105,61 @@ function renderUsers(users) {
     `;
     container.innerHTML = html;
 }
+
+function llcStatusBadge(status) {
+    const key = String(status || 'none').toLowerCase();
+    const map = {
+        pending: { label: 'Pending', cls: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300' },
+        approved: { label: 'Approved', cls: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' },
+        rejected: { label: 'Rejected', cls: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300' },
+        none: { label: 'None', cls: 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300' },
+    };
+    const item = map[key] || map.none;
+    return `<span class="inline-flex px-2.5 py-1 rounded-full text-xs font-semibold ${item.cls}">${item.label}</span>`;
+}
+
+function renderUserActionsMenu(user) {
+    const id = Number(user.id);
+    const hasTrusts = (user.trusts_count || 0) > 0;
+    return `
+        <div class="relative inline-block text-left user-actions-menu" data-user-id="${id}">
+            <button type="button"
+                class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-navy-600 transition-colors"
+                onclick="toggleUserActionsMenu(event, ${id})"
+                aria-label="User actions"
+                aria-haspopup="true">
+                <span class="material-icons-outlined text-xl leading-none">more_vert</span>
+            </button>
+            <div class="user-actions-dropdown hidden absolute right-0 z-50 mt-1 w-44 origin-top-right rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-navy-800 shadow-lg py-1">
+                ${hasTrusts ? `<button type="button" class="w-full text-left px-4 py-2.5 text-sm text-emerald-700 dark:text-emerald-400 hover:bg-slate-50 dark:hover:bg-navy-700" onclick="event.stopPropagation(); closeAllUserActionsMenus(); viewUserTrusts(${id})">View LLC</button>` : ''}
+                <button type="button" class="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-navy-700" onclick="event.stopPropagation(); closeAllUserActionsMenus(); editUser(${id})">Edit</button>
+                <button type="button" class="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-navy-700" onclick="event.stopPropagation(); closeAllUserActionsMenus(); resetPassword(${id})">Reset Password</button>
+                <button type="button" class="w-full text-left px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20" onclick="event.stopPropagation(); closeAllUserActionsMenus(); deleteUser(${id})">Delete</button>
+            </div>
+        </div>
+    `;
+}
+
+function closeAllUserActionsMenus() {
+    document.querySelectorAll('.user-actions-dropdown').forEach((el) => el.classList.add('hidden'));
+}
+
+function toggleUserActionsMenu(event, userId) {
+    event.stopPropagation();
+    const menu = document.querySelector(`.user-actions-menu[data-user-id="${userId}"] .user-actions-dropdown`);
+    if (!menu) return;
+    const wasOpen = !menu.classList.contains('hidden');
+    closeAllUserActionsMenus();
+    if (!wasOpen) menu.classList.remove('hidden');
+}
+
+document.addEventListener('click', function () {
+    closeAllUserActionsMenus();
+});
+document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') closeAllUserActionsMenus();
+});
+
 
 function showCreateUserModal() {
     const formHtml = `
@@ -382,7 +421,8 @@ function setAdminModalWidth(wide) {
     const dialog = document.querySelector('#modalContainer .modal-dialog');
     if (!dialog) return;
     dialog.classList.toggle('max-w-md', !wide);
-    dialog.classList.toggle('max-w-3xl', !!wide);
+    dialog.classList.toggle('max-w-3xl', false);
+    dialog.classList.toggle('max-w-4xl', !!wide);
 }
 
 async function viewUserTrusts(userId) {
@@ -415,7 +455,7 @@ function showTrustPickerModal(user, trusts) {
     const html = TrustDetailRender.renderTrustPickerHtml(user, trusts);
     setAdminModalWidth(true);
     showModal(`LLCs — ${user.full_name || user.email || 'User'}`, html, [
-        { label: 'Close', onclick: () => closeModal(), class: 'bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white' }
+        { label: 'Close', onclick: () => closeModal(), class: 'bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white min-w-[6.5rem]' }
     ]);
 }
 
@@ -450,13 +490,13 @@ function showAdminTrustDetailModal(trust, userId) {
         actions.push({
             label: 'Approve LLC',
             onclick: () => approveTrustRegistration(trust.id),
-            class: 'bg-green-600 text-white',
+            class: 'bg-green-600 text-white min-w-[8rem]',
             icon: 'check_circle',
         });
         actions.push({
             label: 'Disapprove LLC',
             onclick: () => disapproveTrustRegistration(trust.id),
-            class: 'bg-red-600 text-white',
+            class: 'bg-red-600 text-white min-w-[8rem]',
             icon: 'cancel',
         });
     }
@@ -464,7 +504,7 @@ function showAdminTrustDetailModal(trust, userId) {
     actions.push({
         label: 'Close',
         onclick: () => closeModal(),
-        class: 'bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white',
+        class: 'bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white min-w-[6.5rem]',
     });
 
     setAdminModalWidth(true);

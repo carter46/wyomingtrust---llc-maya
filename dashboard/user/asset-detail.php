@@ -41,7 +41,7 @@ include __DIR__ . '/includes/layout.php';
 <p class="text-xs font-bold uppercase tracking-wider text-on-surface-variant mb-3">Live Price</p>
 <div class="text-center md:text-left min-w-0">
 <div class="dashboard-metric-value-wrap">
-<div class="dashboard-metric-value text-primary mb-2" id="currentPrice" data-fit-max="36" data-fit-min="14">$0.00</div>
+<div class="dashboard-metric-value text-primary mb-2" id="currentPrice" data-fit-max="36" data-fit-max-mobile="22" data-fit-min="14">$0.00</div>
 </div>
 <div class="text-lg font-medium mb-1" id="priceChange">--</div>
 <div class="text-sm text-on-surface-variant" id="marketCap"></div>
@@ -55,10 +55,10 @@ include __DIR__ . '/includes/layout.php';
 <div class="text-xl font-bold text-primary" id="balanceSymbol">--</div>
 </div>
 <div class="dashboard-metric-value-wrap">
-<div class="dashboard-metric-value text-primary mb-2" id="balanceAmount" data-fit-max="30" data-fit-min="12">0.00000000</div>
+<div class="dashboard-metric-value text-primary mb-2" id="balanceAmount" data-fit-max="30" data-fit-max-mobile="20" data-fit-min="12">0.00000000</div>
 </div>
 <div class="dashboard-metric-value-wrap">
-<div class="dashboard-metric-value text-on-surface-variant" id="balanceUSD" data-fit-max="22" data-fit-min="11">USD $0.00</div>
+<div class="dashboard-metric-value text-on-surface-variant" id="balanceUSD" data-fit-max="22" data-fit-max-mobile="16" data-fit-min="11">USD $0.00</div>
 </div>
 </div>
 </div>

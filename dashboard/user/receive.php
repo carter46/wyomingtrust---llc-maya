@@ -9,7 +9,7 @@ $coinKeyParam = isset($_GET['coin_key']) ? sanitize_text($_GET['coin_key']) : ''
 $page_title = 'Deposit Crypto | WyomingTrust';
 $active_nav = $trustIdParam > 0 ? 'trusts' : '';
 $extra_styles = '.card-shadow { box-shadow: 0 4px 20px rgba(4, 22, 39, 0.05); }';
-$extra_head = '<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>';
+$extra_head = '<script src="' . escape_html(asset_url('assets/js/qrcode.min.js')) . '"></script>';
 
 include __DIR__ . '/includes/layout.php';
 ?>
@@ -85,7 +85,7 @@ An administrator has not yet configured a deposit wallet address for this asset.
 <div class="min-w-0 flex-1">
 <p class="text-xs font-bold uppercase tracking-wider text-on-surface-variant mb-1">Live Price</p>
 <div class="dashboard-metric-value-wrap max-w-xl">
-<p id="depositLivePrice" class="dashboard-metric-value text-primary" data-fit-max="28" data-fit-min="12">Loading...</p>
+<p id="depositLivePrice" class="dashboard-metric-value text-primary" data-fit-max="28" data-fit-max-mobile="18" data-fit-min="12">Loading...</p>
 </div>
 </div>
 <p id="depositPriceChange" class="text-sm font-medium text-on-surface-variant shrink-0">--</p>
@@ -103,9 +103,7 @@ An administrator has not yet configured a deposit wallet address for this asset.
 </div>
 </div>
 <div class="text-center p-6 sm:p-8 bg-surface-container-low rounded-xl">
-<div id="qrCode" class="inline-block p-4 bg-surface-container-lowest rounded-xl mb-4 border border-outline-variant">
-<canvas id="qrCodeCanvas" width="200" height="200" class="w-48 h-48"></canvas>
-</div>
+<div id="qrCode" class="inline-flex items-center justify-center p-4 bg-surface-container-lowest rounded-xl mb-4 border border-outline-variant w-56 h-56 mx-auto" aria-label="Deposit address QR code"></div>
 <p class="text-xs text-on-surface-variant mb-4">Scan this QR code to deposit crypto</p>
 <div class="flex items-center gap-2 p-3 bg-surface-container-lowest rounded-xl border border-outline-variant max-w-xl mx-auto">
 <input type="text" id="receiveAddress" readonly class="flex-1 bg-transparent text-xs sm:text-sm font-mono break-all text-on-surface min-w-0">
@@ -703,10 +701,12 @@ async function submitDepositConfirmation(event) {
     }
 }
 
-function drawQRPlaceholder(canvas, line1, line2) {
-    const ctx = canvas.getContext('2d');
+function drawQRPlaceholder(host, line1, line2) {
+    const canvas = document.createElement('canvas');
     canvas.width = 200;
     canvas.height = 200;
+    canvas.className = 'w-48 h-48';
+    const ctx = canvas.getContext('2d');
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, 200, 200);
     ctx.fillStyle = '#041627';
@@ -715,27 +715,48 @@ function drawQRPlaceholder(canvas, line1, line2) {
     ctx.textBaseline = 'middle';
     ctx.fillText(line1, 100, 90);
     if (line2) ctx.fillText(line2, 100, 110);
+    host.appendChild(canvas);
 }
 
 function generateQRCode(address) {
-    const canvas = document.getElementById('qrCodeCanvas');
-    if (!canvas || !address) return;
+    const host = document.getElementById('qrCode');
+    if (!host || !address) return;
+    host.innerHTML = '';
 
-    if (typeof QRCode === 'undefined' || typeof QRCode.toCanvas !== 'function') {
-        drawQRPlaceholder(canvas, 'QR code unavailable', 'copy address instead');
-        return;
+    // davidshimjs qrcodejs: new QRCode(el, options) — local asset (CDN node-qrcode build 404'd)
+    if (typeof QRCode === 'function') {
+        try {
+            const mount = document.createElement('div');
+            mount.className = 'w-48 h-48';
+            host.appendChild(mount);
+            new QRCode(mount, {
+                text: String(address),
+                width: 192,
+                height: 192,
+                colorDark: '#041627',
+                colorLight: '#FFFFFF',
+                correctLevel: QRCode.CorrectLevel.M
+            });
+            return;
+        } catch (err) {
+            console.error('Error generating QR code:', err);
+            host.innerHTML = '';
+        }
     }
 
-    QRCode.toCanvas(canvas, address, {
-        width: 200,
-        margin: 1,
-        color: { dark: '#041627', light: '#FFFFFF' }
-    }, (err) => {
-        if (err) {
-            console.error('Error generating QR code:', err);
-            drawQRPlaceholder(canvas, 'QR code unavailable', 'copy address instead');
-        }
-    });
+    // Offline-friendly fallback image API (img-src https: allowed)
+    const img = document.createElement('img');
+    img.alt = 'Deposit address QR code';
+    img.width = 192;
+    img.height = 192;
+    img.className = 'w-48 h-48';
+    img.decoding = 'async';
+    img.src = 'https://api.qrserver.com/v1/create-qr-code/?size=192x192&margin=8&data=' + encodeURIComponent(address);
+    img.onerror = function () {
+        host.innerHTML = '';
+        drawQRPlaceholder(host, 'QR code unavailable', 'copy address instead');
+    };
+    host.appendChild(img);
 }
 
 function renderAssetModal() {

@@ -59,7 +59,10 @@ function toggleMobileNav() {
         if (!el || !el.classList.contains('dashboard-metric-value')) return;
         const wrap = el.closest('.dashboard-metric-value-wrap') || el.parentElement;
         if (!wrap || wrap.clientWidth <= 0) return;
-        const max = parseFloat(el.dataset.fitMax || '28') || 28;
+        const isMobile = window.matchMedia('(max-width: 767px)').matches;
+        const desktopMax = parseFloat(el.dataset.fitMax || '28') || 28;
+        const mobileMax = parseFloat(el.dataset.fitMaxMobile || String(desktopMax)) || desktopMax;
+        const max = isMobile ? mobileMax : desktopMax;
         const min = parseFloat(el.dataset.fitMin || '10') || 10;
         el.style.fontSize = max + 'px';
         let size = max;

@@ -56,19 +56,28 @@ function showModal(title, content, actions = []) {
     
     const footer = modalContainer.querySelector('.modal-footer');
     footer.innerHTML = '';
+    footer.className = 'modal-footer flex flex-wrap items-center justify-end gap-3 p-5 sm:p-6 border-t border-slate-200 dark:border-slate-700 bg-slate-50/80 dark:bg-navy-900/40';
     
+    const baseBtn = 'inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-lg text-sm font-semibold transition-opacity hover:opacity-90 shadow-sm';
+
     if (actions.length === 0) {
         // Default close button
         footer.innerHTML = `
-            <button onclick="closeModal()" class="px-4 py-2 bg-primary text-navy-900 font-semibold rounded-lg hover:opacity-90 transition-opacity">
+            <button onclick="closeModal()" class="${baseBtn} bg-primary text-navy-900 min-w-[6.5rem]">
                 Close
             </button>
         `;
     } else {
         actions.forEach(action => {
             const button = document.createElement('button');
-            button.className = action.class || 'px-4 py-2 rounded-lg font-semibold transition-opacity hover:opacity-90';
-            button.innerHTML = action.icon ? `<span class="material-icons-outlined text-sm mr-2">${action.icon}</span>${action.label}` : action.label;
+            const custom = (action.class || '').trim();
+            // Always keep padding/spacing; append custom color classes
+            button.className = custom
+                ? `${baseBtn} ${custom}`
+                : `${baseBtn} bg-primary text-navy-900`;
+            button.innerHTML = action.icon
+                ? `<span class="material-icons-outlined text-base leading-none">${action.icon}</span><span>${action.label}</span>`
+                : action.label;
             button.onclick = action.onclick;
             footer.appendChild(button);
         });
