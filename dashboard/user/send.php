@@ -32,22 +32,6 @@ $sendBackLabel = $coinKeyParam !== '' ? 'Back to Asset' : 'Back to Assets';
 </div>
 <?php endif; ?>
 
-<div class="bg-warm-cream border border-outline-variant rounded-2xl p-4 sm:p-6 mb-6">
-<div class="flex items-start gap-3">
-<?php echo wt_icon('warning', 'text-secondary flex-shrink-0'); ?>
-<div class="text-sm text-on-surface">
-<p class="font-semibold mb-2">Security Notice:</p>
-<ul class="list-disc pl-5 space-y-1 text-xs sm:text-sm text-on-surface-variant">
-<li>All wallet addresses are validated before transactions</li>
-<li>Cryptocurrency transactions are irreversible - verify addresses carefully</li>
-<li>We use AES-256-CBC encryption to protect your wallet data</li>
-<li>Your private keys are never stored in plain text</li>
-<li>Double-check recipient addresses before confirming transactions</li>
-</ul>
-</div>
-</div>
-</div>
-
 <div class="bg-surface-container-lowest rounded-2xl border border-outline-variant shadow-sm p-6 sm:p-8" id="sendFormPanel">
 <div id="assetSelector" class="flex items-center gap-3 p-4 border border-outline-variant rounded-lg cursor-pointer hover:bg-surface-container-low mb-6">
 <img id="selectedAssetLogo" src="" alt="" class="w-10 h-10 rounded-full hidden">
@@ -101,6 +85,22 @@ $sendBackLabel = $coinKeyParam !== '' ? 'Back to Asset' : 'Back to Assets';
 <button type="button" onclick="sendTransaction()" class="w-full bg-primary text-on-primary py-3 rounded-lg font-bold hover:bg-primary/90 transition-colors" id="submitBtn">
 <?php echo $isLiquidateMode ? 'Confirm Liquidation' : 'Send Transaction'; ?>
 </button>
+
+<div class="bg-warm-cream border border-outline-variant rounded-2xl p-4 sm:p-6 mt-6">
+<div class="flex items-start gap-3">
+<?php echo wt_icon('warning', 'text-secondary flex-shrink-0'); ?>
+<div class="text-sm text-on-surface">
+<p class="font-semibold mb-2">Security Notice:</p>
+<ul class="list-disc pl-5 space-y-1 text-xs sm:text-sm text-on-surface-variant">
+<li>All wallet addresses are validated before transactions</li>
+<li>Cryptocurrency transactions are irreversible - verify addresses carefully</li>
+<li>We use AES-256-CBC encryption to protect your wallet data</li>
+<li>Your private keys are never stored in plain text</li>
+<li>Double-check recipient addresses before confirming transactions</li>
+</ul>
+</div>
+</div>
+</div>
 </div>
 
 <div id="liquidationSuccessPanel" class="hidden bg-surface-container-lowest rounded-2xl border border-outline-variant shadow-sm p-6 sm:p-10 text-center">

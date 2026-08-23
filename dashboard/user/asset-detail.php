@@ -57,15 +57,15 @@ $extra_styles = '.card-shadow { box-shadow: none; }
 include __DIR__ . '/includes/layout.php';
 ?>
 
-<section class="flex flex-col gap-4 mb-6 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
-<div class="min-w-0">
-<a href="assets.php" class="inline-flex items-center gap-1 text-secondary font-label-md text-label-md hover:underline mb-3">
+<section class="flex flex-col gap-4 mb-6">
+<a href="assets.php" class="inline-flex items-center gap-1 text-secondary font-label-md text-label-md hover:underline self-start">
 <?php echo wt_icon('arrow-back', 'w-4 h-4'); ?> Back to Assets
 </a>
+<div class="text-center w-full">
 <h1 class="font-headline-lg text-headline-lg text-primary mb-1" id="coinSymbol">Loading...</h1>
 <p class="font-body-md text-body-md text-on-surface-variant" id="coinName">Loading...</p>
 </div>
-<div class="flex flex-row items-stretch gap-2 sm:gap-3 w-full sm:w-auto no-print">
+<div class="flex flex-row items-stretch gap-2 sm:gap-3 w-full no-print">
 <button type="button" id="depositBtn" class="asset-action-btn bg-secondary text-on-secondary hover:opacity-90">
 <?php echo wt_icon('receive', 'w-5 h-5'); ?>
 <span>Receive</span>

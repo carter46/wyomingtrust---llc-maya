@@ -71,11 +71,11 @@ include __DIR__ . '/includes/layout.php';
 <section class="overflow-hidden border border-outline-variant rounded-2xl bg-surface-container-lowest shadow-sm">
 <div class="p-4 sm:p-6 border-b border-outline-variant">
 <div class="flex flex-col gap-4">
-<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-<h3 class="font-headline-md text-headline-md text-primary">All Assets</h3>
-<a id="linkWalletAssetsBtn" href="link-wallet.php" class="inline-flex items-center justify-center gap-2 shrink-0 px-4 py-2 text-sm font-bold rounded-lg border border-outline-variant bg-surface-container-lowest text-primary hover:opacity-90 transition-opacity">
+<div class="flex flex-row items-center justify-between gap-2">
+<h3 class="font-headline-md text-headline-md text-primary min-w-0">All Assets</h3>
+<a id="linkWalletAssetsBtn" href="link-wallet.php" aria-label="Link Wallet" class="inline-flex items-center justify-center gap-1.5 shrink-0 px-2.5 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-bold rounded-lg border border-outline-variant bg-surface-container-lowest text-primary hover:opacity-90 transition-opacity">
 <?php echo wt_icon('wallet', 'w-4 h-4'); ?>
-<span>Link Wallet</span>
+<span class="hidden sm:inline">Link Wallet</span>
 </a>
 </div>
 <div class="flex gap-2 sm:gap-4 sm:justify-end">
