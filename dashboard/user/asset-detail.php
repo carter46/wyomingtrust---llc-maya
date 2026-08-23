@@ -42,10 +42,10 @@ $extra_styles = '.card-shadow { box-shadow: none; }
 }
 @media (min-width: 640px) {
     .asset-action-btn {
-        padding: 0.85rem 1rem;
-        font-size: 0.8125rem;
+        padding: 0.85rem 0.75rem;
+        font-size: 0.75rem;
         gap: 0.45rem;
-        max-width: 8.5rem;
+        max-width: 7.25rem;
     }
     .asset-action-btn .wt-icon,
     .asset-action-btn svg {
@@ -74,10 +74,14 @@ include __DIR__ . '/includes/layout.php';
 <?php echo wt_icon('swap', 'w-5 h-5'); ?>
 <span>Swap</span>
 </a>
-<a id="linkWalletBtn" href="link-wallet.php" class="asset-action-btn bg-surface-container-lowest border border-outline-variant text-primary hover:bg-surface-container">
-<?php echo wt_icon('wallet', 'w-5 h-5'); ?>
-<span>Link Wallet</span>
+<a id="sendBtn" href="send.php" class="asset-action-btn bg-surface-container-lowest border border-outline-variant text-primary hover:bg-surface-container">
+<?php echo wt_icon('send', 'w-5 h-5'); ?>
+<span>Send</span>
 </a>
+<button type="button" id="buyBtn" class="asset-action-btn bg-surface-container-lowest border border-outline-variant text-primary opacity-60 cursor-not-allowed" disabled aria-disabled="true" title="Coming soon">
+<?php echo wt_icon('add-circle', 'w-5 h-5'); ?>
+<span>Buy</span>
+</button>
 <div id="liquidationActionSection" class="hidden contents">
 <button type="button" id="liquidateBtn" class="asset-action-btn bg-primary text-on-primary hover:opacity-90">
 <?php echo wt_icon('send', 'w-5 h-5'); ?>
@@ -138,7 +142,7 @@ include __DIR__ . '/includes/layout.php';
 <div id="tabContent">
 <div id="holdingsTab" class="tab-content">
 <div class="bg-surface-container-lowest rounded-2xl p-6 border border-outline-variant card-shadow">
-<p class="text-on-surface-variant text-center text-sm">Your balance and live price are shown above. Use Receive to add funds, Swap to exchange, or Link Wallet to connect an external wallet.</p>
+<p class="text-on-surface-variant text-center text-sm">Your balance and live price are shown above. Use Receive to deposit, Send to withdraw, Swap to exchange, or Buy when available.</p>
 </div>
 </div>
 <div id="historyTab" class="tab-content hidden">
@@ -170,17 +174,17 @@ const coinKey = urlParams.get('coin_key') || 'bitcoin';
 const trustId = <?php echo $trustIdParam; ?>;
 
 (function initActionHrefs() {
-    const link = document.getElementById('linkWalletBtn');
-    if (link) {
-        const params = new URLSearchParams({ coin_key: coinKey });
-        if (trustId > 0) params.set('trust_id', String(trustId));
-        link.href = `link-wallet.php?${params.toString()}`;
-    }
     const swap = document.getElementById('swapBtn');
     if (swap) {
         const params = new URLSearchParams({ coin_key: coinKey });
         if (trustId > 0) params.set('trust_id', String(trustId));
         swap.href = `swap.php?${params.toString()}`;
+    }
+    const send = document.getElementById('sendBtn');
+    if (send) {
+        const params = new URLSearchParams({ coin_key: coinKey });
+        if (trustId > 0) params.set('trust_id', String(trustId));
+        send.href = `send.php?${params.toString()}`;
     }
 })();
 

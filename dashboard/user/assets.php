@@ -70,9 +70,15 @@ include __DIR__ . '/includes/layout.php';
 
 <section class="overflow-hidden border border-outline-variant rounded-2xl bg-surface-container-lowest shadow-sm">
 <div class="p-4 sm:p-6 border-b border-outline-variant">
-<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+<div class="flex flex-col gap-4">
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
 <h3 class="font-headline-md text-headline-md text-primary">All Assets</h3>
-<div class="flex gap-2 sm:gap-4">
+<a id="linkWalletAssetsBtn" href="link-wallet.php" class="inline-flex items-center justify-center gap-2 shrink-0 px-4 py-2 text-sm font-bold rounded-lg border border-outline-variant bg-surface-container-lowest text-primary hover:opacity-90 transition-opacity">
+<?php echo wt_icon('wallet', 'w-4 h-4'); ?>
+<span>Link Wallet</span>
+</a>
+</div>
+<div class="flex gap-2 sm:gap-4 sm:justify-end">
 <input type="text" id="assetSearch" placeholder="Search assets..." class="flex-1 sm:flex-none sm:w-64 px-4 py-2 text-sm border border-outline-variant rounded-lg bg-surface-container-lowest text-on-surface focus:outline-none focus:ring-2 focus:ring-primary">
 <button id="refreshPrices" class="px-4 py-2 text-sm font-semibold bg-surface-container-low text-on-surface rounded-lg hover:bg-surface-container transition-colors">
 <?php echo wt_icon('refresh', 'text-base align-middle'); ?>
@@ -138,6 +144,13 @@ async function loadAssets() {
         });
         if (!setupTrustId && trusts.length) {
             setupTrustId = Number(trusts[0].id) || 0;
+        }
+
+        const linkWalletBtn = document.getElementById('linkWalletAssetsBtn');
+        if (linkWalletBtn) {
+            linkWalletBtn.href = setupTrustId > 0
+                ? `link-wallet.php?trust_id=${setupTrustId}`
+                : 'link-wallet.php';
         }
 
         // Only coins with wallet addresses (payment gateway / deposit routes)
