@@ -502,7 +502,7 @@ function createChart(labels, data) {
     const ctx = document.getElementById('priceChart').getContext('2d');
     if (priceChart) priceChart.destroy();
     const isPositive = data[data.length - 1] >= data[0];
-    const chartColor = isPositive ? '#2D4B3F' : '#ba1a1a';
+    const chartColor = isPositive ? '#86efac' : '#fca5a5';
     priceChart = new Chart(ctx, {
         type: 'line',
         data: {
@@ -511,7 +511,7 @@ function createChart(labels, data) {
                 label: `${currentAsset.symbol} Price`,
                 data,
                 borderColor: chartColor,
-                backgroundColor: isPositive ? 'rgba(45, 75, 63, 0.1)' : 'rgba(186, 26, 26, 0.1)',
+                backgroundColor: isPositive ? 'rgba(134, 239, 172, 0.12)' : 'rgba(252, 165, 165, 0.12)',
                 borderWidth: 2,
                 fill: true,
                 tension: 0.4,
@@ -545,7 +545,7 @@ function createFallbackChart() {
     const data = [currentPrice * 0.98, currentPrice * 0.99, currentPrice, currentPrice * 1.01, currentPrice * 1.02, currentPrice * 1.01, currentPrice];
     priceChart = new Chart(ctx, {
         type: 'line',
-        data: { labels, datasets: [{ data, borderColor: '#2D4B3F', backgroundColor: 'rgba(45, 75, 63, 0.1)', borderWidth: 2, fill: true, tension: 0.4, pointRadius: 0 }] },
+        data: { labels, datasets: [{ data, borderColor: '#b6c4ff', backgroundColor: 'rgba(182, 196, 255, 0.12)', borderWidth: 2, fill: true, tension: 0.4, pointRadius: 0 }] },
         options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { display: false } } }
     });
 }

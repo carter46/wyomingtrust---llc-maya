@@ -113,5 +113,164 @@ function wt_premium_bg_css(): string {
 .premium-bg-page #mobile-nav a:not(.bg-primary):not(.text-primary) {
     color: rgba(255, 255, 255, 0.85);
 }
+
+/* --- Topbar: white icons / menu toggle on dark header --- */
+.premium-bg-page .dashboard-topbar {
+    color: #ffffff;
+}
+.premium-bg-page .dashboard-topbar button {
+    color: #ffffff;
+}
+.premium-bg-page .dashboard-topbar button:hover {
+    background: rgba(255, 255, 255, 0.12);
+}
+.premium-bg-page .dashboard-topbar button svg,
+.premium-bg-page .dashboard-topbar .wt-icon {
+    stroke: #ffffff !important;
+}
+.premium-bg-page .dashboard-topbar .text-on-surface-variant {
+    color: rgba(255, 255, 255, 0.82);
+}
+.premium-bg-page .dashboard-topbar .font-label-md {
+    color: rgba(255, 255, 255, 0.92);
+}
+
+/* --- Crypto pages: navy gradient cards + white text --- */
+.premium-bg-page .dashboard-content {
+    color: rgba(255, 255, 255, 0.92);
+}
+.premium-bg-page .dashboard-content .dashboard-metric-card,
+.premium-bg-page .dashboard-content .card-shadow,
+.premium-bg-page .dashboard-content section > .overflow-hidden.border.rounded-2xl.bg-surface-container-lowest,
+.premium-bg-page .dashboard-content .bg-surface-container-lowest.rounded-2xl.border.border-outline-variant,
+.premium-bg-page .dashboard-content .bg-surface-container-lowest.rounded-2xl.border.border-outline-variant.card-shadow,
+.premium-bg-page .dashboard-content .bg-surface-container-lowest.rounded-2xl.border.border-outline-variant.shadow-sm,
+.premium-bg-page .dashboard-content .bg-surface-container-lowest.rounded-2xl.border.border-outline-variant.overflow-hidden {
+    background: linear-gradient(135deg, #041627 0%, #0a2540 42%, #115cb9 100%) !important;
+    border-color: rgba(255, 255, 255, 0.14) !important;
+    box-shadow: 0 8px 32px rgba(4, 22, 39, 0.35);
+}
+.premium-bg-page .dashboard-content .dashboard-metric-card .text-primary,
+.premium-bg-page .dashboard-content .dashboard-metric-card .text-on-surface,
+.premium-bg-page .dashboard-content .dashboard-metric-card .text-on-surface-variant,
+.premium-bg-page .dashboard-content .dashboard-metric-card .dashboard-metric-value,
+.premium-bg-page .dashboard-content .card-shadow .text-primary,
+.premium-bg-page .dashboard-content .card-shadow .text-on-surface,
+.premium-bg-page .dashboard-content .card-shadow .text-on-surface-variant,
+.premium-bg-page .dashboard-content .bg-surface-container-lowest.rounded-2xl .text-primary,
+.premium-bg-page .dashboard-content .bg-surface-container-lowest.rounded-2xl .text-on-surface,
+.premium-bg-page .dashboard-content .bg-surface-container-lowest.rounded-2xl .text-on-surface-variant,
+.premium-bg-page .dashboard-content .font-headline-md.text-primary,
+.premium-bg-page .dashboard-content h3.text-primary {
+    color: #ffffff !important;
+}
+.premium-bg-page .dashboard-content .font-headline-lg.text-primary,
+.premium-bg-page .dashboard-content h1.text-primary {
+    color: #ffffff !important;
+}
+
+/* Chart + tab panels */
+.premium-bg-page .dashboard-content #priceChart {
+    opacity: 0.98;
+}
+.premium-bg-page .dashboard-content .coin-tab {
+    color: rgba(255, 255, 255, 0.55);
+    border-bottom-color: transparent;
+}
+.premium-bg-page .dashboard-content .coin-tab.text-primary,
+.premium-bg-page .dashboard-content .coin-tab.border-primary {
+    color: #ffffff !important;
+    border-bottom-color: #b6c4ff !important;
+}
+.premium-bg-page .dashboard-content .coin-tab:hover {
+    color: rgba(255, 255, 255, 0.9);
+}
+.premium-bg-page .dashboard-content .border-b.border-outline-variant {
+    border-color: rgba(255, 255, 255, 0.18) !important;
+}
+
+/* Time-range toggle buttons */
+.premium-bg-page .dashboard-content .time-filter {
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    color: #ffffff !important;
+    background: rgba(255, 255, 255, 0.1) !important;
+}
+.premium-bg-page .dashboard-content .time-filter:hover {
+    background: rgba(255, 255, 255, 0.18) !important;
+}
+.premium-bg-page .dashboard-content .time-filter.active,
+.premium-bg-page .dashboard-content .time-filter.bg-primary {
+    background: #ffffff !important;
+    color: #041627 !important;
+    border-color: #ffffff !important;
+}
+
+/* Assets table inside navy card */
+.premium-bg-page .dashboard-content thead.bg-surface-container-low {
+    background: rgba(255, 255, 255, 0.08) !important;
+}
+.premium-bg-page .dashboard-content tbody.divide-y,
+.premium-bg-page .dashboard-content .divide-outline-variant > :not([hidden]) ~ :not([hidden]) {
+    border-color: rgba(255, 255, 255, 0.1);
+}
+.premium-bg-page .dashboard-content tbody tr.bg-surface-container,
+.premium-bg-page .dashboard-content tbody tr.hover\:bg-surface-container-low:hover,
+.premium-bg-page .dashboard-content tbody tr.hover\:bg-surface-container:hover {
+    background: rgba(255, 255, 255, 0.06) !important;
+}
+.premium-bg-page .dashboard-content tbody .text-on-surface,
+.premium-bg-page .dashboard-content tbody .text-on-surface-variant,
+.premium-bg-page .dashboard-content thead .text-on-surface-variant {
+    color: rgba(255, 255, 255, 0.88) !important;
+}
+.premium-bg-page .dashboard-content #assetSearch,
+.premium-bg-page .dashboard-content input:not([type="checkbox"]):not([type="radio"]),
+.premium-bg-page .dashboard-content select,
+.premium-bg-page .dashboard-content textarea {
+    background: rgba(255, 255, 255, 0.1) !important;
+    border-color: rgba(255, 255, 255, 0.22) !important;
+    color: #ffffff !important;
+}
+.premium-bg-page .dashboard-content input::placeholder,
+.premium-bg-page .dashboard-content textarea::placeholder {
+    color: rgba(255, 255, 255, 0.45);
+}
+.premium-bg-page .dashboard-content #refreshPrices,
+.premium-bg-page .dashboard-content button.bg-surface-container-low.text-on-surface {
+    background: rgba(255, 255, 255, 0.12) !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+}
+.premium-bg-page .dashboard-content #refreshPrices svg {
+    stroke: #ffffff !important;
+}
+
+/* Keep semantic greens/reds readable on navy */
+.premium-bg-page .dashboard-content .text-deep-forest {
+    color: #86efac !important;
+}
+.premium-bg-page .dashboard-content .text-error {
+    color: #fca5a5 !important;
+}
+.premium-bg-page .dashboard-content #transactionHistory .text-on-surface,
+.premium-bg-page .dashboard-content #transactionHistory .text-on-surface-variant,
+.premium-bg-page .dashboard-content #coinAbout,
+.premium-bg-page .dashboard-content #coinAbout p,
+.premium-bg-page .dashboard-content #coinAbout .text-on-surface,
+.premium-bg-page .dashboard-content #holdingsTab p,
+.premium-bg-page .dashboard-content #assetsContainer .text-on-surface-variant {
+    color: rgba(255, 255, 255, 0.85) !important;
+}
+.premium-bg-page .dashboard-content #coinAbout a.text-secondary {
+    color: #b6c4ff !important;
+}
+.premium-bg-page .dashboard-content .asset-action-btn.border-outline-variant {
+    background: rgba(255, 255, 255, 0.1) !important;
+    border-color: rgba(255, 255, 255, 0.25) !important;
+    color: #ffffff !important;
+}
+.premium-bg-page .dashboard-content .asset-action-btn.border-outline-variant svg {
+    stroke: #ffffff !important;
+}
 CSS;
 }
