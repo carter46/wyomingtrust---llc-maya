@@ -24,7 +24,7 @@ include 'includes/header.php';
 <span class="text-label-sm text-outline">Based on 544 reviews</span>
 </div>
 <p class="text-label-sm font-label-sm uppercase tracking-[0.12em] text-primary">Limited Liability, Limitless Potential</p>
-<h1 class="text-headline-lg-mobile lg:text-headline-xl font-headline-xl text-on-surface text-balance leading-tight">
+<h1 class="hidden sm:block text-headline-lg-mobile lg:text-headline-xl font-headline-xl text-on-surface text-balance leading-tight">
 Register Your Business in Wyoming — <span class="text-on-surface-variant opacity-80">The Best State To Register Your Business</span>
 </h1>
 <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8">
