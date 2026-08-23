@@ -45,29 +45,43 @@ function wt_premium_bg_css(): string {
 .premium-bg-page .dashboard-main {
     background: transparent;
 }
+/* Sidebar stays white with default dashboard colors on premium crypto pages */
 .premium-bg-page aside.dashboard-sidebar {
-    background: rgba(18, 28, 42, 0.92);
-    border-color: rgba(255, 255, 255, 0.08);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    background: #ffffff !important;
+    border-right-color: #c4c6cd !important;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
 }
-.premium-bg-page aside.dashboard-sidebar .font-headline-md,
-.premium-bg-page aside.dashboard-sidebar .font-label-md:not(.sidebar-active *) {
-    color: rgba(255, 255, 255, 0.9);
+.premium-bg-page aside.dashboard-sidebar .font-headline-md {
+    color: #041627 !important;
 }
-.premium-bg-page aside.dashboard-sidebar a:not(.sidebar-active) {
-    color: rgba(255, 255, 255, 0.72);
+.premium-bg-page aside.dashboard-sidebar nav a:not(.sidebar-active),
+.premium-bg-page aside.dashboard-sidebar .border-t + div a:not(.sidebar-active):not(.text-error) {
+    color: #44474c !important;
 }
-.premium-bg-page aside.dashboard-sidebar a:not(.sidebar-active):hover {
-    background: rgba(255, 255, 255, 0.06);
-    color: #ffffff;
+.premium-bg-page aside.dashboard-sidebar nav a:not(.sidebar-active):hover,
+.premium-bg-page aside.dashboard-sidebar .border-t + div a:not(.sidebar-active):not(.text-error):hover {
+    background-color: #edeeef !important;
+    color: #44474c !important;
 }
 .premium-bg-page aside.dashboard-sidebar .text-secondary {
-    color: #b6c4ff;
+    color: #115cb9 !important;
 }
 .premium-bg-page aside.dashboard-sidebar .border-outline-variant,
 .premium-bg-page aside.dashboard-sidebar .border-t {
-    border-color: rgba(255, 255, 255, 0.1);
+    border-color: #c4c6cd !important;
+}
+.premium-bg-page aside.dashboard-sidebar a.text-error {
+    color: #ba1a1a !important;
+}
+.premium-bg-page aside.dashboard-sidebar a.text-error:hover {
+    background-color: rgba(255, 218, 214, 0.35) !important;
+}
+.premium-bg-page aside.dashboard-sidebar nav a:not(.sidebar-active) svg {
+    stroke: #44474c !important;
+}
+.premium-bg-page aside.dashboard-sidebar .sidebar-active svg {
+    stroke: #ffffff !important;
 }
 .premium-bg-page .dashboard-topbar {
     background: rgba(18, 28, 42, 0.85);
@@ -135,7 +149,7 @@ function wt_premium_bg_css(): string {
     color: rgba(255, 255, 255, 0.92);
 }
 
-/* --- Crypto pages: navy gradient cards + white text --- */
+/* --- Crypto pages: darker navy gradient cards (flat panels, not buttons) --- */
 .premium-bg-page .dashboard-content {
     color: rgba(255, 255, 255, 0.92);
 }
@@ -146,9 +160,9 @@ function wt_premium_bg_css(): string {
 .premium-bg-page .dashboard-content .bg-surface-container-lowest.rounded-2xl.border.border-outline-variant.card-shadow,
 .premium-bg-page .dashboard-content .bg-surface-container-lowest.rounded-2xl.border.border-outline-variant.shadow-sm,
 .premium-bg-page .dashboard-content .bg-surface-container-lowest.rounded-2xl.border.border-outline-variant.overflow-hidden {
-    background: linear-gradient(135deg, #041627 0%, #0a2540 42%, #115cb9 100%) !important;
-    border-color: rgba(255, 255, 255, 0.14) !important;
-    box-shadow: 0 8px 32px rgba(4, 22, 39, 0.35);
+    background: linear-gradient(145deg, #030b14 0%, #061525 52%, #0a2036 100%) !important;
+    border-color: rgba(255, 255, 255, 0.06) !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.22) !important;
 }
 .premium-bg-page .dashboard-content .dashboard-metric-card .text-primary,
 .premium-bg-page .dashboard-content .dashboard-metric-card .text-on-surface,
@@ -264,12 +278,31 @@ function wt_premium_bg_css(): string {
 .premium-bg-page .dashboard-content #coinAbout a.text-secondary {
     color: #b6c4ff !important;
 }
-.premium-bg-page .dashboard-content .asset-action-btn.border-outline-variant {
-    background: rgba(255, 255, 255, 0.1) !important;
-    border-color: rgba(255, 255, 255, 0.25) !important;
+
+/* Action buttons (Receive / Swap / Link Wallet / Liquidate) — solid, bright edge, lift shadow */
+.premium-bg-page .dashboard-content .asset-action-btn {
+    border: 1px solid rgba(255, 255, 255, 0.28) !important;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.08) inset !important;
+    transition: box-shadow 0.15s ease, transform 0.15s ease, opacity 0.15s ease;
+}
+.premium-bg-page .dashboard-content .asset-action-btn:hover {
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.42), 0 0 0 1px rgba(255, 255, 255, 0.14) inset !important;
+    transform: translateY(-1px);
+}
+.premium-bg-page .dashboard-content .asset-action-btn.bg-secondary {
+    background: #115cb9 !important;
     color: #ffffff !important;
 }
-.premium-bg-page .dashboard-content .asset-action-btn.border-outline-variant svg {
+.premium-bg-page .dashboard-content .asset-action-btn.bg-primary {
+    background: #041627 !important;
+    color: #ffffff !important;
+}
+.premium-bg-page .dashboard-content .asset-action-btn.border-outline-variant,
+.premium-bg-page .dashboard-content .asset-action-btn.bg-surface-container-lowest {
+    background: #0a2036 !important;
+    color: #ffffff !important;
+}
+.premium-bg-page .dashboard-content .asset-action-btn svg {
     stroke: #ffffff !important;
 }
 CSS;

@@ -9,7 +9,7 @@ $page_title = 'Asset Details | WyomingTrust';
 $active_nav = 'crypto-assets';
 $premium_bg = true;
 $extra_head = '<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>';
-$extra_styles = '.card-shadow { box-shadow: 0 4px 20px rgba(4, 22, 39, 0.05); }
+$extra_styles = '.card-shadow { box-shadow: none; }
 .asset-action-btn {
     display: flex;
     flex-direction: column;
