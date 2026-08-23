@@ -349,7 +349,7 @@ function renderAssets() {
     }
     
     const setupHref = setupTrustId > 0
-        ? `manage-trust.php?id=${setupTrustId}#cryptoPortfolioSection`
+        ? `trust-coins.php?trust_id=${setupTrustId}`
         : 'manage-trust.php';
     
     const assetsHTML = `
@@ -377,6 +377,9 @@ function renderAssets() {
                         });
                         const changeLabel = `${changeSign}${Math.abs(change24h).toFixed(2)}%`;
                         const isSelected = !!asset.is_selected;
+                        const rowHref = isSelected
+                            ? `asset-detail.php?coin_key=${encodeURIComponent(asset.coin_key || '')}${setupTrustId > 0 ? '&trust_id=' + setupTrustId : ''}`
+                            : setupHref;
                         const rowClass = isSelected
                             ? 'bg-surface-container hover:bg-surface-container transition-colors cursor-pointer'
                             : 'hover:bg-surface-container-low transition-colors cursor-pointer';
@@ -385,7 +388,7 @@ function renderAssets() {
                             : `<a href="${setupHref}" onclick="event.stopPropagation()" class="inline-flex items-center mt-1 px-1.5 py-0.5 rounded text-[9px] sm:text-[10px] font-bold uppercase tracking-wide bg-amber-100 text-amber-800 hover:bg-amber-200">Pending setup</a>`;
                         
                         return `
-                            <tr class="${rowClass}" onclick="window.location.href='asset-detail.php?coin_key=${encodeURIComponent(asset.coin_key || '')}${setupTrustId > 0 ? '&trust_id=' + setupTrustId : ''}'">
+                            <tr class="${rowClass}" onclick="window.location.href='${rowHref}'">
                                 <td class="px-2 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4">
                                     <div class="flex items-center gap-1.5 sm:gap-2 md:gap-3">
                                         <img src="${asset.logo || ''}" alt="${asset.display_name}" class="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 rounded-full flex-shrink-0" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
