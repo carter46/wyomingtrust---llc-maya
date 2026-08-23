@@ -27,12 +27,27 @@ include 'includes/header.php';
 <h1 class="text-headline-lg-mobile lg:text-headline-xl font-headline-xl text-on-surface text-balance leading-tight">
 Register Your Business in Wyoming — <span class="text-on-surface-variant opacity-80">The Best State To Register Your Business</span>
 </h1>
-<ul class="flex flex-col gap-2.5 text-body-md text-on-surface-variant">
-<li class="flex items-start gap-2"><span class="material-symbols-outlined text-secondary-container text-[20px] mt-0.5">check_circle</span><span>Only $99 + State Filing Fees.</span></li>
-<li class="flex items-start gap-2"><span class="material-symbols-outlined text-secondary-container text-[20px] mt-0.5">check_circle</span><span>Private &amp; Anonymous.</span></li>
-<li class="flex items-start gap-2"><span class="material-symbols-outlined text-secondary-container text-[20px] mt-0.5">check_circle</span><span>Do Business In Any State With a Wyoming LLC.</span></li>
-<li class="flex items-start gap-2"><span class="material-symbols-outlined text-secondary-container text-[20px] mt-0.5">check_circle</span><span>Get Assistance From Business Formation Experts.</span></li>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8">
+<div>
+<p class="text-label-sm font-label-sm uppercase tracking-[0.1em] text-primary mb-3">Business Services</p>
+<ul class="flex flex-col gap-2">
+<li><a href="<?php echo escape_html($start_href); ?>" class="text-body-md text-on-surface-variant hover:text-primary transition-colors">Wyoming LLC</a></li>
+<li><a href="<?php echo escape_html($start_href); ?>" class="text-body-md text-on-surface-variant hover:text-primary transition-colors">Delaware LLC</a></li>
+<li><a href="<?php echo escape_html($start_href); ?>" class="text-body-md text-on-surface-variant hover:text-primary transition-colors">New Mexico LLC</a></li>
+<li><a href="<?php echo escape_html($start_href); ?>" class="text-body-md text-on-surface-variant hover:text-primary transition-colors">Florida LLC</a></li>
+<li><a href="<?php echo escape_html($start_href); ?>" class="text-body-md text-on-surface-variant hover:text-primary transition-colors">Texas LLC</a></li>
 </ul>
+</div>
+<div>
+<p class="text-label-sm font-label-sm uppercase tracking-[0.1em] text-primary mb-3">Resources</p>
+<ul class="flex flex-col gap-2">
+<li><a href="<?php echo escape_html($why_href); ?>" class="text-body-md text-on-surface-variant hover:text-primary transition-colors">LLC vs Corporation</a></li>
+<li><a href="<?php echo escape_html(asset_url('login.php')); ?>" class="text-body-md text-on-surface-variant hover:text-primary transition-colors">Virtual Office &amp; Mail</a></li>
+<li><a href="<?php echo escape_html(asset_url('login.php')); ?>" class="text-body-md text-on-surface-variant hover:text-primary transition-colors">Annual Report</a></li>
+<li><a href="<?php echo escape_html(asset_url('login.php')); ?>" class="text-body-md text-on-surface-variant hover:text-primary transition-colors">DBA / Trade Name</a></li>
+</ul>
+</div>
+</div>
 <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4 mt-2">
 <a href="<?php echo escape_html($start_href); ?>" class="w-full sm:w-auto bg-primary text-on-primary px-8 py-4 rounded-full text-label-md font-label-md hover:bg-primary-container transition-colors shadow-sm flex items-center justify-center gap-2 group">Start Your Business<span class="material-symbols-outlined text-[18px] group-hover:translate-x-1 transition-transform">arrow_forward</span></a>
 <a href="<?php echo escape_html($pricing_href); ?>" class="w-full sm:w-auto bg-transparent text-primary border border-primary px-8 py-4 rounded-full text-label-md font-label-md hover:bg-primary/5 transition-colors flex items-center justify-center">View Pricing</a>
