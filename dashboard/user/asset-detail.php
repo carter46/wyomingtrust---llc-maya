@@ -8,7 +8,50 @@ $trustIdParam = isset($_GET['trust_id']) ? (int) $_GET['trust_id'] : 0;
 $page_title = 'Asset Details | WyomingTrust';
 $active_nav = 'trusts';
 $extra_head = '<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>';
-$extra_styles = '.card-shadow { box-shadow: 0 4px 20px rgba(4, 22, 39, 0.05); }';
+$extra_styles = '.card-shadow { box-shadow: 0 4px 20px rgba(4, 22, 39, 0.05); }
+.asset-action-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 0.65rem 0.4rem;
+    border-radius: 0.5rem;
+    text-align: center;
+    font-weight: 700;
+    font-size: 0.6875rem;
+    line-height: 1.15;
+    transition: opacity 0.15s ease, background-color 0.15s ease;
+}
+.asset-action-btn .wt-icon,
+.asset-action-btn svg {
+    width: 1.25rem;
+    height: 1.25rem;
+    flex-shrink: 0;
+}
+.asset-action-btn span {
+    display: block;
+    width: 100%;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+@media (min-width: 640px) {
+    .asset-action-btn {
+        padding: 0.85rem 1rem;
+        font-size: 0.8125rem;
+        gap: 0.45rem;
+        max-width: 8.5rem;
+    }
+    .asset-action-btn .wt-icon,
+    .asset-action-btn svg {
+        width: 1.5rem;
+        height: 1.5rem;
+    }
+}';
 
 include __DIR__ . '/includes/layout.php';
 ?>
@@ -23,18 +66,22 @@ include __DIR__ . '/includes/layout.php';
 <h1 class="font-headline-lg text-headline-lg text-primary mb-1" id="coinSymbol">Loading...</h1>
 <p class="font-body-md text-body-md text-on-surface-variant" id="coinName">Loading...</p>
 </div>
-<div class="flex flex-row items-stretch gap-1.5 sm:gap-3 w-full sm:w-auto no-print">
-<button type="button" id="depositBtn" class="flex-1 min-w-0 inline-flex items-center justify-center gap-1 sm:gap-2 bg-secondary text-on-secondary px-2 sm:px-6 py-2.5 sm:py-3 rounded-xl text-[11px] sm:text-sm font-bold hover:opacity-90 transition-opacity">
-<?php echo wt_icon('receive', 'w-4 h-4 sm:w-5 sm:h-5'); ?> <span class="truncate">Receive</span>
+<div class="flex flex-row items-stretch gap-2 sm:gap-3 w-full sm:w-auto no-print">
+<button type="button" id="depositBtn" class="asset-action-btn bg-secondary text-on-secondary hover:opacity-90">
+<?php echo wt_icon('receive', 'w-5 h-5'); ?>
+<span>Receive</span>
 </button>
-<a id="swapBtn" href="swap.php" class="flex-1 min-w-0 inline-flex items-center justify-center gap-1 sm:gap-2 bg-primary text-on-primary px-2 sm:px-6 py-2.5 sm:py-3 rounded-xl text-[11px] sm:text-sm font-bold hover:opacity-90 transition-opacity">
-<?php echo wt_icon('swap', 'w-4 h-4 sm:w-5 sm:h-5'); ?> <span class="truncate">Swap</span>
+<a id="swapBtn" href="swap.php" class="asset-action-btn bg-primary text-on-primary hover:opacity-90">
+<?php echo wt_icon('swap', 'w-5 h-5'); ?>
+<span>Swap</span>
 </a>
-<a id="linkWalletBtn" href="link-wallet.php" class="flex-1 min-w-0 inline-flex items-center justify-center gap-1 sm:gap-2 bg-surface-container-lowest border border-outline-variant text-primary px-2 sm:px-6 py-2.5 sm:py-3 rounded-xl text-[11px] sm:text-sm font-bold hover:bg-surface-container transition-colors">
-<?php echo wt_icon('link', 'w-4 h-4 sm:w-5 sm:h-5'); ?> <span class="truncate">Link Wallet</span>
+<a id="linkWalletBtn" href="link-wallet.php" class="asset-action-btn bg-surface-container-lowest border border-outline-variant text-primary hover:bg-surface-container">
+<?php echo wt_icon('wallet', 'w-5 h-5'); ?>
+<span>Link Wallet</span>
 </a>
-<button type="button" id="liquidateBtn" class="hidden flex-1 min-w-0 inline-flex items-center justify-center gap-1 sm:gap-2 bg-primary text-on-primary px-2 sm:px-6 py-2.5 sm:py-3 rounded-xl text-[11px] sm:text-sm font-bold hover:opacity-90 transition-opacity">
-<?php echo wt_icon('send', 'w-4 h-4 sm:w-5 sm:h-5'); ?> <span class="truncate">Liquidate</span>
+<button type="button" id="liquidateBtn" class="asset-action-btn hidden bg-primary text-on-primary hover:opacity-90">
+<?php echo wt_icon('send', 'w-5 h-5'); ?>
+<span>Liquidate</span>
 </button>
 </div>
 </section>

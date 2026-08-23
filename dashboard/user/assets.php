@@ -10,64 +10,50 @@ $active_nav = 'crypto-assets';
 include __DIR__ . '/includes/layout.php';
 ?>
 
-<section>
-<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-<div>
-<h1 class="font-headline-lg text-headline-lg text-primary mb-2">My Crypto Assets</h1>
-<p class="font-body-lg text-body-lg text-on-surface-variant">View and manage your cryptocurrency holdings</p>
-</div>
-<div class="flex gap-2 sm:gap-4">
-<a href="send.php" class="flex items-center justify-center gap-2 bg-primary text-on-primary px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg text-sm font-bold hover:bg-primary/90 transition-colors">
+<section class="flex justify-end gap-2 mb-4">
+<a href="send.php" class="flex items-center justify-center gap-2 bg-primary text-on-primary px-3 sm:px-6 py-2 sm:py-2.5 rounded-lg text-sm font-bold hover:bg-primary/90 transition-colors">
 <?php echo wt_icon('send', 'text-base'); ?>
 <span class="hidden sm:inline">Send</span>
 </a>
-<a href="receive.php" class="flex items-center justify-center gap-2 bg-surface-container-low text-on-surface px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg text-sm font-bold hover:bg-surface-container transition-colors">
+<a href="receive.php" class="flex items-center justify-center gap-2 bg-surface-container-low text-on-surface px-3 sm:px-6 py-2 sm:py-2.5 rounded-lg text-sm font-bold hover:bg-surface-container transition-colors">
 <?php echo wt_icon('receive', 'text-base'); ?>
 <span class="hidden sm:inline">Receive</span>
 </a>
-<a href="swap.php" class="flex items-center justify-center gap-2 bg-secondary text-on-secondary px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg text-sm font-bold hover:bg-secondary/90 transition-colors">
+<a href="swap.php" class="flex items-center justify-center gap-2 bg-secondary text-on-secondary px-3 sm:px-6 py-2 sm:py-2.5 rounded-lg text-sm font-bold hover:bg-secondary/90 transition-colors">
 <?php echo wt_icon('swap', 'text-base'); ?>
 <span class="hidden sm:inline">Swap</span>
 </a>
-</div>
-</div>
 </section>
 
-<section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-<div class="dashboard-metric-card flex min-w-0 flex-1 flex-col gap-2 rounded-2xl p-4 sm:p-6 border border-outline-variant bg-surface-container-lowest shadow-sm">
-<div class="flex items-center gap-2 text-primary">
-<?php echo wt_icon('wallet', 'text-sm'); ?>
-<p class="text-on-surface-variant text-xs sm:text-sm font-medium">Total Portfolio Value</p>
+<section class="space-y-3 sm:space-y-4 mb-2">
+<div class="dashboard-metric-card rounded-2xl p-5 sm:p-8 border border-outline-variant bg-surface-container-lowest shadow-sm text-center">
+<div class="flex items-center justify-center gap-2 text-primary mb-2">
+<?php echo wt_icon('wallet', 'w-4 h-4'); ?>
+<p class="text-on-surface-variant text-[11px] sm:text-sm font-medium uppercase tracking-wide">Total Portfolio Value</p>
 </div>
-<div class="dashboard-metric-value-wrap">
-<p id="totalPortfolioValue" class="dashboard-metric-value text-on-surface tracking-tight leading-tight" data-fit-max="28" data-fit-min="11">$0.00</p>
+<div class="dashboard-metric-value-wrap mx-auto max-w-md">
+<p id="totalPortfolioValue" class="dashboard-metric-value text-on-surface tracking-tight leading-tight text-center" data-fit-max="40" data-fit-max-mobile="28" data-fit-min="16">$0.00</p>
 </div>
-<p class="text-xs text-on-surface-variant" id="portfolioChange">--</p>
+<p class="text-[11px] sm:text-xs text-on-surface-variant mt-2" id="portfolioChange">--</p>
 </div>
-<div class="dashboard-metric-card flex min-w-0 flex-1 flex-col gap-2 rounded-2xl p-4 sm:p-6 border border-outline-variant bg-surface-container-lowest shadow-sm">
-<div class="flex items-center gap-2 text-primary">
-<?php echo wt_icon('arrow-forward', 'text-sm'); ?>
-<p class="text-on-surface-variant text-xs sm:text-sm font-medium">24h Change</p>
-</div>
-<div class="dashboard-metric-value-wrap">
-<p id="total24hChange" class="dashboard-metric-value text-on-surface tracking-tight leading-tight" data-fit-max="28" data-fit-min="12">--</p>
-</div>
-</div>
-<div class="dashboard-metric-card flex min-w-0 flex-1 flex-col gap-2 rounded-2xl p-4 sm:p-6 border border-outline-variant bg-surface-container-lowest shadow-sm">
-<div class="flex items-center gap-2 text-primary">
-<?php echo wt_icon('wallet', 'text-sm'); ?>
-<p class="text-on-surface-variant text-xs sm:text-sm font-medium">Total Assets</p>
-</div>
-<div class="dashboard-metric-value-wrap">
-<p id="totalAssetsCount" class="dashboard-metric-value text-on-surface tracking-tight leading-tight" data-fit-max="28" data-fit-min="14">0</p>
+
+<div class="grid grid-cols-3 gap-2 sm:gap-4">
+<div class="dashboard-metric-card min-w-0 flex flex-col items-center text-center gap-1 rounded-xl sm:rounded-2xl p-2.5 sm:p-5 border border-outline-variant bg-surface-container-lowest shadow-sm">
+<p class="text-on-surface-variant text-[9px] sm:text-xs font-medium leading-tight">24h Change</p>
+<div class="dashboard-metric-value-wrap w-full">
+<p id="total24hChange" class="dashboard-metric-value text-on-surface tracking-tight leading-tight text-center" data-fit-max="22" data-fit-max-mobile="13" data-fit-min="9">--</p>
 </div>
 </div>
-<div class="dashboard-metric-card flex min-w-0 flex-1 flex-col gap-2 rounded-2xl p-4 sm:p-6 border border-outline-variant bg-surface-container-lowest shadow-sm">
-<div class="flex items-center gap-2 text-secondary">
-<?php echo wt_icon('refresh', 'text-sm'); ?>
-<p class="text-on-surface-variant text-xs sm:text-sm font-medium">Last Updated</p>
+<div class="dashboard-metric-card min-w-0 flex flex-col items-center text-center gap-1 rounded-xl sm:rounded-2xl p-2.5 sm:p-5 border border-outline-variant bg-surface-container-lowest shadow-sm">
+<p class="text-on-surface-variant text-[9px] sm:text-xs font-medium leading-tight">Total Assets</p>
+<div class="dashboard-metric-value-wrap w-full">
+<p id="totalAssetsCount" class="dashboard-metric-value text-on-surface tracking-tight leading-tight text-center" data-fit-max="22" data-fit-max-mobile="13" data-fit-min="9">0</p>
 </div>
-<p class="text-on-surface tracking-tight text-sm sm:text-base font-bold leading-tight" id="lastUpdated">Just Now</p>
+</div>
+<div class="dashboard-metric-card min-w-0 flex flex-col items-center text-center gap-1 rounded-xl sm:rounded-2xl p-2.5 sm:p-5 border border-outline-variant bg-surface-container-lowest shadow-sm">
+<p class="text-on-surface-variant text-[9px] sm:text-xs font-medium leading-tight">Updated</p>
+<p class="text-on-surface tracking-tight text-[11px] sm:text-base font-bold leading-tight truncate max-w-full" id="lastUpdated">Just Now</p>
+</div>
 </div>
 </section>
 
@@ -391,7 +377,7 @@ function updatePortfolioSummary() {
     document.getElementById('portfolioChange').innerHTML = `<span class="${changeClass}">${changeSign}$${Math.abs(totalChange).toFixed(2)} (${changeSign}${Math.abs(changePercent).toFixed(2)}%)</span>`;
     const changeEl = document.getElementById('total24hChange');
     changeEl.textContent = `${changeSign}${Math.abs(changePercent).toFixed(2)}%`;
-    changeEl.className = 'dashboard-metric-value text-on-surface tracking-tight leading-tight ' + changeClass;
+    changeEl.className = 'dashboard-metric-value text-on-surface tracking-tight leading-tight text-center ' + changeClass;
     document.getElementById('totalAssetsCount').textContent = totalAssets;
     if (typeof window.fitDashboardAmounts === 'function') window.fitDashboardAmounts();
 }

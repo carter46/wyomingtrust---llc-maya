@@ -14,11 +14,15 @@ include __DIR__ . '/includes/layout.php';
 ?>
 
 <section class="w-full min-w-0">
-<?php if ($trustIdParam > 0 && $coinKeyParam !== ''): ?>
-<a href="asset-detail.php?coin_key=<?php echo escape_html($coinKeyParam); ?>&trust_id=<?php echo $trustIdParam; ?>" class="inline-flex items-center gap-1 text-secondary font-label-md text-label-md hover:underline mb-4">
-<?php echo wt_icon('arrow-back', 'w-4 h-4'); ?> Back to Asset
+<?php
+$sendBackHref = $coinKeyParam !== ''
+    ? 'asset-detail.php?coin_key=' . rawurlencode($coinKeyParam) . ($trustIdParam > 0 ? '&trust_id=' . $trustIdParam : '')
+    : 'assets.php';
+$sendBackLabel = $coinKeyParam !== '' ? 'Back to Asset' : 'Back to Assets';
+?>
+<a href="<?php echo escape_html($sendBackHref); ?>" class="inline-flex items-center gap-1 text-secondary font-label-md text-label-md hover:underline mb-4">
+<?php echo wt_icon('arrow-back', 'w-4 h-4'); ?> <?php echo escape_html($sendBackLabel); ?>
 </a>
-<?php endif; ?>
 <h1 class="font-headline-lg text-headline-lg text-primary mb-4" id="pageHeading"><?php echo $isLiquidateMode ? 'Liquidate Asset' : 'Send Cryptocurrency'; ?></h1>
 
 <?php if ($isLiquidateMode): ?>

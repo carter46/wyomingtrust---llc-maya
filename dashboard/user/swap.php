@@ -4,13 +4,22 @@ require_once __DIR__ . '/../../api/helpers.php';
 require_user_page_auth('../../login.php');
 
 $userName = $_SESSION['user_name'] ?? 'User';
+$trustIdParam = isset($_GET['trust_id']) ? (int) $_GET['trust_id'] : 0;
+$coinKeyParam = isset($_GET['coin_key']) ? sanitize_text($_GET['coin_key']) : '';
 $page_title = 'Swap Crypto | WyomingTrust';
-$active_nav = '';
+$active_nav = $trustIdParam > 0 ? 'trusts' : 'crypto-assets';
+$swapBackHref = $coinKeyParam !== ''
+    ? 'asset-detail.php?coin_key=' . rawurlencode($coinKeyParam) . ($trustIdParam > 0 ? '&trust_id=' . $trustIdParam : '')
+    : 'assets.php';
+$swapBackLabel = $coinKeyParam !== '' ? 'Back to Asset' : 'Back to Assets';
 
 include __DIR__ . '/includes/layout.php';
 ?>
 
 <section class="w-full min-w-0">
+<a href="<?php echo escape_html($swapBackHref); ?>" class="inline-flex items-center gap-1 text-secondary font-label-md text-label-md hover:underline mb-4">
+<?php echo wt_icon('arrow-back', 'w-4 h-4'); ?> <?php echo escape_html($swapBackLabel); ?>
+</a>
 <h1 class="font-headline-lg text-headline-lg text-primary mb-4">Swap Cryptocurrency</h1>
 
 <div class="bg-warm-cream border border-outline-variant rounded-2xl p-4 sm:p-6 mb-6">

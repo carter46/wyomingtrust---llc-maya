@@ -16,30 +16,19 @@ include __DIR__ . '/includes/layout.php';
 
 <section class="flex flex-wrap items-center justify-between gap-4 mb-6">
 <div>
-<?php if ($trustIdParam > 0 && $coinKeyParam !== ''): ?>
-<a href="asset-detail.php?coin_key=<?php echo escape_html($coinKeyParam); ?>&trust_id=<?php echo $trustIdParam; ?>" class="inline-flex items-center gap-1 text-secondary font-label-md text-label-md hover:underline mb-3">
-<?php echo wt_icon('arrow-back', 'w-4 h-4'); ?> Back to Asset
+<?php
+$receiveBackHref = $coinKeyParam !== ''
+    ? 'asset-detail.php?coin_key=' . rawurlencode($coinKeyParam) . ($trustIdParam > 0 ? '&trust_id=' . $trustIdParam : '')
+    : 'assets.php';
+$receiveBackLabel = $coinKeyParam !== '' ? 'Back to Asset' : 'Back to Assets';
+?>
+<a href="<?php echo escape_html($receiveBackHref); ?>" class="inline-flex items-center gap-1 text-secondary font-label-md text-label-md hover:underline mb-3">
+<?php echo wt_icon('arrow-back', 'w-4 h-4'); ?> <?php echo escape_html($receiveBackLabel); ?>
 </a>
-<?php endif; ?>
 <h1 class="font-headline-lg text-headline-lg text-primary mb-1">Deposit Cryptocurrency</h1>
 <p class="font-body-md text-body-md text-on-surface-variant">Send crypto to your trust deposit address</p>
 </div>
 </section>
-
-<div class="bg-surface-container-low border border-outline-variant rounded-2xl p-4 sm:p-6 mb-6">
-<div class="flex items-start gap-3">
-<?php echo wt_icon('info', 'text-secondary flex-shrink-0'); ?>
-<div class="text-sm text-on-surface">
-<p class="font-semibold mb-2">Security Information:</p>
-<ul class="list-disc pl-5 space-y-1 text-xs sm:text-sm text-on-surface-variant">
-<li>Only send the selected cryptocurrency to the address shown</li>
-<li>Deposit addresses are configured by WyomingTrust administrators</li>
-<li>Transactions sent to the wrong network or coin may be unrecoverable</li>
-<li>We do not store your private keys or seed phrases</li>
-</ul>
-</div>
-</div>
-</div>
 
 <div class="bg-surface-container-lowest rounded-2xl border border-outline-variant card-shadow p-6 sm:p-8">
 <div id="assetSelector" class="flex items-center gap-3 p-4 border border-outline-variant rounded-xl cursor-pointer hover:bg-surface-container-low mb-6">
@@ -71,16 +60,15 @@ Deposits for <strong id="unavailableCoinName" class="text-primary">this coin</st
 <p class="text-on-surface-variant text-xs max-w-md mx-auto">
 An administrator has not yet configured a deposit wallet address for this asset. Please check back later or contact support.
 </p>
-<?php if ($trustIdParam > 0 && $coinKeyParam !== ''): ?>
-<a href="asset-detail.php?coin_key=<?php echo escape_html($coinKeyParam); ?>&trust_id=<?php echo $trustIdParam; ?>" class="inline-flex items-center gap-2 mt-6 text-secondary font-label-md font-bold hover:underline">
-<?php echo wt_icon('arrow-back', 'w-4 h-4'); ?> Back to Asset
+<a href="<?php echo escape_html($receiveBackHref); ?>" class="inline-flex items-center gap-2 mt-6 text-secondary font-label-md font-bold hover:underline">
+<?php echo wt_icon('arrow-back', 'w-4 h-4'); ?> <?php echo escape_html($receiveBackLabel); ?>
 </a>
-<?php endif; ?>
 </div>
 
 <div id="depositAvailablePanel" class="hidden">
 <div id="depositAddressSection">
-<div id="depositAmountSection" class="mb-6 p-4 sm:p-5 bg-surface-container-low rounded-xl border border-outline-variant">
+<div id="depositAmountSection">
+<div class="mb-6 p-4 sm:p-5 bg-surface-container-low rounded-xl border border-outline-variant">
 <div class="flex flex-wrap items-start justify-between gap-3 mb-4 pb-4 border-b border-outline-variant">
 <div class="min-w-0 flex-1">
 <p class="text-xs font-bold uppercase tracking-wider text-on-surface-variant mb-1">Live Price</p>
@@ -102,6 +90,34 @@ An administrator has not yet configured a deposit wallet address for this asset.
 <p id="depositRateHint" class="text-xs text-on-surface-variant mt-1">Enter how much you want to deposit in US dollars. We will calculate the crypto amount to send.</p>
 </div>
 </div>
+<div class="mb-6 text-center">
+<button type="button" id="continueToDepositBtn" onclick="continueToDeposit()" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-primary text-on-primary px-8 py-4 rounded-xl font-label-md font-bold hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+Continue to Deposit <?php echo wt_icon('arrow-forward', 'w-5 h-5'); ?>
+</button>
+</div>
+<div class="bg-surface-container-low border border-outline-variant rounded-2xl p-4 sm:p-6">
+<div class="flex items-start gap-3">
+<?php echo wt_icon('info', 'text-secondary flex-shrink-0'); ?>
+<div class="text-sm text-on-surface">
+<p class="font-semibold mb-2">Security Information:</p>
+<ul class="list-disc pl-5 space-y-1 text-xs sm:text-sm text-on-surface-variant">
+<li>Only send the selected cryptocurrency to the address shown</li>
+<li>Deposit addresses are configured by WyomingTrust administrators</li>
+<li>Transactions sent to the wrong network or coin may be unrecoverable</li>
+<li>We do not store your private keys or seed phrases</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+
+<div id="depositQrSection" class="hidden">
+<div class="mb-4 flex items-center justify-between gap-3">
+<button type="button" onclick="backToAmountStep()" class="inline-flex items-center gap-1 text-secondary text-sm font-semibold hover:underline">
+<?php echo wt_icon('arrow-back', 'w-4 h-4'); ?> Edit amount
+</button>
+<p id="depositQrAmountSummary" class="text-sm text-on-surface-variant text-right"></p>
+</div>
 <div class="text-center p-6 sm:p-8 bg-surface-container-low rounded-xl">
 <div id="qrCode" class="inline-flex items-center justify-center p-4 bg-surface-container-lowest rounded-xl mb-4 border border-outline-variant w-56 h-56 mx-auto" aria-label="Deposit address QR code"></div>
 <p class="text-xs text-on-surface-variant mb-4">Scan this QR code to deposit crypto</p>
@@ -115,13 +131,14 @@ An administrator has not yet configured a deposit wallet address for this asset.
 </div>
 <div class="mt-8 text-center">
 <button type="button" id="madePaymentBtn" onclick="showConfirmPaymentForm()" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-primary text-on-primary px-8 py-4 rounded-xl font-label-md font-bold hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-<?php echo wt_icon('check-circle', 'w-5 h-5'); ?> I Have Made This Payment
+<?php echo wt_icon('check-circle', 'w-5 h-5'); ?> Confirm Deposit
 </button>
+</div>
 </div>
 </div>
 
 <div id="depositConfirmSection" class="hidden mt-2">
-<h2 class="font-headline-md text-headline-md text-primary mb-2">Confirm Your Payment</h2>
+<h2 class="font-headline-md text-headline-md text-primary mb-2">Confirm Your Deposit</h2>
 <p class="text-sm text-on-surface-variant mb-6">Enter your transaction details to complete your deposit submission.</p>
 <form id="depositConfirmForm" class="space-y-5 max-w-xl">
 <input type="hidden" id="depositAddressHidden" value="">
@@ -195,6 +212,7 @@ let selectedAsset = null;
 let adminAddresses = {};
 let hasPendingDeposit = false;
 let confirmFormOpen = false;
+let depositQrStepOpen = false;
 let currentCoinPrice = 0;
 let priceRefreshTimer = null;
 
@@ -388,7 +406,23 @@ function syncConfirmAmountDisplay() {
     }
 }
 
-function showConfirmPaymentForm() {
+function setDepositStep(step) {
+    // step: 'amount' | 'qr' | 'confirm' | 'success'
+    const amountEl = document.getElementById('depositAmountSection');
+    const qrEl = document.getElementById('depositQrSection');
+    const confirmEl = document.getElementById('depositConfirmSection');
+    const addressWrap = document.getElementById('depositAddressSection');
+
+    depositQrStepOpen = step === 'qr';
+    confirmFormOpen = step === 'confirm';
+
+    if (addressWrap) addressWrap.classList.toggle('hidden', step === 'confirm' || step === 'success');
+    if (amountEl) amountEl.classList.toggle('hidden', step !== 'amount');
+    if (qrEl) qrEl.classList.toggle('hidden', step !== 'qr');
+    if (confirmEl) confirmEl.classList.toggle('hidden', step !== 'confirm');
+}
+
+function continueToDeposit() {
     if (hasPendingDeposit || !selectedAsset) return;
     const usdAmount = getUsdDepositAmount();
     if (!usdAmount || usdAmount <= 0) {
@@ -400,35 +434,66 @@ function showConfirmPaymentForm() {
         showAlertModal('Price Unavailable', 'Unable to calculate the crypto amount right now. Please wait for the live price to load and try again.', 'error');
         return;
     }
+
+    const address = (adminAddresses[selectedAsset.coin_key] || document.getElementById('receiveAddress')?.value || '').trim();
+    if (!address) {
+        showAlertModal('Address Unavailable', 'No deposit address is configured for this asset yet.', 'error');
+        return;
+    }
+
+    document.getElementById('receiveAddress').value = address;
+    const coinAmount = getCoinAmountFromUsd(usdAmount);
+    const symbol = selectedAsset?.symbol || selectedAsset?.coin_key || '';
+    const summary = document.getElementById('depositQrAmountSummary');
+    if (summary) {
+        summary.textContent = `${formatUsd(usdAmount)} ≈ ${formatCoinAmount(coinAmount)} ${symbol}`;
+    }
+    generateQRCode(address);
+    setDepositStep('qr');
+    try {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch (e) { /* ignore */ }
+}
+
+function backToAmountStep() {
+    setDepositStep('amount');
+}
+
+function showConfirmPaymentForm() {
+    if (hasPendingDeposit || !selectedAsset) return;
+    const usdAmount = getUsdDepositAmount();
+    if (!usdAmount || usdAmount <= 0) {
+        showAlertModal('Amount Required', 'Please enter the USD amount you want to deposit before continuing.', 'error');
+        backToAmountStep();
+        document.getElementById('depositUsdAmount')?.focus();
+        return;
+    }
+    if (!currentCoinPrice || currentCoinPrice <= 0) {
+        showAlertModal('Price Unavailable', 'Unable to calculate the crypto amount right now. Please wait for the live price to load and try again.', 'error');
+        return;
+    }
     const address = document.getElementById('receiveAddress')?.value?.trim() || '';
     const hidden = document.getElementById('depositAddressHidden');
     if (hidden) hidden.value = address;
     syncConfirmAmountDisplay();
-    confirmFormOpen = true;
-    document.getElementById('depositAddressSection')?.classList.add('hidden');
-    document.getElementById('depositConfirmSection')?.classList.remove('hidden');
+    setDepositStep('confirm');
     document.getElementById('depositTxHash')?.focus();
 }
 
 function showDepositSuccessPanel() {
-    confirmFormOpen = false;
     stopPriceRefresh();
-    document.getElementById('depositAddressSection')?.classList.add('hidden');
-    document.getElementById('depositConfirmSection')?.classList.add('hidden');
+    setDepositStep('success');
     document.getElementById('depositPendingNotice')?.classList.add('hidden');
     document.getElementById('depositSuccessPanel')?.classList.remove('hidden');
 }
 
 function hideConfirmPaymentForm() {
-    confirmFormOpen = false;
-    document.getElementById('depositConfirmSection')?.classList.add('hidden');
-    document.getElementById('depositAddressSection')?.classList.remove('hidden');
+    setDepositStep('qr');
 }
 
 function resetDepositView() {
-    confirmFormOpen = false;
-    document.getElementById('depositConfirmSection')?.classList.add('hidden');
-    document.getElementById('depositAddressSection')?.classList.remove('hidden');
+    document.getElementById('depositSuccessPanel')?.classList.add('hidden');
+    setDepositStep('amount');
 }
 
 const urlParams = new URLSearchParams(window.location.search);
@@ -571,7 +636,6 @@ function renderDepositState() {
     showPanel('depositAvailablePanel');
     resetDepositView();
     document.getElementById('receiveAddress').value = address;
-    generateQRCode(address);
     updateDepositAmountLabels();
     startPriceRefresh();
     checkPendingDeposit();
@@ -581,6 +645,7 @@ async function checkPendingDeposit() {
     const notice = document.getElementById('depositPendingNotice');
     const addressSection = document.getElementById('depositAddressSection');
     const formSection = document.getElementById('depositConfirmSection');
+    const continueBtn = document.getElementById('continueToDepositBtn');
     const madeBtn = document.getElementById('madePaymentBtn');
     if (!selectedAsset) return;
 
@@ -594,8 +659,14 @@ async function checkPendingDeposit() {
             : null;
         hasPendingDeposit = !!pending;
         if (notice) notice.classList.toggle('hidden', !hasPendingDeposit);
-        if (addressSection) addressSection.classList.toggle('hidden', hasPendingDeposit || confirmFormOpen);
-        if (formSection) formSection.classList.toggle('hidden', hasPendingDeposit || !confirmFormOpen);
+        if (hasPendingDeposit) {
+            if (addressSection) addressSection.classList.add('hidden');
+            if (formSection) formSection.classList.add('hidden');
+            document.getElementById('depositSuccessPanel')?.classList.add('hidden');
+        } else if (!confirmFormOpen && !depositQrStepOpen) {
+            setDepositStep('amount');
+        }
+        if (continueBtn) continueBtn.disabled = hasPendingDeposit;
         if (madeBtn) madeBtn.disabled = hasPendingDeposit;
     } catch (e) {
         console.error('Error checking pending deposit:', e);
