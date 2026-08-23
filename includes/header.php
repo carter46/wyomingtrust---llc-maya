@@ -138,7 +138,25 @@ tailwind.config = {
 <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@100..900&family=Inter:wght@100..900&display=swap" rel="stylesheet"/>
 </head>
 <body class="bg-surface font-body-md text-body-md text-on-surface">
-<header class="fixed top-0 w-full z-50 bg-surface-pure/95 backdrop-blur-md shadow-[0_1px_8px_rgba(0,0,0,0.04)]">
+<div class="fixed top-0 w-full z-50">
+<!-- Announcement top bar -->
+<div class="bg-primary text-on-primary">
+<div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-12 h-10 sm:h-11 flex items-center justify-center gap-3 sm:gap-8 lg:gap-10 text-[10px] sm:text-xs font-semibold tracking-wide overflow-x-auto">
+<span class="inline-flex items-center gap-1 sm:gap-2 whitespace-nowrap">
+<span class="material-symbols-outlined text-secondary-container text-[15px] sm:text-[18px]">schedule</span>
+<span>Same-Day Filing</span>
+</span>
+<span class="inline-flex items-center gap-1 sm:gap-2 whitespace-nowrap">
+<span class="material-symbols-outlined text-secondary-container text-[15px] sm:text-[18px]">account_balance_wallet</span>
+<span>Instant Bank Account</span>
+</span>
+<span class="inline-flex items-center gap-1 sm:gap-2 whitespace-nowrap">
+<span class="material-symbols-outlined text-secondary-container text-[15px] sm:text-[18px]">payments</span>
+<span>No Hidden Fees</span>
+</span>
+</div>
+</div>
+<header class="bg-surface-pure/95 backdrop-blur-md shadow-[0_1px_8px_rgba(0,0,0,0.04)]">
 <div class="h-20 max-w-7xl mx-auto px-6 lg:px-12 flex items-center justify-between">
 <div class="flex items-center gap-12">
 <?php
@@ -182,7 +200,7 @@ Services
 </div>
 <a class="text-label-md font-label-md <?php echo $nav_active('why_us'); ?>" href="<?php echo escape_html(asset_url('why_us.php')); ?>">Why Us</a>
 <a class="text-label-md font-label-md text-on-surface-variant hover:text-primary transition-colors" href="<?php echo escape_html($login_href); ?>">Resources</a>
-<a class="text-label-md font-label-md <?php echo $nav_active('pricing'); ?>" href="<?php echo escape_html(asset_url('pricing.php')); ?>">Present</a>
+<a class="text-label-md font-label-md <?php echo $nav_active('pricing'); ?>" href="<?php echo escape_html(asset_url('pricing.php')); ?>">Pricing</a>
 <a class="text-label-md font-label-md <?php echo $nav_active('about_us'); ?>" href="<?php echo escape_html(asset_url('about_us.php')); ?>">About</a>
 </nav>
 </div>
@@ -208,7 +226,7 @@ Services
 <div class="border-t border-outline-variant/30 my-2"></div>
 <a href="<?php echo escape_html(asset_url('why_us.php')); ?>" class="px-4 py-2 text-sm text-on-surface-variant hover:text-primary rounded-lg hover:bg-surface-container-low transition-colors">Why Us</a>
 <a href="<?php echo escape_html($login_href); ?>" class="px-4 py-2 text-sm text-on-surface-variant hover:text-primary rounded-lg hover:bg-surface-container-low transition-colors">Resources</a>
-<a href="<?php echo escape_html(asset_url('pricing.php')); ?>" class="px-4 py-2 text-sm text-on-surface-variant hover:text-primary rounded-lg hover:bg-surface-container-low transition-colors">Present</a>
+<a href="<?php echo escape_html(asset_url('pricing.php')); ?>" class="px-4 py-2 text-sm text-on-surface-variant hover:text-primary rounded-lg hover:bg-surface-container-low transition-colors">Pricing</a>
 <a href="<?php echo escape_html(asset_url('about_us.php')); ?>" class="px-4 py-2 text-sm text-on-surface-variant hover:text-primary rounded-lg hover:bg-surface-container-low transition-colors">About</a>
 <div class="border-t border-outline-variant/30 my-2 pt-2 flex flex-col gap-2">
 <?php if (isset($_SESSION['user_id'])): ?>
@@ -221,6 +239,7 @@ Services
 </div>
 </div>
 </header>
+</div>
 <script>
 function toggleMobileMenu() {
   const menu = document.getElementById('mobileMenu');
@@ -234,5 +253,16 @@ function toggleMobileMenu() {
     icon.textContent = 'menu';
   }
 }
+function toggleFaq(btn) {
+  const panel = btn.nextElementSibling;
+  const icon = btn.querySelector('[data-faq-icon]');
+  const open = !panel.classList.contains('hidden');
+  document.querySelectorAll('[data-faq-panel]').forEach((p) => p.classList.add('hidden'));
+  document.querySelectorAll('[data-faq-icon]').forEach((i) => { i.textContent = 'expand_more'; });
+  if (!open) {
+    panel.classList.remove('hidden');
+    if (icon) icon.textContent = 'expand_less';
+  }
+}
 </script>
-<main class="pt-20">
+<main class="pt-[7.5rem]">
