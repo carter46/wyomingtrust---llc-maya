@@ -10,7 +10,7 @@ $active_nav = 'crypto-assets';
 include __DIR__ . '/includes/layout.php';
 ?>
 
-<section class="flex justify-end gap-2 mb-4">
+<section class="hidden justify-end gap-2 mb-4" id="assetsQuickActions" aria-hidden="true">
 <a href="send.php" class="flex items-center justify-center gap-2 bg-primary text-on-primary px-3 sm:px-6 py-2 sm:py-2.5 rounded-lg text-sm font-bold hover:bg-primary/90 transition-colors">
 <?php echo wt_icon('send', 'text-base'); ?>
 <span class="hidden sm:inline">Send</span>
@@ -82,21 +82,72 @@ const COINGECKO_API = '../../api/coingecko.php';
 const REFRESH_INTERVAL = 300000;
 let cryptoPrices = {};
 let userAssets = [];
+let selectedCoinKeys = new Set(); // entrusted coins across user LLCs
+let setupTrustId = 0; // preferred LLC for pending-setup deep link
 let priceRefreshTimer = null;
 
 async function loadAssets() {
     try {
-        const response = await fetch('../../api/user/assets.php');
-        const data = await response.json();
-        
-        if (data.success && data.assets) {
-            userAssets = data.assets;
-            await fetchCryptoPrices();
-            renderAssets();
-            updatePortfolioSummary();
-        } else {
-            document.getElementById('assetsContainer').innerHTML = '<div class="text-center py-10 text-error">Failed to load assets</div>';
+        const [depositRes, assetsRes, trustsRes] = await Promise.all([
+            fetch('../../api/coins.php?for=depositable', { credentials: 'same-origin' }),
+            fetch('../../api/user/assets.php', { credentials: 'same-origin' }),
+            fetch('../../api/user/trusts.php', { credentials: 'same-origin' }),
+        ]);
+        const depositData = await depositRes.json();
+        const assetsData = await assetsRes.json();
+        const trustsData = await trustsRes.json();
+
+        if (!depositData.success || !Array.isArray(depositData.coins)) {
+            document.getElementById('assetsContainer').innerHTML = '<div class="text-center py-10 text-error">Failed to load deposit-ready assets</div>';
+            return;
         }
+
+        const balanceByKey = {};
+        const priceByKey = {};
+        ((assetsData.success && assetsData.assets) ? assetsData.assets : []).forEach(a => {
+            if (!a.coin_key) return;
+            balanceByKey[a.coin_key] = parseFloat(a.balance || 0) || 0;
+            if (a.price_usd != null) priceByKey[a.coin_key] = a;
+        });
+
+        selectedCoinKeys = new Set();
+        setupTrustId = 0;
+        const trusts = (trustsData.success && Array.isArray(trustsData.trusts)) ? trustsData.trusts : [];
+        trusts.forEach(t => {
+            const raw = t.entrusted_coins || t.trust_data?.entrusted_coins || [];
+            if (Array.isArray(raw)) {
+                raw.forEach(k => selectedCoinKeys.add(String(k).toLowerCase()));
+            }
+            if (!setupTrustId && t.id) {
+                const svc = String(t.service_key || t.trust_type || '').toLowerCase();
+                if (svc.includes('smart_contract') || (Array.isArray(raw) && raw.length > 0)) {
+                    setupTrustId = Number(t.id) || 0;
+                }
+            }
+        });
+        if (!setupTrustId && trusts.length) {
+            setupTrustId = Number(trusts[0].id) || 0;
+        }
+
+        // Only coins with wallet addresses (payment gateway / deposit routes)
+        userAssets = depositData.coins.map(c => {
+            const key = c.coin_key;
+            const held = priceByKey[key] || {};
+            return {
+                coin_key: key,
+                display_name: c.display_name || held.display_name || key,
+                symbol: c.symbol || held.symbol || '',
+                logo: c.logo || held.logo || '',
+                balance: balanceByKey[key] != null ? balanceByKey[key] : 0,
+                price_usd: held.price_usd || 0,
+                price_change_24h: held.price_change_24h || 0,
+                is_selected: selectedCoinKeys.has(String(key).toLowerCase()),
+            };
+        });
+
+        await fetchCryptoPrices();
+        renderAssets();
+        updatePortfolioSummary();
     } catch (error) {
         console.error('Error loading assets:', error);
         document.getElementById('assetsContainer').innerHTML = '<div class="text-center py-10 text-error">Error loading assets</div>';
@@ -274,10 +325,21 @@ function renderAssets() {
     });
     
     const sortedAssets = [...filteredAssets].sort((a, b) => {
+        // Selected (active) first, then by price
+        if (!!a.is_selected !== !!b.is_selected) return a.is_selected ? -1 : 1;
         const priceA = a.price_usd || cryptoPrices[a.coin_key]?.usd || 0;
         const priceB = b.price_usd || cryptoPrices[b.coin_key]?.usd || 0;
         return priceB - priceA;
     });
+
+    if (!sortedAssets.length) {
+        container.innerHTML = '<div class="text-center py-10 text-on-surface-variant">No deposit-ready assets available yet.</div>';
+        return;
+    }
+    
+    const setupHref = setupTrustId > 0
+        ? `manage-trust.php?id=${setupTrustId}#cryptoPortfolioSection`
+        : 'manage-trust.php';
     
     const assetsHTML = `
         <div class="overflow-x-auto">
@@ -303,9 +365,16 @@ function renderAssets() {
                             maximumFractionDigits: price > 1000 ? 2 : 6
                         });
                         const changeLabel = `${changeSign}${Math.abs(change24h).toFixed(2)}%`;
+                        const isSelected = !!asset.is_selected;
+                        const rowClass = isSelected
+                            ? 'bg-surface-container hover:bg-surface-container transition-colors cursor-pointer'
+                            : 'hover:bg-surface-container-low transition-colors cursor-pointer';
+                        const statusBadge = isSelected
+                            ? `<span class="inline-flex items-center mt-1 px-1.5 py-0.5 rounded text-[9px] sm:text-[10px] font-bold uppercase tracking-wide bg-deep-forest/15 text-deep-forest">Active</span>`
+                            : `<a href="${setupHref}" onclick="event.stopPropagation()" class="inline-flex items-center mt-1 px-1.5 py-0.5 rounded text-[9px] sm:text-[10px] font-bold uppercase tracking-wide bg-amber-100 text-amber-800 hover:bg-amber-200">Pending setup</a>`;
                         
                         return `
-                            <tr class="hover:bg-surface-container-low transition-colors cursor-pointer" onclick="window.location.href='asset-detail.php?coin_key=${encodeURIComponent(asset.coin_key || '')}'">
+                            <tr class="${rowClass}" onclick="window.location.href='asset-detail.php?coin_key=${encodeURIComponent(asset.coin_key || '')}${setupTrustId > 0 ? '&trust_id=' + setupTrustId : ''}'">
                                 <td class="px-2 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4">
                                     <div class="flex items-center gap-1.5 sm:gap-2 md:gap-3">
                                         <img src="${asset.logo || ''}" alt="${asset.display_name}" class="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 rounded-full flex-shrink-0" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
@@ -315,6 +384,7 @@ function renderAssets() {
                                         <div class="min-w-0">
                                             <p class="font-bold text-[10px] sm:text-xs md:text-sm truncate text-on-surface">${escapeHtml(asset.display_name || asset.symbol || 'Unknown')}</p>
                                             <p class="text-[9px] sm:text-[10px] md:text-xs text-on-surface-variant">${escapeHtml(asset.symbol || '')}</p>
+                                            ${statusBadge}
                                             <div class="sm:hidden mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
                                                 <span class="text-[9px] font-medium text-on-surface">${priceLabel}</span>
                                                 <span class="text-[9px] ${changeClass}">${changeLabel}</span>
@@ -341,7 +411,7 @@ function renderAssets() {
         </div>
     `;
     
-    container.innerHTML = assetsHTML || '<div class="text-center py-10 text-on-surface-variant">No assets match your search</div>';
+    container.innerHTML = assetsHTML;
 }
 
 /** Zero → 0.00; otherwise up to 8 decimals with trailing zeros removed. */
@@ -357,8 +427,8 @@ function updatePortfolioSummary() {
     let totalAssets = 0;
     
     userAssets.forEach(asset => {
-        const price = asset.price_usd || 0;
-        const change24h = asset.price_change_24h || 0;
+        const price = asset.price_usd || cryptoPrices[asset.coin_key]?.usd || 0;
+        const change24h = asset.price_change_24h || cryptoPrices[asset.coin_key]?.usd_24h_change || 0;
         const balance = parseFloat(asset.balance || 0);
         const value = balance * price;
         

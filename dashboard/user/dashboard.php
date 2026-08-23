@@ -16,35 +16,44 @@ include __DIR__ . '/includes/layout.php';
 <p class="text-sm sm:text-base text-on-surface-variant">Manage your LLCs, beneficiaries, and business details from one secure dashboard.</p>
 </section>
 
-<!-- Key Metrics (3 cards) -->
-<section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-<div class="metric-card-gradient p-6 rounded-2xl card-hover flex flex-col justify-between min-h-[7.5rem] text-on-primary shadow-lg dashboard-metric-card">
-<span class="text-xs md:text-sm uppercase tracking-widest text-on-primary/70 font-bold">Active LLCs</span>
+<!-- Key Metrics -->
+<section class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
+<div class="metric-card-gradient p-4 sm:p-6 rounded-2xl card-hover flex flex-col justify-between min-h-[7rem] sm:min-h-[7.5rem] text-on-primary shadow-lg dashboard-metric-card">
+<span class="text-[10px] sm:text-xs md:text-sm uppercase tracking-widest text-on-primary/70 font-bold">Active LLCs</span>
 <div class="min-w-0">
 <div class="dashboard-metric-value-wrap">
-<p class="dashboard-metric-value text-on-primary" id="trustCount" data-fit-max="36" data-fit-min="16">0</p>
+<p class="dashboard-metric-value text-on-primary" id="trustCount" data-fit-max="36" data-fit-max-mobile="24" data-fit-min="14">0</p>
 </div>
-<p class="text-sm md:text-base text-on-primary/80 mt-1 font-medium">Securely Managed</p>
+<p class="text-xs sm:text-sm md:text-base text-on-primary/80 mt-1 font-medium">Securely Managed</p>
 </div>
 </div>
-<div class="dashboard-metric-card bg-surface-container-lowest p-6 rounded-2xl border border-outline-variant card-hover flex flex-col justify-between min-h-[7.5rem]">
-<span class="text-xs md:text-sm uppercase tracking-widest text-on-surface-variant font-bold">Share Holders</span>
+<div class="dashboard-metric-card bg-surface-container-lowest p-4 sm:p-6 rounded-2xl border border-outline-variant card-hover flex flex-col justify-between min-h-[7rem] sm:min-h-[7.5rem]">
+<span class="text-[10px] sm:text-xs md:text-sm uppercase tracking-widest text-on-surface-variant font-bold">Pending LLCs</span>
 <div class="min-w-0">
 <div class="dashboard-metric-value-wrap">
-<p class="dashboard-metric-value text-primary" id="beneficiaryCount" data-fit-max="36" data-fit-min="16">0</p>
+<p class="dashboard-metric-value text-primary" id="pendingTrustCount" data-fit-max="36" data-fit-max-mobile="24" data-fit-min="14">0</p>
 </div>
-<p class="text-sm md:text-base text-on-surface-variant mt-1 font-medium">Assigned protections</p>
+<p class="text-xs sm:text-sm md:text-base text-on-surface-variant mt-1 font-medium">Awaiting approval</p>
 </div>
 </div>
-<div class="dashboard-metric-card bg-surface-container-lowest p-6 rounded-2xl border border-outline-variant card-hover flex flex-col justify-between min-h-[7.5rem]">
-<span class="text-xs md:text-sm uppercase tracking-widest text-on-surface-variant font-bold">Last Updated</span>
+<div class="dashboard-metric-card bg-surface-container-lowest p-4 sm:p-6 rounded-2xl border border-outline-variant card-hover flex flex-col justify-between min-h-[7rem] sm:min-h-[7.5rem]">
+<span class="text-[10px] sm:text-xs md:text-sm uppercase tracking-widest text-on-surface-variant font-bold">Share Holders</span>
 <div class="min-w-0">
 <div class="dashboard-metric-value-wrap">
-<p class="dashboard-metric-value text-primary" id="lastUpdated" data-fit-max="28" data-fit-min="12">—</p>
+<p class="dashboard-metric-value text-primary" id="beneficiaryCount" data-fit-max="36" data-fit-max-mobile="24" data-fit-min="14">0</p>
+</div>
+<p class="text-xs sm:text-sm md:text-base text-on-surface-variant mt-1 font-medium">Assigned protections</p>
+</div>
+</div>
+<div class="dashboard-metric-card bg-surface-container-lowest p-4 sm:p-6 rounded-2xl border border-outline-variant card-hover flex flex-col justify-between min-h-[7rem] sm:min-h-[7.5rem]">
+<span class="text-[10px] sm:text-xs md:text-sm uppercase tracking-widest text-on-surface-variant font-bold">Last Updated</span>
+<div class="min-w-0">
+<div class="dashboard-metric-value-wrap">
+<p class="dashboard-metric-value text-primary" id="lastUpdated" data-fit-max="28" data-fit-max-mobile="16" data-fit-min="11">—</p>
 </div>
 <div class="flex items-center gap-2 text-deep-forest mt-1">
 <span class="w-2 h-2 rounded-full bg-deep-forest animate-pulse"></span>
-<p class="text-sm md:text-base font-medium">System Sync</p>
+<p class="text-xs sm:text-sm md:text-base font-medium">System Sync</p>
 </div>
 </div>
 </div>
@@ -158,6 +167,7 @@ async function loadDashboardData() {
     const trustsContainer = document.getElementById('trustsContainer');
     const paymentsContainer = document.getElementById('paymentsContainer');
     const trustCountEl = document.getElementById('trustCount');
+    const pendingTrustCountEl = document.getElementById('pendingTrustCount');
     const beneficiaryEl = document.getElementById('beneficiaryCount');
 
     const showTrustsError = (message) => {
@@ -165,6 +175,7 @@ async function loadDashboardData() {
             trustsContainer.innerHTML = `<div class="p-10 text-center text-error">${escapeHtml(message)}</div>`;
         }
         if (trustCountEl) trustCountEl.textContent = '0';
+        if (pendingTrustCountEl) pendingTrustCountEl.textContent = '0';
         if (beneficiaryEl) beneficiaryEl.textContent = '0';
     };
 
@@ -203,7 +214,9 @@ async function loadDashboardData() {
 
             if (trustsData && trustsData.success && Array.isArray(trustsData.trusts)) {
                 const activeTrusts = trustsData.trusts.filter(t => (t.status || '').toLowerCase() === 'active');
+                const pendingTrusts = trustsData.trusts.filter(t => (t.status || '').toLowerCase() === 'pending');
                 if (trustCountEl) trustCountEl.textContent = String(activeTrusts.length);
+                if (pendingTrustCountEl) pendingTrustCountEl.textContent = String(pendingTrusts.length);
 
                 const uniqueBeneficiaries = countUniqueBeneficiaries(trustsData.trusts);
                 if (beneficiaryEl) beneficiaryEl.textContent = String(uniqueBeneficiaries);
@@ -212,16 +225,25 @@ async function loadDashboardData() {
                     renderTrusts(activeTrusts);
                 } else if (trustsData.trusts.length > 0) {
                     if (trustsContainer) {
-                        trustsContainer.innerHTML = '<div class="p-10 text-center text-on-surface-variant">No active LLCs yet. <a href="manage-trust.php" class="text-secondary font-semibold hover:underline">View pending LLCs</a></div>';
+                        trustsContainer.innerHTML = `
+                            <div class="p-6 sm:p-8 text-left text-on-surface-variant flex flex-col items-start gap-2">
+                                <p>No active LLCs yet.</p>
+                                <a href="manage-trust.php" class="text-secondary font-semibold hover:underline">View pending LLCs</a>
+                            </div>`;
                     }
                 } else {
                     renderTrusts([]);
                 }
             } else {
                 if (trustCountEl) trustCountEl.textContent = '0';
+                if (pendingTrustCountEl) pendingTrustCountEl.textContent = '0';
                 if (beneficiaryEl) beneficiaryEl.textContent = '0';
                 if (trustsContainer) {
-                    trustsContainer.innerHTML = '<div class="p-10 text-center text-on-surface-variant">No LLCs yet. <a href="../../onboarding/onboarding.php" class="text-secondary font-semibold hover:underline">Create your first LLC</a></div>';
+                    trustsContainer.innerHTML = `
+                        <div class="p-6 sm:p-8 text-left text-on-surface-variant flex flex-col items-start gap-2">
+                            <p>No LLCs yet.</p>
+                            <a href="../../onboarding/onboarding.php" class="text-secondary font-semibold hover:underline">Create your first LLC</a>
+                        </div>`;
                 }
             }
         }
@@ -256,7 +278,11 @@ async function loadDashboardData() {
 function renderTrusts(trusts) {
     const container = document.getElementById('trustsContainer');
     if (!trusts || trusts.length === 0) {
-        container.innerHTML = '<div class="p-10 text-center text-on-surface-variant">No LLCs yet. <a href="../../onboarding/onboarding.php" class="text-secondary font-semibold hover:underline">Create your first LLC</a></div>';
+        container.innerHTML = `
+            <div class="p-6 sm:p-8 text-left text-on-surface-variant flex flex-col items-start gap-2">
+                <p>No LLCs yet.</p>
+                <a href="../../onboarding/onboarding.php" class="text-secondary font-semibold hover:underline">Create your first LLC</a>
+            </div>`;
         return;
     }
 
@@ -278,8 +304,9 @@ function renderTrusts(trusts) {
                         <div class="flex items-center gap-2 flex-wrap">
                             <p class="font-bold text-primary text-lg truncate">${escapeHtml(trustName)}</p>
                             ${showBadge ? `<span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-secondary/10 text-secondary">${escapeHtml(serviceName)}</span>` : ''}
+                            ${llcStatusBadge(status)}
                         </div>
-                        <p class="text-sm text-on-surface-variant mt-0.5">Status: <span class="capitalize font-medium">${escapeHtml(status)}</span> · Created ${createdDate}</p>
+                        <p class="text-sm text-on-surface-variant mt-0.5">Created ${createdDate}</p>
                     </div>
                 </div>
                 <div class="flex gap-2 shrink-0">
@@ -289,6 +316,25 @@ function renderTrusts(trusts) {
             </div>
         `;
     }).join('');
+}
+
+function llcStatusBadge(status) {
+    const raw = String(status || 'pending').toLowerCase();
+    let label = raw.replace(/_/g, ' ');
+    let classes = 'bg-surface-container text-on-surface-variant';
+    if (raw === 'pending') {
+        classes = 'bg-amber-100 text-amber-800';
+        label = 'pending';
+    } else if (raw === 'active' || raw === 'approved') {
+        classes = 'bg-deep-forest/15 text-deep-forest';
+        label = raw === 'approved' ? 'approved' : 'active';
+    } else if (raw === 'rejected' || raw === 'denied') {
+        classes = 'bg-error-container/40 text-error';
+        label = 'rejected';
+    } else if (raw === 'liquidated' || raw === 'inactive' || raw === 'suspended') {
+        classes = 'bg-surface-container text-on-surface-variant';
+    }
+    return `<span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${classes}">${escapeHtml(label)}</span>`;
 }
 
 function renderPayments(payments) {

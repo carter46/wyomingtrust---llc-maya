@@ -5,6 +5,10 @@
  */
 $active_nav = $active_nav ?? '';
 $userName = $userName ?? ($_SESSION['user_name'] ?? 'User');
+$site_settings = function_exists('get_site_settings') ? get_site_settings() : [];
+$site_name = trim((string) ($site_settings['site_name'] ?? '')) !== ''
+    ? trim((string) $site_settings['site_name'])
+    : 'WyomingTrust';
 $userInitials = 'WT';
 $nameParts = preg_split('/\s+/', trim($userName));
 if (count($nameParts) >= 2) {
@@ -31,7 +35,7 @@ $footerNavClass = function ($key) use ($active_nav) {
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title><?php echo escape_html($page_title ?? 'WyomingTrust Dashboard'); ?></title>
+<title><?php echo escape_html($page_title ?? ($site_name . ' Dashboard')); ?></title>
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Source+Serif+4:ital,opsz,wght@0,8..60,200..900;1,8..60,200..900&display=swap" rel="stylesheet"/>
 <script src="<?php echo escape_html(wt_icon_script_url()); ?>"></script>
@@ -163,7 +167,7 @@ tailwind.config = {
 <path d="M9.75 12.25L11.1 13.85L14.55 10.1" stroke="#16a34a" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>
 </span>
-<a href="dashboard.php" class="font-headline-md text-headline-md font-bold text-primary tracking-tight">WyomingTrust</a>
+<a href="dashboard.php" class="font-headline-md text-headline-md font-bold text-primary tracking-tight truncate" title="<?php echo escape_html($site_name); ?>"><?php echo escape_html($site_name); ?></a>
 </div>
 <nav class="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
 <a class="<?php echo $navClass('dashboard'); ?>" href="dashboard.php">

@@ -6,7 +6,7 @@ require_user_page_auth('../../login.php');
 $userName = $_SESSION['user_name'] ?? 'User';
 $trustIdParam = isset($_GET['trust_id']) ? (int) $_GET['trust_id'] : 0;
 $page_title = 'Asset Details | WyomingTrust';
-$active_nav = 'trusts';
+$active_nav = 'crypto-assets';
 $extra_head = '<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>';
 $extra_styles = '.card-shadow { box-shadow: 0 4px 20px rgba(4, 22, 39, 0.05); }
 .asset-action-btn {
@@ -58,11 +58,9 @@ include __DIR__ . '/includes/layout.php';
 
 <section class="flex flex-col gap-4 mb-6 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
 <div class="min-w-0">
-<?php if ($trustIdParam > 0): ?>
-<a href="manage-trust.php?id=<?php echo $trustIdParam; ?>" class="inline-flex items-center gap-1 text-secondary font-label-md text-label-md hover:underline mb-3">
-<?php echo wt_icon('arrow-back', 'w-4 h-4'); ?> Back to LLC
+<a href="assets.php" class="inline-flex items-center gap-1 text-secondary font-label-md text-label-md hover:underline mb-3">
+<?php echo wt_icon('arrow-back', 'w-4 h-4'); ?> Back to Assets
 </a>
-<?php endif; ?>
 <h1 class="font-headline-lg text-headline-lg text-primary mb-1" id="coinSymbol">Loading...</h1>
 <p class="font-body-md text-body-md text-on-surface-variant" id="coinName">Loading...</p>
 </div>

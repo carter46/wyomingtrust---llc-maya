@@ -171,7 +171,7 @@ Continue to Deposit <?php echo wt_icon('arrow-forward', 'w-5 h-5'); ?>
 <div id="depositPendingNotice" class="hidden mt-8 p-4 rounded-xl border border-secondary/30 bg-secondary/10 text-sm text-on-surface text-center">
 <?php echo wt_icon('info', 'inline w-4 h-4 text-secondary mr-1'); ?>
 <strong>Deposit pending review.</strong> You already submitted a payment for this asset. An administrator will verify it shortly.
-<a href="dashboard.php" class="block mt-3 text-secondary font-semibold hover:underline">Back to Dashboard</a>
+<a id="depositPendingBackLink" href="assets.php" class="block mt-3 text-secondary font-semibold hover:underline">Back to Asset</a>
 </div>
 
 <div id="depositSuccessPanel" class="hidden text-center py-10 sm:py-14 px-4">
@@ -185,7 +185,7 @@ Your crypto deposit is <strong class="text-primary">pending review</strong>. An 
 <p class="text-sm text-on-surface-variant max-w-md mx-auto mb-8">
 Once confirmed, your funds will be credited to your account within <strong class="text-primary">24 hours</strong>.
 </p>
-<button type="button" onclick="window.location.href='dashboard.php'" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-primary text-on-primary px-10 py-4 rounded-xl font-label-md font-bold hover:bg-primary/90 transition-colors">
+<button type="button" id="depositDoneBtn" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-primary text-on-primary px-10 py-4 rounded-xl font-label-md font-bold hover:bg-primary/90 transition-colors">
 Done
 </button>
 </div>
@@ -485,6 +485,32 @@ function showDepositSuccessPanel() {
     setDepositStep('success');
     document.getElementById('depositPendingNotice')?.classList.add('hidden');
     document.getElementById('depositSuccessPanel')?.classList.remove('hidden');
+    syncDepositReturnLinks();
+}
+
+function getDepositReturnUrl() {
+    const coin = (selectedAsset && selectedAsset.coin_key) || urlCoinKey || '';
+    if (!coin) return 'assets.php';
+    const params = new URLSearchParams({ coin_key: coin });
+    if (urlTrustId > 0) params.set('trust_id', String(urlTrustId));
+    return `asset-detail.php?${params.toString()}`;
+}
+
+function syncDepositReturnLinks() {
+    const href = getDepositReturnUrl();
+    const pendingLink = document.getElementById('depositPendingBackLink');
+    if (pendingLink) {
+        pendingLink.href = href;
+        pendingLink.textContent = coinKeyLabel() ? 'Back to Asset' : 'Back to Assets';
+    }
+    const doneBtn = document.getElementById('depositDoneBtn');
+    if (doneBtn) {
+        doneBtn.onclick = () => { window.location.href = href; };
+    }
+}
+
+function coinKeyLabel() {
+    return (selectedAsset && selectedAsset.coin_key) || urlCoinKey || '';
 }
 
 function hideConfirmPaymentForm() {
@@ -663,6 +689,7 @@ async function checkPendingDeposit() {
             if (addressSection) addressSection.classList.add('hidden');
             if (formSection) formSection.classList.add('hidden');
             document.getElementById('depositSuccessPanel')?.classList.add('hidden');
+            syncDepositReturnLinks();
         } else if (!confirmFormOpen && !depositQrStepOpen) {
             setDepositStep('amount');
         }

@@ -156,8 +156,9 @@ async function loadTrusts() {
                             <div class="flex items-center gap-2 flex-wrap">
                                 <p class="text-xl font-black text-primary">${escapeHtml(trustName)}</p>
                                 ${showServiceBadge ? `<span class="text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded bg-secondary/10 text-secondary">${escapeHtml(serviceName)}</span>` : ''}
+                                ${llcStatusBadge(status)}
                             </div>
-                            <p class="text-xs text-on-surface-variant mt-1">Status: <strong>${escapeHtml(status)}</strong> · Share Holders: <strong>${bens}</strong> · Created: ${escapeHtml(createdAt)}</p>
+                            <p class="text-xs text-on-surface-variant mt-1">Share Holders: <strong>${bens}</strong> · Created: ${escapeHtml(createdAt)}</p>
                         </div>
                         <div class="flex gap-2">
                             <a href="manage-trust.php?id=${t.id}" class="px-4 py-2 rounded-lg bg-primary text-on-primary font-bold hover:bg-primary/90 h-10 flex items-center">Manage</a>
@@ -171,6 +172,25 @@ async function loadTrusts() {
         console.error(e);
         document.getElementById('trustsList').innerHTML = '<div class="text-center py-10 text-error">Error loading LLCs</div>';
     }
+}
+
+function llcStatusBadge(status) {
+    const raw = String(status || 'pending').toLowerCase();
+    let label = raw.replace(/_/g, ' ');
+    let classes = 'bg-surface-container text-on-surface-variant';
+    if (raw === 'pending') {
+        classes = 'bg-amber-100 text-amber-800';
+        label = 'pending';
+    } else if (raw === 'active' || raw === 'approved') {
+        classes = 'bg-deep-forest/15 text-deep-forest';
+        label = raw === 'approved' ? 'approved' : 'active';
+    } else if (raw === 'rejected' || raw === 'denied') {
+        classes = 'bg-error-container/40 text-error';
+        label = 'rejected';
+    } else if (raw === 'liquidated' || raw === 'inactive' || raw === 'suspended') {
+        classes = 'bg-surface-container text-on-surface-variant';
+    }
+    return `<span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${classes}">${escapeHtml(label)}</span>`;
 }
 
 var modalResolve = null;
@@ -432,7 +452,7 @@ Change Status
 
 <section class="mb-8" id="cryptoTrustSection" style="display:none;">
 <div class="flex justify-between items-center pb-4">
-<h2 class="font-headline-md text-headline-md text-primary">Crypto Portfolio</h2>
+<h2 class="font-headline-md text-headline-md text-primary">Selected Crypto Portfolio</h2>
 <div class="flex items-center gap-3">
 <a id="addCoinsLinkLegacy" href="#" class="hidden text-secondary text-sm font-bold hover:underline inline-flex items-center gap-1"><?php echo wt_icon('add-circle', 'w-4 h-4'); ?> Add Assets</a>
 <a href="assets.php" class="text-secondary text-sm font-bold hover:underline inline-flex items-center gap-1">View All Assets <?php echo wt_icon('arrow-forward', 'w-4 h-4'); ?></a>
@@ -517,12 +537,8 @@ Liquidate LLC
 <p id="cryptoTrustId" class="text-on-surface-variant text-sm font-mono font-medium">ID: Loading...</p>
 </div>
 <div class="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center no-print w-full sm:w-auto">
-<button type="button" onclick="window.location.href='link-wallet.php?trust_id=<?php echo (int) $trustId; ?>'" class="crypto-action-btn flex items-center justify-center rounded-lg h-10 px-3 sm:px-4 bg-primary text-on-primary text-xs sm:text-sm font-bold gap-1.5 hover:bg-primary/90 transition-all">
-<?php echo wt_icon('link', 'text-sm shrink-0'); ?>
-<span>Link Wallet</span>
-</button>
-<button type="button" onclick="scrollToCryptoPortfolio()" class="crypto-action-btn flex items-center justify-center rounded-lg h-10 px-3 sm:px-4 bg-surface-container-lowest border border-outline-variant text-primary text-xs sm:text-sm font-bold gap-1.5 hover:bg-surface-container transition-all">
-<?php echo wt_icon('arrow-back', 'text-sm shrink-0'); ?>
+<button type="button" onclick="scrollToCryptoPortfolio()" class="crypto-action-btn flex items-center justify-center rounded-lg h-10 px-3 sm:px-4 bg-primary text-on-primary text-xs sm:text-sm font-bold gap-1.5 hover:bg-primary/90 transition-all">
+<?php echo wt_icon('wallet', 'text-sm shrink-0'); ?>
 <span>View Assets</span>
 </button>
 </div>
@@ -563,7 +579,7 @@ Liquidate LLC
 <a id="cryptoPortfolioSection"></a>
 <div id="cryptoPortfolioMobileBlock" class="md:hidden bg-surface-container-lowest p-4 rounded-xl card-shadow border border-surface-container-high crypto-layout-card min-w-0">
 <div class="flex justify-between items-center gap-2 mb-4">
-<h3 class="font-headline-md text-headline-md text-primary">Crypto Portfolio</h3>
+<h3 class="font-headline-md text-headline-md text-primary">Selected Crypto Portfolio</h3>
 <a id="addCoinsLinkMobile" href="#" class="text-secondary text-xs font-bold hover:underline inline-flex items-center gap-1 shrink-0"><?php echo wt_icon('add-circle', 'w-4 h-4'); ?> Add Assets</a>
 </div>
 <div id="cryptoPortfolioMobileList" class="space-y-3 min-w-0">
@@ -638,7 +654,7 @@ Liquidate LLC
 
 <div id="cryptoPortfolioDesktopBlock" class="hidden md:block bg-surface-container-lowest p-4 sm:p-8 rounded-xl card-shadow border border-surface-container-high overflow-hidden crypto-layout-card min-w-0">
 <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6 sm:mb-8">
-<h3 class="font-headline-md text-headline-md text-primary">Crypto Portfolio</h3>
+<h3 class="font-headline-md text-headline-md text-primary">Selected Crypto Portfolio</h3>
 <a id="addCoinsLinkDesktop" href="#" class="text-secondary text-sm font-bold hover:underline inline-flex items-center gap-1"><?php echo wt_icon('add-circle', 'w-4 h-4'); ?> Add Assets</a>
 </div>
 <table class="w-full text-left">
@@ -1092,6 +1108,10 @@ async function loadTrustData() {
             } else {
                 document.getElementById('trustAssetsSection').style.display = 'none';
                 document.getElementById('cryptoTrustSection').style.display = 'none';
+            }
+
+            if ((window.location.hash || '') === '#cryptoPortfolioSection') {
+                setTimeout(() => scrollToCryptoPortfolio(), 150);
             }
         } else {
             await showAlertModal('Error', 'LLC not found', 'error');

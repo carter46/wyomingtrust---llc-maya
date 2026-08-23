@@ -19,7 +19,7 @@ $mobileFooterNavClass = function ($key) use ($active_nav) {
 <div class="absolute inset-0 bg-primary/20 backdrop-blur-sm" onclick="toggleMobileNav()"></div>
 <div class="absolute inset-y-0 left-0 w-72 bg-surface-container-lowest shadow-2xl flex flex-col p-6 -translate-x-full transition-transform duration-300">
 <div class="flex items-center justify-between mb-8">
-<span class="font-headline-md text-headline-md font-bold text-primary">WyomingTrust</span>
+<span class="font-headline-md text-headline-md font-bold text-primary truncate" title="<?php echo escape_html($site_name ?? 'WyomingTrust'); ?>"><?php echo escape_html($site_name ?? 'WyomingTrust'); ?></span>
 <button type="button" class="p-2 hover:bg-surface-container rounded-full" onclick="toggleMobileNav()" aria-label="Close menu">
 <?php echo wt_icon('close', 'w-6 h-6'); ?>
 </button>
