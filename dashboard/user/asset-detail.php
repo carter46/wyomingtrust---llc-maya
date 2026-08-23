@@ -191,7 +191,9 @@ function formatAssetBalance(amount) {
 function updateActionButtons() {
     const liquidateBtn = document.getElementById('liquidateBtn');
     if (!liquidateBtn) return;
-    liquidateBtn.classList.toggle('hidden', assetBalance <= 0);
+    // Only show Liquidate when this coin has a real balance to withdraw
+    const hasValue = Number(assetBalance) > 0;
+    liquidateBtn.classList.toggle('hidden', !hasValue);
 }
 
 function closeModal() {

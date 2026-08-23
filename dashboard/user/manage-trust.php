@@ -38,7 +38,23 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
-function renderListTrustAction(trust) {
+function trustHasFundedEntrustedAssets(trust, allAssets) {
+    const meta = trust.service_meta || {};
+    if (!meta.is_crypto && !meta.allows_liquidation) return true;
+    if (!meta.is_crypto) return true;
+    const entrusted = Array.isArray(trust.entrusted_coins)
+        ? trust.entrusted_coins
+        : (trust.trust_data?.entrusted_coins || []);
+    if (!entrusted.length) return false;
+    const entrustedSet = new Set(entrusted.map((k) => String(k).toLowerCase()));
+    const assets = Array.isArray(allAssets) ? allAssets : [];
+    return assets.some((a) => {
+        if (!entrustedSet.has(String(a.coin_key).toLowerCase())) return false;
+        return (parseFloat(a.balance) || 0) > 0 || (parseFloat(a.value_usd) || 0) > 0;
+    });
+}
+
+function renderListTrustAction(trust, allAssets) {
     const meta = trust.service_meta || {};
     if (meta.is_irrevocable) {
         return '';
@@ -47,8 +63,16 @@ function renderListTrustAction(trust) {
     if (status === 'pending') {
         return '';
     }
+    // Smart contract / liquidation: only show when selected assets have real value
+    if (meta.allows_liquidation && meta.is_crypto && !trustHasFundedEntrustedAssets(trust, allAssets)) {
+        return '';
+    }
     const fee = parseFloat(meta.liquidation_fee || 0);
-    const label = meta.allows_liquidation ? `Liquidate${fee > 0 ? ' ($' + fee.toFixed(2) + ')' : ''}` : 'Delete';
+    const label = meta.allows_liquidation
+        ? (meta.is_crypto
+            ? `Liquidate & Withdraw${fee > 0 ? ' ($' + fee.toFixed(2) + ')' : ''}`
+            : `Liquidate${fee > 0 ? ' ($' + fee.toFixed(2) + ')' : ''}`)
+        : 'Delete';
     return `<button onclick="liquidateTrustFromList(${trust.id}, ${fee})" class="px-4 py-2 rounded-lg bg-error/10 text-error border border-error/30 font-bold hover:bg-error hover:text-on-primary h-10 flex items-center">${escapeHtml(label)}</button>`;
 }
 
@@ -130,8 +154,18 @@ async function liquidateTrustFromList(trustId, fee) {
 
 async function loadTrusts() {
     try {
-        const res = await fetch('../../api/user/trusts.php');
-        const data = await res.json();
+        const [trustsRes, assetsRes] = await Promise.all([
+            fetch('../../api/user/trusts.php'),
+            fetch('../../api/user/assets.php'),
+        ]);
+        const data = await trustsRes.json();
+        let allAssets = [];
+        try {
+            const assetsData = await assetsRes.json();
+            if (assetsData.success && Array.isArray(assetsData.assets)) {
+                allAssets = assetsData.assets;
+            }
+        } catch (_) { /* list still works without assets */ }
         const container = document.getElementById('trustsList');
         if (!data.success || !data.trusts) {
             container.innerHTML = '<div class="text-center py-10 text-error">Failed to load LLCs</div>';
@@ -162,7 +196,7 @@ async function loadTrusts() {
                         </div>
                         <div class="flex gap-2">
                             <a href="manage-trust.php?id=${t.id}" class="px-4 py-2 rounded-lg bg-primary text-on-primary font-bold hover:bg-primary/90 h-10 flex items-center">Manage</a>
-                            ${renderListTrustAction(t)}
+                            ${renderListTrustAction(t, allAssets)}
                         </div>
                     </div>
                 </div>
@@ -701,8 +735,8 @@ Warning: The following actions are irreversible and may require additional legal
 <button type="button" id="cryptoSuspendTrustBtn" onclick="suspendTrust()" class="w-full py-3 px-4 rounded-lg border-2 border-error text-error font-bold text-xs sm:text-sm hover:bg-error hover:text-on-primary transition-colors text-center whitespace-nowrap">
 Suspend LLC
 </button>
-<button type="button" onclick="archiveTrust()" id="cryptoLiquidateTrustBtn" class="w-full py-3 px-4 rounded-lg bg-error text-on-primary font-bold text-xs sm:text-sm hover:opacity-90 transition-opacity text-center shadow-md whitespace-nowrap">
-Liquidate LLC
+<button type="button" onclick="archiveTrust()" id="cryptoLiquidateTrustBtn" class="hidden w-full py-3 px-4 rounded-lg bg-error text-on-primary font-bold text-xs sm:text-sm hover:opacity-90 transition-opacity text-center shadow-md whitespace-nowrap">
+Liquidate LLC & Withdraw
 </button>
 </div>
 </section>
@@ -1404,7 +1438,9 @@ function updateTrustPermissionsUI(trust) {
         const fee = parseFloat(meta.liquidation_fee || 0);
         if (isCryptoLayout) {
             liqBtn.textContent = fee > 0 ? `Liquidate LLC & Withdraw ($${fee.toFixed(2)} fee)` : 'Liquidate LLC & Withdraw';
+            // Visibility is driven by funded asset value in updateCryptoMetrics()
         } else {
+            liqBtn.classList.remove('hidden');
             liqBtn.textContent = fee > 0 ? `Liquidate LLC ($${fee.toFixed(2)} fee)` : 'Liquidate LLC';
         }
     }
@@ -1531,6 +1567,7 @@ async function updateCryptoMetrics(trust, valueEl) {
         if (depositHint) {
             depositHint.classList.toggle('hidden', entrustedUsd > 0);
         }
+        updateCryptoLiquidateVisibility(fundedCount > 0 || entrustedUsd > 0);
     } catch (error) {
         console.error('Error loading crypto metrics:', error);
         if (assetsEl) assetsEl.textContent = isCryptoLayout ? String(totalSlots) : `0/${totalSlots}`;
@@ -1538,8 +1575,18 @@ async function updateCryptoMetrics(trust, valueEl) {
         if (valueEl) valueEl.textContent = formatUsd(0);
         if (cryptoValueEl) cryptoValueEl.textContent = formatUsd(0);
         if (depositHint) depositHint.classList.remove('hidden');
+        updateCryptoLiquidateVisibility(false);
     }
     if (typeof window.fitDashboardAmounts === 'function') window.fitDashboardAmounts();
+}
+
+/** Liquidate & Withdraw only when selected assets have actual funded balance/value. */
+function updateCryptoLiquidateVisibility(hasFundedValue) {
+    if (!isCryptoLayout) return;
+    const liqBtn = document.getElementById('cryptoLiquidateTrustBtn');
+    if (liqBtn) {
+        liqBtn.classList.toggle('hidden', !hasFundedValue);
+    }
 }
 
 async function renderCryptoPortfolioTable(trust) {
