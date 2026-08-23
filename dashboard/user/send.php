@@ -8,6 +8,7 @@ $trustIdParam = isset($_GET['trust_id']) ? (int) $_GET['trust_id'] : 0;
 $coinKeyParam = isset($_GET['coin_key']) ? sanitize_text($_GET['coin_key']) : '';
 $isLiquidateMode = isset($_GET['mode']) && $_GET['mode'] === 'liquidate';
 $page_title = $isLiquidateMode ? 'Liquidate Asset | WyomingTrust' : 'Send Crypto | WyomingTrust';
+$premium_bg = true;
 $active_nav = $trustIdParam > 0 ? 'trusts' : '';
 
 include __DIR__ . '/includes/layout.php';

@@ -149,21 +149,98 @@ function wt_premium_bg_css(): string {
     color: rgba(255, 255, 255, 0.92);
 }
 
-/* --- Crypto pages: darker navy gradient cards (flat panels, not buttons) --- */
+/* --- Crypto pages: navy gradient cards (flat panels, not buttons) --- */
+.premium-bg-page {
+    --crypto-card-gradient: linear-gradient(145deg, #041627 0%, #082238 52%, #0c3258 100%);
+    --crypto-panel-gradient: linear-gradient(145deg, #051a2e 0%, #082238 55%, #0a2d50 100%);
+    --crypto-inset-bg: rgba(255, 255, 255, 0.08);
+    --crypto-inset-border: rgba(255, 255, 255, 0.12);
+}
 .premium-bg-page .dashboard-content {
     color: rgba(255, 255, 255, 0.92);
 }
+.premium-bg-page .dashboard-content .text-on-surface {
+    color: rgba(255, 255, 255, 0.92) !important;
+}
+.premium-bg-page .dashboard-content .text-on-surface-variant {
+    color: rgba(255, 255, 255, 0.68) !important;
+}
+.premium-bg-page .dashboard-content strong.text-primary {
+    color: #ffffff !important;
+}
+
+/* Primary cards — swap/receive/link-wallet/assets/send forms + security blocks */
 .premium-bg-page .dashboard-content .dashboard-metric-card,
 .premium-bg-page .dashboard-content .card-shadow,
 .premium-bg-page .dashboard-content section > .overflow-hidden.border.rounded-2xl.bg-surface-container-lowest,
+.premium-bg-page .dashboard-content .bg-surface-container-lowest.rounded-2xl.border,
 .premium-bg-page .dashboard-content .bg-surface-container-lowest.rounded-2xl.border.border-outline-variant,
 .premium-bg-page .dashboard-content .bg-surface-container-lowest.rounded-2xl.border.border-outline-variant.card-shadow,
 .premium-bg-page .dashboard-content .bg-surface-container-lowest.rounded-2xl.border.border-outline-variant.shadow-sm,
-.premium-bg-page .dashboard-content .bg-surface-container-lowest.rounded-2xl.border.border-outline-variant.overflow-hidden {
-    background: linear-gradient(145deg, #041627 0%, #082238 52%, #0c3258 100%) !important;
+.premium-bg-page .dashboard-content .bg-surface-container-lowest.rounded-2xl.border.border-outline-variant.overflow-hidden,
+.premium-bg-page .dashboard-content .bg-surface-container-low.rounded-2xl.border.border-outline-variant,
+.premium-bg-page .dashboard-content .bg-warm-cream.border.border-outline-variant.rounded-2xl,
+.premium-bg-page .dashboard-content section.grid > .bg-surface-container-lowest.rounded-2xl,
+.premium-bg-page .dashboard-content #liquidationSuccessPanel,
+.premium-bg-page .dashboard-content #sendFormPanel,
+.premium-bg-page #assetModal > .bg-surface-container-lowest.rounded-2xl,
+.premium-bg-page #walletModal > .bg-surface-container-lowest.rounded-2xl {
+    background: var(--crypto-card-gradient) !important;
     border-color: rgba(255, 255, 255, 0.06) !important;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.22) !important;
 }
+
+/* Medium panels — deposit amount, QR wrapper, confirm blocks */
+.premium-bg-page .dashboard-content .bg-surface-container-low.rounded-xl,
+.premium-bg-page .dashboard-content .bg-surface-container-low.rounded-xl.border,
+.premium-bg-page .dashboard-content .bg-surface-container-low.rounded-xl.border.border-outline-variant {
+    background: var(--crypto-panel-gradient) !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Small inset panels — estimated fee, summaries */
+.premium-bg-page .dashboard-content .bg-surface-container-low.rounded-lg {
+    background: var(--crypto-inset-bg) !important;
+    border-color: var(--crypto-inset-border) !important;
+}
+
+/* Inner nested boxes — QR frame, address row, asset chips */
+.premium-bg-page .dashboard-content .bg-surface-container-lowest.rounded-xl,
+.premium-bg-page .dashboard-content .bg-surface-container-lowest.rounded-lg {
+    background: var(--crypto-inset-bg) !important;
+    border-color: rgba(255, 255, 255, 0.14) !important;
+}
+.premium-bg-page .dashboard-content #qrCode {
+    background: #ffffff !important;
+    border-color: rgba(255, 255, 255, 0.35) !important;
+}
+.premium-bg-page #walletModal .size-10.bg-surface-container-lowest,
+.premium-bg-page #walletModal .rounded-full.bg-surface-container-lowest {
+    background: #ffffff !important;
+}
+
+/* Asset / coin selector rows */
+.premium-bg-page .dashboard-content .border.border-outline-variant.rounded-lg,
+.premium-bg-page .dashboard-content .border.border-outline-variant.rounded-xl.cursor-pointer,
+.premium-bg-page .dashboard-content #lockedAssetDisplay {
+    background: var(--crypto-inset-bg) !important;
+    border-color: var(--crypto-inset-border) !important;
+}
+.premium-bg-page .dashboard-content .hover\:bg-surface-container-low:hover,
+.premium-bg-page .dashboard-content .cursor-pointer.hover\:bg-surface-container-low:hover {
+    background: rgba(255, 255, 255, 0.14) !important;
+}
+
+/* Accent notice panels */
+.premium-bg-page .dashboard-content [class*="bg-secondary/10"] {
+    background: rgba(17, 92, 185, 0.18) !important;
+    border-color: rgba(182, 196, 255, 0.22) !important;
+}
+.premium-bg-page .dashboard-content #liquidationFeeNotice {
+    background: rgba(17, 92, 185, 0.18) !important;
+    border-color: rgba(182, 196, 255, 0.22) !important;
+}
+
 .premium-bg-page .dashboard-content .dashboard-metric-card .text-primary,
 .premium-bg-page .dashboard-content .dashboard-metric-card .text-on-surface,
 .premium-bg-page .dashboard-content .dashboard-metric-card .text-on-surface-variant,
@@ -174,13 +251,31 @@ function wt_premium_bg_css(): string {
 .premium-bg-page .dashboard-content .bg-surface-container-lowest.rounded-2xl .text-primary,
 .premium-bg-page .dashboard-content .bg-surface-container-lowest.rounded-2xl .text-on-surface,
 .premium-bg-page .dashboard-content .bg-surface-container-lowest.rounded-2xl .text-on-surface-variant,
+.premium-bg-page .dashboard-content .bg-surface-container-low.rounded-2xl .text-primary,
+.premium-bg-page .dashboard-content .bg-surface-container-low.rounded-2xl .text-on-surface,
+.premium-bg-page .dashboard-content .bg-surface-container-low.rounded-2xl .text-on-surface-variant,
 .premium-bg-page .dashboard-content .font-headline-md.text-primary,
-.premium-bg-page .dashboard-content h3.text-primary {
+.premium-bg-page .dashboard-content h3.text-primary,
+.premium-bg-page #assetModal .text-primary,
+.premium-bg-page #assetModal .text-on-surface,
+.premium-bg-page #assetModal .text-on-surface-variant,
+.premium-bg-page #walletModal .text-primary,
+.premium-bg-page #walletModal .text-on-surface,
+.premium-bg-page #walletModal .text-on-surface-variant {
     color: #ffffff !important;
 }
 .premium-bg-page .dashboard-content .font-headline-lg.text-primary,
-.premium-bg-page .dashboard-content h1.text-primary {
+.premium-bg-page .dashboard-content h1.text-primary,
+.premium-bg-page .dashboard-content h2.text-primary {
     color: #ffffff !important;
+}
+.premium-bg-page #assetModal .text-on-surface-variant,
+.premium-bg-page #walletModal .text-on-surface-variant {
+    color: rgba(255, 255, 255, 0.68) !important;
+}
+.premium-bg-page .dashboard-content ul.text-on-surface-variant li,
+.premium-bg-page .dashboard-content .list-disc.text-on-surface-variant {
+    color: rgba(255, 255, 255, 0.72) !important;
 }
 
 /* Chart + tab panels */
@@ -250,12 +345,23 @@ function wt_premium_bg_css(): string {
     color: rgba(255, 255, 255, 0.45);
 }
 .premium-bg-page .dashboard-content #refreshPrices,
-.premium-bg-page .dashboard-content button.bg-surface-container-low.text-on-surface {
+.premium-bg-page .dashboard-content button.bg-surface-container-low.text-on-surface,
+.premium-bg-page .dashboard-content button.bg-surface-container-lowest.text-on-surface,
+.premium-bg-page .dashboard-content button.bg-surface-container-lowest.text-sm,
+.premium-bg-page .dashboard-content .fee-option {
     background: rgba(255, 255, 255, 0.12) !important;
     color: #ffffff !important;
-    border: 1px solid rgba(255, 255, 255, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.18) !important;
+}
+.premium-bg-page .dashboard-content .fee-option.border-secondary {
+    background: rgba(182, 196, 255, 0.2) !important;
+    border-color: rgba(182, 196, 255, 0.45) !important;
 }
 .premium-bg-page .dashboard-content #refreshPrices svg {
+    stroke: #ffffff !important;
+}
+.premium-bg-page .dashboard-content button.bg-surface-container-low svg,
+.premium-bg-page .dashboard-content button.bg-surface-container-lowest svg {
     stroke: #ffffff !important;
 }
 
