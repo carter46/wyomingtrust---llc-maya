@@ -4,6 +4,7 @@
  * Expects: $page_title, $userName; optional: $active_nav (dashboard|trusts|crypto-assets|billing|support|profile)
  */
 $active_nav = $active_nav ?? '';
+$premium_bg = !empty($premium_bg);
 $userName = $userName ?? ($_SESSION['user_name'] ?? 'User');
 $site_settings = function_exists('get_site_settings') ? get_site_settings() : [];
 $site_name = trim((string) ($site_settings['site_name'] ?? '')) !== ''
@@ -167,6 +168,9 @@ tailwind.config = {
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #d9dadb; border-radius: 10px; }
+<?php if ($premium_bg): ?>
+<?php echo wt_premium_bg_css(); ?>
+<?php endif; ?>
 <?php if (!empty($extra_styles)): ?>
 <?php echo $extra_styles; ?>
 <?php endif; ?>
@@ -175,9 +179,9 @@ tailwind.config = {
 <?php echo $extra_head; ?>
 <?php endif; ?>
 </head>
-$body class="bg-surface font-body-md text-on-surface antialiased">
+<body class="<?php echo $premium_bg ? 'premium-bg-page bg-premium' : 'bg-surface'; ?> font-body-md text-on-surface antialiased">
 <div class="dashboard-shell flex min-h-screen">
-<aside class="hidden md:flex flex-col w-72 fixed h-full bg-surface-container-lowest border-r border-outline-variant z-50">
+<aside class="dashboard-sidebar hidden md:flex flex-col w-72 fixed h-full bg-surface-container-lowest border-r border-outline-variant z-50">
 <div class="p-gutter h-20 flex items-center gap-2.5">
 <span class="flex-shrink-0 w-9 h-9 rounded-lg bg-[#16a34a] flex items-center justify-center shadow-sm" aria-hidden="true">
 <svg class="w-[22px] h-[22px]" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">

@@ -8,6 +8,7 @@ $trustIdParam = isset($_GET['trust_id']) ? (int) $_GET['trust_id'] : 0;
 $coinKeyParam = isset($_GET['coin_key']) ? sanitize_text($_GET['coin_key']) : '';
 $page_title = 'Deposit Crypto | WyomingTrust';
 $active_nav = $trustIdParam > 0 ? 'trusts' : '';
+$premium_bg = true;
 $extra_styles = '.card-shadow { box-shadow: 0 4px 20px rgba(4, 22, 39, 0.05); }';
 $extra_head = '<script src="' . escape_html(asset_url('assets/js/qrcode.min.js')) . '"></script>';
 

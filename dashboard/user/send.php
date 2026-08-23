@@ -547,16 +547,33 @@ async function getCsrfToken() {
 
 document.addEventListener('DOMContentLoaded', async () => {
     await getCsrfToken();
-    const canProceed = await ensureLiquidationCheckout();
-    if (!canProceed) {
-        const notice = document.getElementById('liquidationFeeNotice');
-        const pendingShown = notice && !notice.classList.contains('hidden');
-        if (!pendingShown) {
-            alert('Unable to verify liquidation fee. Please try again or return to the asset page.');
-        }
-        return;
-    }
     await loadAssets();
+
+    if (isLiquidateMode) {
+        const balance = parseFloat(selectedAsset?.balance || 0);
+        if (!(balance > 0)) {
+            const notice = document.getElementById('liquidationFeeNotice');
+            if (notice) notice.classList.add('hidden');
+            const backParams = new URLSearchParams();
+            if (urlCoinKey) backParams.set('coin_key', urlCoinKey);
+            if (urlTrustId) backParams.set('trust_id', urlTrustId);
+            window.location.href = urlCoinKey
+                ? `asset-detail.php?${backParams.toString()}`
+                : 'assets.php';
+            return;
+        }
+
+        const canProceed = await ensureLiquidationCheckout();
+        if (!canProceed) {
+            const notice = document.getElementById('liquidationFeeNotice');
+            const pendingShown = notice && !notice.classList.contains('hidden');
+            if (!pendingShown) {
+                alert('Unable to verify liquidation fee. Please try again or return to the asset page.');
+            }
+            return;
+        }
+    }
+
     await fetchCryptoPrices();
 });
 </script>

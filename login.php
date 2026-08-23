@@ -15,7 +15,6 @@ $site_settings = get_site_settings();
 $site_name = $site_settings['site_name'] ?? 'WyomingTrust';
 $page_title = 'Sign In | ' . $site_name;
 $redirectTo = isset($_GET['redirect']) ? $_GET['redirect'] : 'dashboard';
-$bg_image = asset_url('Storage/images/wyoming-business-landscape.jpg');
 $favicon_href = asset_url('Storage/images/logo_ant.webp');
 $forgot_href = asset_url('forgot-password.php');
 $onboarding_href = asset_url('onboarding/onboarding.php');
@@ -37,31 +36,7 @@ $home_href = asset_url('index.php');
 }
 ::-webkit-scrollbar { display: none; }
 
-.bg-premium {
-    background: linear-gradient(135deg, #121c2a 0%, #1e293b 50%, #0f172a 100%);
-    position: relative;
-}
-.bg-premium::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background-image: url('<?php echo escape_html($bg_image); ?>');
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-    opacity: 0.14;
-    pointer-events: none;
-}
-.bg-premium::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background:
-        radial-gradient(circle at top right, rgba(0, 35, 111, 0.35) 0%, transparent 42%),
-        radial-gradient(circle at bottom left, rgba(64, 89, 170, 0.18) 0%, transparent 42%),
-        linear-gradient(135deg, rgba(18, 28, 42, 0.88) 0%, rgba(15, 23, 42, 0.92) 100%);
-    pointer-events: none;
-}
+<?php echo wt_premium_bg_css(); ?>
 
 .glass-panel {
     background: rgba(255, 255, 255, 0.03);
@@ -302,8 +277,9 @@ Please wait <span id="countdownSeconds" class="font-bold">60</span> seconds befo
 <span class="material-symbols-outlined text-[18px] font-light">lock</span>
 </span>
 <input class="w-full h-11 pl-11 pr-11 glass-input rounded-lg font-body-md text-sm focus:outline-none transition-all" id="password" name="password" placeholder="••••••••" required type="password" autocomplete="current-password"/>
-<button class="absolute right-3.5 top-1/2 -translate-y-1/2 text-white/40 hover:text-white focus:outline-none transition-colors" id="togglePassword" type="button" aria-label="Toggle password visibility">
-<span class="material-symbols-outlined text-[18px] font-light" id="visibilityIcon">visibility_off</span>
+<button class="absolute right-3.5 top-1/2 -translate-y-1/2 text-white/40 hover:text-white focus:outline-none transition-colors flex items-center justify-center" id="togglePassword" type="button" aria-label="Show password">
+<span id="visibilityIconHide"><?php echo wt_icon('visibility-off', 'w-[18px] h-[18px]', 'currentColor'); ?></span>
+<span id="visibilityIconShow" class="hidden"><?php echo wt_icon('visibility', 'w-[18px] h-[18px]', 'currentColor'); ?></span>
 </button>
 </div>
 </div>
@@ -378,13 +354,16 @@ let currentEmail = '';
 document.addEventListener('DOMContentLoaded', function() {
     const togglePassword = document.getElementById('togglePassword');
     const password = document.getElementById('password');
-    const visibilityIcon = document.getElementById('visibilityIcon');
+    const visibilityIconHide = document.getElementById('visibilityIconHide');
+    const visibilityIconShow = document.getElementById('visibilityIconShow');
 
-    if (togglePassword && password && visibilityIcon) {
+    if (togglePassword && password && visibilityIconHide && visibilityIconShow) {
         togglePassword.addEventListener('click', function() {
-            const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
-            password.setAttribute('type', type);
-            visibilityIcon.textContent = type === 'password' ? 'visibility_off' : 'visibility';
+            const showPassword = password.getAttribute('type') === 'password';
+            password.setAttribute('type', showPassword ? 'text' : 'password');
+            visibilityIconHide.classList.toggle('hidden', showPassword);
+            visibilityIconShow.classList.toggle('hidden', !showPassword);
+            togglePassword.setAttribute('aria-label', showPassword ? 'Hide password' : 'Show password');
         });
     }
 

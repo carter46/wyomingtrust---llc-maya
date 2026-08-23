@@ -1280,3 +1280,4 @@ function decode_asset_types(?string $json): array {
 }
 
 require_once __DIR__ . '/../includes/icons.php';
+require_once __DIR__ . '/../includes/premium-bg.php';

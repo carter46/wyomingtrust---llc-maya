@@ -7,6 +7,7 @@ $userName = $_SESSION['user_name'] ?? 'User';
 $trustIdParam = isset($_GET['trust_id']) ? (int) $_GET['trust_id'] : 0;
 $page_title = 'Asset Details | WyomingTrust';
 $active_nav = 'crypto-assets';
+$premium_bg = true;
 $extra_head = '<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>';
 $extra_styles = '.card-shadow { box-shadow: 0 4px 20px rgba(4, 22, 39, 0.05); }
 .asset-action-btn {
@@ -77,10 +78,12 @@ include __DIR__ . '/includes/layout.php';
 <?php echo wt_icon('wallet', 'w-5 h-5'); ?>
 <span>Link Wallet</span>
 </a>
-<button type="button" id="liquidateBtn" class="asset-action-btn hidden bg-primary text-on-primary hover:opacity-90">
+<div id="liquidationActionSection" class="hidden contents">
+<button type="button" id="liquidateBtn" class="asset-action-btn bg-primary text-on-primary hover:opacity-90">
 <?php echo wt_icon('send', 'w-5 h-5'); ?>
 <span>Liquidate</span>
 </button>
+</div>
 </div>
 </section>
 
@@ -188,12 +191,23 @@ function formatAssetBalance(amount) {
     return num.toFixed(8).replace(/\.?0+$/, '');
 }
 
+function assetHasFundedValue() {
+    const balance = Number(assetBalance) || 0;
+    if (balance > 0) return true;
+    const usd = balance * (Number(currentPrice) || 0);
+    return usd > 0;
+}
+
 function updateActionButtons() {
+    const liquidationSection = document.getElementById('liquidationActionSection');
     const liquidateBtn = document.getElementById('liquidateBtn');
-    if (!liquidateBtn) return;
-    // Only show Liquidate when this coin has a real balance to withdraw
-    const hasValue = Number(assetBalance) > 0;
-    liquidateBtn.classList.toggle('hidden', !hasValue);
+    const hasValue = assetHasFundedValue();
+    if (liquidationSection) {
+        liquidationSection.classList.toggle('hidden', !hasValue);
+    }
+    if (liquidateBtn) {
+        liquidateBtn.classList.toggle('hidden', !hasValue);
+    }
 }
 
 function closeModal() {

@@ -723,20 +723,22 @@ Liquidate LLC
 </div>
 </div>
 
-<section class="bg-error-container/20 p-4 sm:p-8 rounded-xl border border-error/20 space-y-4 sm:space-y-6 no-print crypto-layout-card" id="cryptoDangerZoneSection">
+<section class="bg-error-container/20 p-4 sm:p-8 rounded-xl border border-error/20 space-y-4 sm:space-y-6 no-print crypto-layout-card hidden" id="cryptoDangerZoneSection">
+<div id="cryptoLiquidationSection" class="hidden space-y-4 sm:space-y-6">
 <div class="flex items-center gap-3">
 <?php echo wt_icon('warning', 'w-6 h-6 text-error'); ?>
-<h3 class="font-headline-md text-headline-md text-error">Danger Zone</h3>
+<h3 class="font-headline-md text-headline-md text-error">Liquidation</h3>
 </div>
 <p class="text-sm text-on-error-container/80 leading-relaxed italic">
-Warning: The following actions are irreversible and may require additional legal authorization under Wyoming Digital Asset statutes. Please proceed with extreme caution.
+Liquidate and withdraw your deposited digital assets. This action is irreversible and may require additional legal authorization under Wyoming Digital Asset statutes.
 </p>
-<div class="flex flex-col gap-3">
+<button type="button" onclick="archiveTrust()" id="cryptoLiquidateTrustBtn" class="w-full py-3 px-4 rounded-lg bg-error text-on-primary font-bold text-xs sm:text-sm hover:opacity-90 transition-opacity text-center shadow-md whitespace-nowrap">
+Liquidate LLC & Withdraw
+</button>
+</div>
+<div id="cryptoSuspendSection" class="flex flex-col gap-3">
 <button type="button" id="cryptoSuspendTrustBtn" onclick="suspendTrust()" class="w-full py-3 px-4 rounded-lg border-2 border-error text-error font-bold text-xs sm:text-sm hover:bg-error hover:text-on-primary transition-colors text-center whitespace-nowrap">
 Suspend LLC
-</button>
-<button type="button" onclick="archiveTrust()" id="cryptoLiquidateTrustBtn" class="hidden w-full py-3 px-4 rounded-lg bg-error text-on-primary font-bold text-xs sm:text-sm hover:opacity-90 transition-opacity text-center shadow-md whitespace-nowrap">
-Liquidate LLC & Withdraw
 </button>
 </div>
 </section>
@@ -761,6 +763,7 @@ let hasBeneficiaryChanges = false;
 let originalBeneficiariesState = [];
 let isCryptoLayout = false;
 let cryptoBenEditing = null;
+let cryptoHasFundedValue = false;
 
 let csrfToken = null;
 
@@ -1432,17 +1435,21 @@ function updateTrustPermissionsUI(trust) {
         if (notice) notice.classList.remove('hidden');
         return;
     }
-    if (danger) danger.classList.remove('hidden');
     if (notice) notice.classList.add('hidden');
     if (liqBtn) {
         const fee = parseFloat(meta.liquidation_fee || 0);
         if (isCryptoLayout) {
             liqBtn.textContent = fee > 0 ? `Liquidate LLC & Withdraw ($${fee.toFixed(2)} fee)` : 'Liquidate LLC & Withdraw';
-            // Visibility is driven by funded asset value in updateCryptoMetrics()
+            syncCryptoDangerZoneVisibility();
         } else {
+            if (danger) danger.classList.remove('hidden');
             liqBtn.classList.remove('hidden');
             liqBtn.textContent = fee > 0 ? `Liquidate LLC ($${fee.toFixed(2)} fee)` : 'Liquidate LLC';
         }
+    } else if (!isCryptoLayout && danger) {
+        danger.classList.remove('hidden');
+    } else if (isCryptoLayout) {
+        syncCryptoDangerZoneVisibility();
     }
 }
 
@@ -1567,7 +1574,7 @@ async function updateCryptoMetrics(trust, valueEl) {
         if (depositHint) {
             depositHint.classList.toggle('hidden', entrustedUsd > 0);
         }
-        updateCryptoLiquidateVisibility(fundedCount > 0 || entrustedUsd > 0);
+        updateCryptoLiquidationUI(fundedCount > 0 || entrustedUsd > 0);
     } catch (error) {
         console.error('Error loading crypto metrics:', error);
         if (assetsEl) assetsEl.textContent = isCryptoLayout ? String(totalSlots) : `0/${totalSlots}`;
@@ -1575,18 +1582,33 @@ async function updateCryptoMetrics(trust, valueEl) {
         if (valueEl) valueEl.textContent = formatUsd(0);
         if (cryptoValueEl) cryptoValueEl.textContent = formatUsd(0);
         if (depositHint) depositHint.classList.remove('hidden');
-        updateCryptoLiquidateVisibility(false);
+        updateCryptoLiquidationUI(false);
     }
     if (typeof window.fitDashboardAmounts === 'function') window.fitDashboardAmounts();
 }
 
-/** Liquidate & Withdraw only when selected assets have actual funded balance/value. */
-function updateCryptoLiquidateVisibility(hasFundedValue) {
+/** Hide all liquidation UI unless selected assets have actual funded balance/value. */
+function updateCryptoLiquidationUI(hasFundedValue) {
     if (!isCryptoLayout) return;
-    const liqBtn = document.getElementById('cryptoLiquidateTrustBtn');
-    if (liqBtn) {
-        liqBtn.classList.toggle('hidden', !hasFundedValue);
+    cryptoHasFundedValue = !!hasFundedValue;
+    syncCryptoDangerZoneVisibility();
+}
+
+function syncCryptoDangerZoneVisibility() {
+    if (!isCryptoLayout) return;
+    const meta = currentTrust?.service_meta || {};
+    const danger = document.getElementById('cryptoDangerZoneSection');
+    const liqSection = document.getElementById('cryptoLiquidationSection');
+    const suspendBtn = document.getElementById('cryptoSuspendTrustBtn');
+    if (meta.is_irrevocable) {
+        if (danger) danger.classList.add('hidden');
+        if (liqSection) liqSection.classList.add('hidden');
+        return;
     }
+    const showLiquidation = cryptoHasFundedValue && !!meta.allows_liquidation;
+    const showSuspend = !!(suspendBtn && !suspendBtn.classList.contains('hidden'));
+    if (liqSection) liqSection.classList.toggle('hidden', !showLiquidation);
+    if (danger) danger.classList.toggle('hidden', !showLiquidation && !showSuspend);
 }
 
 async function renderCryptoPortfolioTable(trust) {
@@ -1974,6 +1996,7 @@ function updateStatusUI(trust) {
         const btn = document.getElementById(id);
         if (btn) btn.classList.toggle('hidden', statusRaw !== 'active');
     });
+    syncCryptoDangerZoneVisibility();
 }
 
 async function updateTrustStatus(newStatus) {

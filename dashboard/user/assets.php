@@ -6,6 +6,7 @@ require_user_page_auth('../../login.php');
 $userName = $_SESSION['user_name'] ?? 'User';
 $page_title = 'My Assets | WyomingTrust';
 $active_nav = 'crypto-assets';
+$premium_bg = true;
 $extra_styles = '@media (max-width: 767px) {
     .dashboard-content {
         padding-top: calc(5rem + 0.25rem) !important;

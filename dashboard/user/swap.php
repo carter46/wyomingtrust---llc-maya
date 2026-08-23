@@ -8,6 +8,7 @@ $trustIdParam = isset($_GET['trust_id']) ? (int) $_GET['trust_id'] : 0;
 $coinKeyParam = isset($_GET['coin_key']) ? sanitize_text($_GET['coin_key']) : '';
 $page_title = 'Swap Crypto | WyomingTrust';
 $active_nav = 'crypto-assets';
+$premium_bg = true;
 $swapBackHref = $coinKeyParam !== ''
     ? 'asset-detail.php?coin_key=' . rawurlencode($coinKeyParam) . ($trustIdParam > 0 ? '&trust_id=' . $trustIdParam : '')
     : 'assets.php';
