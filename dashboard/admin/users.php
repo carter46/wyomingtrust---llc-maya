@@ -130,7 +130,7 @@ function renderUserActionsMenu(user) {
                 aria-haspopup="true">
                 <span class="material-icons-outlined text-xl leading-none">more_vert</span>
             </button>
-            <div class="user-actions-dropdown hidden fixed z-[9999] w-44 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-navy-800 shadow-xl py-1">
+            <div class="user-actions-dropdown hidden fixed z-[9999] w-48 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-navy-800 shadow-xl py-1">
                 ${hasTrusts ? `<button type="button" class="w-full text-left px-4 py-2.5 text-sm text-emerald-700 dark:text-emerald-400 hover:bg-slate-50 dark:hover:bg-navy-700" onclick="event.stopPropagation(); closeAllUserActionsMenus(); viewUserTrusts(${id})">View LLC</button>` : ''}
                 <button type="button" class="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-navy-700" onclick="event.stopPropagation(); closeAllUserActionsMenus(); editUser(${id})">Edit</button>
                 <button type="button" class="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-navy-700" onclick="event.stopPropagation(); closeAllUserActionsMenus(); resetPassword(${id})">Reset Password</button>
@@ -146,28 +146,48 @@ function closeAllUserActionsMenus() {
         el.style.top = '';
         el.style.left = '';
         el.style.right = '';
+        // Return portal menus back to their original wrapper if needed
+        if (el.dataset.portal === '1' && el._originParent) {
+            el._originParent.appendChild(el);
+            el.dataset.portal = '0';
+            el._originParent = null;
+        }
     });
 }
 
 function toggleUserActionsMenu(event, userId) {
+    event.preventDefault();
     event.stopPropagation();
-    const wrap = document.querySelector(`.user-actions-menu[data-user-id="${userId}"]`);
+    // Use the clicked button — never querySelector by user id
+    // (desktop + mobile both render a menu for the same user)
+    const btn = event.currentTarget;
+    const wrap = btn.closest('.user-actions-menu');
     const menu = wrap?.querySelector('.user-actions-dropdown');
-    const btn = wrap?.querySelector('button');
     if (!menu || !btn) return;
-    const wasOpen = !menu.classList.contains('hidden');
+
+    const wasOpen = !menu.classList.contains('hidden') && menu.dataset.portal === '1';
     closeAllUserActionsMenus();
     if (wasOpen) return;
 
+    // Portal to body so nothing can clip it (mobile cards / overflow)
+    if (menu.parentElement !== document.body) {
+        menu._originParent = wrap;
+        document.body.appendChild(menu);
+        menu.dataset.portal = '1';
+    }
+
     menu.classList.remove('hidden');
+    // Measure after visible
     const rect = btn.getBoundingClientRect();
-    const menuWidth = menu.offsetWidth || 176;
-    const menuHeight = menu.offsetHeight || 160;
+    const menuWidth = Math.max(menu.offsetWidth || 0, 192);
+    const menuHeight = Math.max(menu.offsetHeight || 0, 160);
     const spaceBelow = window.innerHeight - rect.bottom;
     const openUp = spaceBelow < menuHeight + 12 && rect.top > menuHeight + 12;
     const top = openUp ? (rect.top - menuHeight - 4) : (rect.bottom + 4);
     let left = rect.right - menuWidth;
     left = Math.max(8, Math.min(left, window.innerWidth - menuWidth - 8));
+    menu.style.position = 'fixed';
+    menu.style.zIndex = '9999';
     menu.style.top = `${Math.max(8, top)}px`;
     menu.style.left = `${left}px`;
     menu.style.right = 'auto';
@@ -176,10 +196,18 @@ function toggleUserActionsMenu(event, userId) {
 document.addEventListener('click', function () {
     closeAllUserActionsMenus();
 });
+document.addEventListener('touchstart', function (e) {
+    if (e.target.closest && (e.target.closest('.user-actions-dropdown') || e.target.closest('.user-actions-menu'))) {
+        return;
+    }
+    closeAllUserActionsMenus();
+}, { passive: true });
 document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape') closeAllUserActionsMenus();
 });
-
+document.addEventListener('scroll', function () {
+    closeAllUserActionsMenus();
+}, true);
 
 function showCreateUserModal() {
     const formHtml = `
