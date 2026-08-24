@@ -6,27 +6,122 @@
 // Modal container element
 let modalContainer = null;
 
+function ensureModalStyles() {
+    if (document.getElementById('adminModalStyles')) return;
+    const style = document.createElement('style');
+    style.id = 'adminModalStyles';
+    style.textContent = `
+      #modalContainer .modal-dialog {
+        width: 100%;
+        max-height: 90vh;
+        display: flex;
+        flex-direction: column;
+      }
+      #modalContainer .modal-body {
+        overflow-y: auto;
+        flex: 1 1 auto;
+      }
+      #modalContainer .modal-footer {
+        display: flex !important;
+        flex-direction: column-reverse !important;
+        align-items: stretch !important;
+        justify-content: flex-end;
+        gap: 0.75rem !important;
+        padding: 1rem 1.25rem !important;
+        border-top: 1px solid #e2e8f0;
+        background: rgba(248, 250, 252, 0.95);
+        flex-shrink: 0;
+      }
+      .dark #modalContainer .modal-footer {
+        border-top-color: #334155;
+        background: rgba(15, 23, 42, 0.55);
+      }
+      #modalContainer .modal-footer-btn {
+        display: inline-flex !important;
+        width: 100% !important;
+        align-items: center;
+        justify-content: center;
+        gap: 0.4rem;
+        box-sizing: border-box;
+        margin: 0 !important;
+        padding: 0.85rem 1.25rem !important;
+        border-radius: 0.65rem !important;
+        border: 1px solid transparent !important;
+        font-size: 0.875rem !important;
+        font-weight: 600 !important;
+        line-height: 1.25 !important;
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+        cursor: pointer;
+        transition: opacity 0.15s ease;
+      }
+      #modalContainer .modal-footer-btn:hover { opacity: 0.92; }
+      #modalContainer .modal-footer-btn .material-icons-outlined {
+        font-size: 1.125rem;
+        line-height: 1;
+      }
+      #modalContainer .modal-footer-btn--primary {
+        background: #F59E0B !important;
+        color: #0F172A !important;
+        border-color: #d97706 !important;
+      }
+      #modalContainer .modal-footer-btn--secondary {
+        background: #e2e8f0 !important;
+        color: #0f172a !important;
+        border-color: #cbd5e1 !important;
+      }
+      .dark #modalContainer .modal-footer-btn--secondary {
+        background: #334155 !important;
+        color: #f8fafc !important;
+        border-color: #475569 !important;
+      }
+      #modalContainer .modal-footer-btn--success {
+        background: #16a34a !important;
+        color: #ffffff !important;
+        border-color: #15803d !important;
+      }
+      #modalContainer .modal-footer-btn--danger {
+        background: #dc2626 !important;
+        color: #ffffff !important;
+        border-color: #b91c1c !important;
+      }
+      @media (min-width: 640px) {
+        #modalContainer .modal-footer {
+          flex-direction: row !important;
+          flex-wrap: wrap !important;
+          align-items: center !important;
+          padding: 1.25rem 1.5rem !important;
+        }
+        #modalContainer .modal-footer-btn {
+          width: auto !important;
+          min-width: 7.5rem;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+}
+
 /**
  * Initialize modal system
  */
 function initModalSystem() {
     if (modalContainer) return;
+    ensureModalStyles();
     
     modalContainer = document.createElement('div');
     modalContainer.id = 'modalContainer';
     modalContainer.className = 'fixed inset-0 z-50 hidden';
     modalContainer.innerHTML = `
         <div class="modal-backdrop fixed inset-0 bg-black/50 transition-opacity" onclick="closeModal()"></div>
-        <div class="modal-content fixed inset-0 flex items-center justify-center p-4 pointer-events-none">
-            <div class="modal-dialog bg-white dark:bg-navy-800 rounded-xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto pointer-events-auto transform transition-all" style="opacity: 0; transform: scale(0.95);">
-                <div class="modal-header flex items-center justify-between p-5 sm:p-6 border-b border-slate-200 dark:border-slate-700">
+        <div class="modal-content fixed inset-0 flex items-center justify-center p-3 sm:p-4 pointer-events-none">
+            <div class="modal-dialog bg-white dark:bg-navy-800 rounded-xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-hidden pointer-events-auto transform transition-all" style="opacity: 0; transform: scale(0.95);">
+                <div class="modal-header flex items-center justify-between p-4 sm:p-5 border-b border-slate-200 dark:border-slate-700 shrink-0">
                     <h3 class="modal-title text-lg sm:text-xl font-bold text-navy-900 dark:text-white pr-2"></h3>
                     <button type="button" onclick="closeModal()" class="inline-flex items-center justify-center w-10 h-10 rounded-lg border border-slate-200 dark:border-slate-600 text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-navy-700 transition-colors shrink-0" aria-label="Close">
                         <span class="material-icons-outlined">close</span>
                     </button>
                 </div>
-                <div class="modal-body p-6"></div>
-                <div class="modal-footer flex items-center justify-end gap-3 p-6 border-t border-slate-200 dark:border-slate-700"></div>
+                <div class="modal-body p-4 sm:p-6"></div>
+                <div class="modal-footer"></div>
             </div>
         </div>
     `;
@@ -41,6 +136,21 @@ function initModalSystem() {
     });
 }
 
+function resolveFooterBtnVariant(action) {
+    const label = String(action.label || '').toLowerCase();
+    const cls = String(action.class || '').toLowerCase();
+    if (cls.includes('green') || label.includes('approve') && !label.includes('disapprove')) {
+        return 'modal-footer-btn--success';
+    }
+    if (cls.includes('red') || label.includes('disapprove') || label.includes('reject') || label.includes('delete')) {
+        return 'modal-footer-btn--danger';
+    }
+    if (cls.includes('primary') || label.includes('confirm') || label.includes('submit') || label.includes('save') || label.includes('create') || label.includes('add')) {
+        return 'modal-footer-btn--primary';
+    }
+    return 'modal-footer-btn--secondary';
+}
+
 /**
  * Show a generic modal
  * @param {string} title - Modal title
@@ -50,6 +160,7 @@ function initModalSystem() {
  */
 function showModal(title, content, actions = [], options = {}) {
     initModalSystem();
+    ensureModalStyles();
     
     const dialog = modalContainer.querySelector('.modal-dialog');
     const wide = !!(options && options.wide);
@@ -63,39 +174,31 @@ function showModal(title, content, actions = [], options = {}) {
     
     const footer = modalContainer.querySelector('.modal-footer');
     footer.innerHTML = '';
-    footer.className = 'modal-footer flex flex-col-reverse sm:flex-row sm:flex-wrap items-stretch sm:items-center justify-end gap-3 p-5 sm:p-6 border-t border-slate-200 dark:border-slate-700 bg-slate-50/80 dark:bg-navy-900/40';
-    
-    const baseBtn = 'inline-flex w-full sm:w-auto items-center justify-center gap-1.5 px-5 py-3 rounded-lg text-sm font-semibold transition-opacity hover:opacity-90 shadow-sm border border-transparent';
 
     const normalizeOnClick = (handler) => {
         if (typeof handler === 'function') return handler;
-        // Legacy string handlers (e.g. "closeModal()")
         if (typeof handler === 'string' && handler.indexOf('closeModal') !== -1) {
             return () => closeModal();
         }
         return () => closeModal();
     };
 
+    const buildBtn = (action) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        const variant = resolveFooterBtnVariant(action);
+        button.className = `modal-footer-btn ${variant}`;
+        button.innerHTML = action.icon
+            ? `<span class="material-icons-outlined">${action.icon}</span><span>${action.label}</span>`
+            : `<span>${action.label}</span>`;
+        button.onclick = normalizeOnClick(action.onclick);
+        return button;
+    };
+
     if (actions.length === 0) {
-        footer.innerHTML = `
-            <button type="button" onclick="closeModal()" class="${baseBtn} bg-primary text-navy-900 min-w-[6.5rem]">
-                Close
-            </button>
-        `;
+        footer.appendChild(buildBtn({ label: 'Close', onclick: () => closeModal(), class: 'secondary' }));
     } else {
-        actions.forEach(action => {
-            const button = document.createElement('button');
-            button.type = 'button';
-            const custom = (action.class || '').trim();
-            button.className = custom
-                ? `${baseBtn} ${custom}`
-                : `${baseBtn} bg-primary text-navy-900`;
-            button.innerHTML = action.icon
-                ? `<span class="material-icons-outlined text-base leading-none">${action.icon}</span><span>${action.label}</span>`
-                : action.label;
-            button.onclick = normalizeOnClick(action.onclick);
-            footer.appendChild(button);
-        });
+        actions.forEach(action => footer.appendChild(buildBtn(action)));
     }
     
     modalContainer.classList.remove('hidden');
@@ -134,7 +237,7 @@ function showConfirmModal(title, message, onConfirm, onCancel = null) {
                 closeModal();
                 if (onCancel) onCancel();
             },
-            class: 'px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold rounded-lg hover:opacity-90 transition-opacity'
+            class: 'secondary'
         },
         {
             label: 'Confirm',
@@ -142,7 +245,7 @@ function showConfirmModal(title, message, onConfirm, onCancel = null) {
                 closeModal();
                 if (onConfirm) onConfirm();
             },
-            class: 'px-4 py-2 bg-red-600 text-white font-semibold rounded-lg hover:opacity-90 transition-opacity',
+            class: 'red',
             icon: 'check'
         }
     ];
@@ -176,7 +279,7 @@ function showFormModal(title, formHtml, onSubmit, onCancel = null) {
                 closeModal();
                 if (onCancel) onCancel();
             },
-            class: 'px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold rounded-lg hover:opacity-90 transition-opacity'
+            class: 'secondary'
         },
         {
             label: 'Submit',
@@ -188,7 +291,7 @@ function showFormModal(title, formHtml, onSubmit, onCancel = null) {
                     form.reportValidity();
                 }
             },
-            class: 'px-4 py-2 bg-primary text-navy-900 font-semibold rounded-lg hover:opacity-90 transition-opacity',
+            class: 'primary',
             icon: 'check'
         }
     ];
