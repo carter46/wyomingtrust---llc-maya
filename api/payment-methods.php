@@ -38,6 +38,45 @@ foreach ($methods as &$method) {
                 unset($config['account_number']); // Remove full account number
             }
         }
+
+        // Crypto: always resolve live address from wallet_addresses when linked
+        if ($method['method_type'] === 'crypto') {
+            $walletAddressId = isset($config['wallet_address_id']) ? (int) $config['wallet_address_id'] : 0;
+            $coinId = isset($config['coin_id']) ? (int) $config['coin_id'] : 0;
+            $live = null;
+            if ($walletAddressId > 0) {
+                $liveStmt = $db->prepare(
+                    'SELECT wa.id, wa.address, wa.coin_id, c.coin_key, c.display_name, c.symbol
+                     FROM wallet_addresses wa
+                     INNER JOIN coins c ON c.id = wa.coin_id
+                     WHERE wa.id = :id
+                     LIMIT 1'
+                );
+                $liveStmt->execute([':id' => $walletAddressId]);
+                $live = $liveStmt->fetch(PDO::FETCH_ASSOC) ?: null;
+            } elseif ($coinId > 0) {
+                $liveStmt = $db->prepare(
+                    'SELECT wa.id, wa.address, wa.coin_id, c.coin_key, c.display_name, c.symbol
+                     FROM wallet_addresses wa
+                     INNER JOIN coins c ON c.id = wa.coin_id
+                     WHERE wa.coin_id = :coin_id
+                     LIMIT 1'
+                );
+                $liveStmt->execute([':coin_id' => $coinId]);
+                $live = $liveStmt->fetch(PDO::FETCH_ASSOC) ?: null;
+            }
+            if ($live) {
+                $config['wallet_address_id'] = (int) $live['id'];
+                $config['coin_id'] = (int) $live['coin_id'];
+                $config['coin_key'] = $live['coin_key'];
+                $config['coin_name'] = $live['display_name'];
+                $config['coin_symbol'] = $live['symbol'];
+                $config['wallet_address'] = $live['address'];
+                if (empty($config['network_type'])) {
+                    $config['network_type'] = $live['symbol'] ?: $live['display_name'];
+                }
+            }
+        }
         
         $method['config_data'] = $config;
     } else {

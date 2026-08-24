@@ -130,8 +130,16 @@ function showCreateAddressModal() {
         showMessage('Please wait, loading coins...', 'error');
         return;
     }
+
+    const usedCoinIds = new Set(allAddresses.map(a => Number(a.coin_id)));
+    const availableCoins = allCoins.filter(coin => !usedCoinIds.has(Number(coin.id)));
+
+    if (availableCoins.length === 0) {
+        showMessage('All coins already have a wallet address. Edit an existing address or add a new coin first.', 'error');
+        return;
+    }
     
-    const coinsOptions = allCoins.map(coin => 
+    const coinsOptions = availableCoins.map(coin => 
         `<option value="${coin.id}">${escapeHtml(coin.display_name)} (${escapeHtml(coin.symbol)})</option>`
     ).join('');
     
@@ -144,6 +152,7 @@ function showCreateAddressModal() {
                         <option value="">Select a coin</option>
                         ${coinsOptions}
                     </select>
+                    <p class="text-xs text-slate-500 mt-1">Only coins without an existing address are listed.</p>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Wallet Address</label>

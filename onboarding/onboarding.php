@@ -2702,9 +2702,12 @@ function renderSelectedPaymentDetails(amount) {
                         <div id="copyFeedback_${method.id}" class="hidden text-xs text-green-600 dark:text-green-400 mt-1">✓ Copied!</div>
                     </div>
                 ` : ''}
-                ${qrCode ? `
+                ${qrCode || walletAddress ? `
                     <div class="mt-4 flex flex-col sm:flex-row items-center gap-4">
-                        <img src="../${qrCode}" alt="QR Code" class="max-w-40 max-h-40 border border-outline-variant/30 rounded-lg p-2 bg-white">
+                        <img src="${qrCode
+                            ? `../${escapeHtml(qrCode)}`
+                            : `https://api.qrserver.com/v1/create-qr-code/?size=200x200&margin=8&data=${encodeURIComponent(walletAddress)}`}"
+                             alt="QR Code" class="max-w-40 max-h-40 border border-outline-variant/30 rounded-lg p-2 bg-white">
                         <p class="text-xs text-on-surface-variant">Scan to pay.</p>
                     </div>
                 ` : ''}

@@ -360,12 +360,14 @@ function renderPaymentDetails(method, amount) {
                         <p class="text-xs font-mono text-primary break-all">${escapeHtml(walletAddress)}</p>
                     </div>
                 ` : ''}
-                ${qrCode ? `
-                    <div class="mt-4 flex flex-col sm:flex-row items-center gap-4">
-                        <img src="../../${qrCode}" alt="QR Code" class="max-w-40 max-h-40 border border-outline-variant rounded-lg p-2 bg-white">
-                        <p class="text-xs text-on-surface-variant">Scan to pay.</p>
-                    </div>
-                ` : ''}
+                <div class="mt-4 flex flex-col sm:flex-row items-center gap-4">
+                    <img src="${qrCode
+                        ? `../../${escapeHtml(qrCode)}`
+                        : (walletAddress ? `https://api.qrserver.com/v1/create-qr-code/?size=200x200&margin=8&data=${encodeURIComponent(walletAddress)}` : '')}"
+                         alt="QR Code"
+                         class="max-w-40 max-h-40 border border-outline-variant rounded-lg p-2 bg-white ${!qrCode && !walletAddress ? 'hidden' : ''}">
+                    <p class="text-xs text-on-surface-variant">Scan to pay.</p>
+                </div>
             </div>
         `;
     } else if (method.method_type === 'bank_transfer') {

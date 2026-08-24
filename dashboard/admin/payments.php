@@ -15,8 +15,11 @@ function renderPaymentsContent() {
 ?>
 
 <div class="mb-4 sm:mb-6 lg:mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
-    <h1 class="text-2xl sm:text-3xl font-bold text-navy-900 dark:text-white">Payment Methods Management</h1>
-    <button onclick="showPaymentTypeSelector()" class="bg-primary text-navy-900 px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg font-semibold text-sm sm:text-base hover:opacity-90 w-full sm:w-auto flex items-center gap-2">
+    <div>
+        <h1 class="text-2xl sm:text-3xl font-bold text-navy-900 dark:text-white">Payment Methods Management</h1>
+        <p class="text-slate-600 dark:text-slate-400 text-sm mt-1 max-w-2xl">LLC formation payment options (crypto, bank, PayPal). For crypto, pick from addresses already set under <a href="addresses.php" class="text-primary font-semibold hover:underline">Wallet Addresses</a> — QR codes are generated automatically.</p>
+    </div>
+    <button onclick="showPaymentTypeSelector()" class="bg-primary text-navy-900 px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg font-semibold text-sm sm:text-base hover:opacity-90 w-full sm:w-auto flex items-center gap-2 shrink-0">
         <span class="material-icons-outlined text-sm">add</span>
         <span>Add New Payment Method</span>
     </button>
@@ -32,9 +35,72 @@ function renderPaymentsContent() {
 <script src="includes/modal.js"></script>
 <script>
 let allPayments = [];
+let walletAddresses = [];
+
+async function loadWalletAddresses() {
+    try {
+        const addrRes = await fetch('../../api/admin/addresses.php');
+        const addrData = await addrRes.json();
+        walletAddresses = (addrData.success && addrData.addresses) ? addrData.addresses : [];
+    } catch (e) {
+        console.error('Failed loading wallet addresses', e);
+        walletAddresses = [];
+    }
+}
+
+function getUsedWalletKeys(excludePaymentId = null) {
+    const usedIds = new Set();
+    const usedAddresses = new Set();
+    allPayments.forEach((m) => {
+        if (m.method_type !== 'crypto') return;
+        if (excludePaymentId != null && Number(m.id) === Number(excludePaymentId)) return;
+        const c = m.config_data || {};
+        if (c.wallet_address_id) usedIds.add(Number(c.wallet_address_id));
+        const addr = String(c.wallet_address || '').trim().toLowerCase();
+        if (addr) usedAddresses.add(addr);
+    });
+    return { usedIds, usedAddresses };
+}
+
+function getAvailableWalletAddresses(excludePaymentId = null) {
+    const { usedIds, usedAddresses } = getUsedWalletKeys(excludePaymentId);
+    return walletAddresses.filter((a) => {
+        if (usedIds.has(Number(a.id))) return false;
+        const addr = String(a.address || '').trim().toLowerCase();
+        if (addr && usedAddresses.has(addr)) return false;
+        return true;
+    });
+}
+
+function onWalletAddressSelected() {
+    const select = document.getElementById('walletAddressSelect');
+    const preview = document.getElementById('walletAddressPreview');
+    const qrPreview = document.getElementById('walletQrPreview');
+    if (!select || !preview) return;
+    const addr = walletAddresses.find(a => String(a.id) === String(select.value));
+    if (!addr) {
+        preview.innerHTML = '<p class="text-xs text-slate-500">Select a configured wallet address.</p>';
+        if (qrPreview) qrPreview.innerHTML = '';
+        return;
+    }
+    preview.innerHTML = `
+        <div class="space-y-1 text-sm">
+            <p><span class="text-slate-500">Coin:</span> <strong>${escapeHtml(addr.display_name || '')}</strong> (${escapeHtml(addr.symbol || '')})</p>
+            <p class="font-mono text-xs break-all"><span class="text-slate-500">Address:</span> ${escapeHtml(addr.address || '')}</p>
+        </div>
+    `;
+    if (qrPreview) {
+        const qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=160x160&margin=8&data=' + encodeURIComponent(addr.address || '');
+        qrPreview.innerHTML = `
+            <p class="text-xs font-semibold text-slate-500 mb-2">QR will be auto-generated on add</p>
+            <img src="${qrUrl}" alt="QR preview" class="w-40 h-40 border border-slate-200 dark:border-slate-600 rounded-lg p-2 bg-white">
+        `;
+    }
+}
 
 async function loadPayments() {
     try {
+        await loadWalletAddresses();
         const response = await fetch('../../api/admin/payments.php');
         const data = await response.json();
         if (data.success && data.methods) {
@@ -73,7 +139,10 @@ function renderPayments(methods) {
                         const config = method.config_data || {};
                         let details = '';
                         if (method.method_type === 'crypto') {
-                            details = `${config.coin_name || ''} (${config.network_type || ''})`;
+                            const shortAddr = (config.wallet_address || '').length > 18
+                                ? `${config.wallet_address.slice(0, 10)}…${config.wallet_address.slice(-6)}`
+                                : (config.wallet_address || '');
+                            details = `${config.coin_name || method.method_name || ''} · ${shortAddr}`;
                         } else if (method.method_type === 'bank_transfer') {
                             details = `${config.bank_name || ''} - ${config.account_name || ''}`;
                         } else if (method.method_type === 'paypal') {
@@ -114,7 +183,10 @@ function renderPayments(methods) {
                 const config = method.config_data || {};
                 let details = '';
                 if (method.method_type === 'crypto') {
-                    details = `${config.coin_name || ''} (${config.network_type || ''})`;
+                    const shortAddr = (config.wallet_address || '').length > 18
+                        ? `${config.wallet_address.slice(0, 10)}…${config.wallet_address.slice(-6)}`
+                        : (config.wallet_address || '');
+                    details = `${config.coin_name || method.method_name || ''} · ${shortAddr}`;
                 } else if (method.method_type === 'bank_transfer') {
                     details = `${config.bank_name || ''} - ${config.account_name || ''}`;
                 } else if (method.method_type === 'paypal') {
@@ -183,162 +255,44 @@ function showPaymentTypeSelector() {
     });
 }
 
-// Step 2: Show type-specific form
-function showPaymentTypeForm(paymentType) {
-    let formHtml = '';
-    
-    if (paymentType === 'crypto') {
-        formHtml = `
-            <div class="space-y-4">
-                <div>
-                    <label class="block text-sm font-semibold text-navy-900 dark:text-white mb-2">Coin Name *</label>
-                    <input type="text" name="coin_name" required 
-                           class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-navy-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary" 
-                           placeholder="e.g., Bitcoin, Ethereum, USDC">
-                </div>
-                <div>
-                    <label class="block text-sm font-semibold text-navy-900 dark:text-white mb-2">Network Type *</label>
-                    <select name="network_type" required 
-                            class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-navy-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary">
-                        <option value="">Select network</option>
-                        <option value="Bitcoin">Bitcoin</option>
-                        <option value="Ethereum">Ethereum (ERC-20)</option>
-                        <option value="BSC">Binance Smart Chain (BEP-20)</option>
-                        <option value="Polygon">Polygon (MATIC)</option>
-                        <option value="Solana">Solana</option>
-                        <option value="TRON">TRON (TRC-20)</option>
-                        <option value="Litecoin">Litecoin</option>
-                        <option value="Other">Other</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-sm font-semibold text-navy-900 dark:text-white mb-2">Wallet Address *</label>
-                    <input type="text" name="wallet_address" required 
-                           class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-navy-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary font-mono text-sm" 
-                           placeholder="Enter wallet address">
-                </div>
-                <div>
-                    <label class="block text-sm font-semibold text-navy-900 dark:text-white mb-2">QR Code Image (Optional)</label>
-                    <input type="file" name="qr_code" accept="image/png,image/jpeg,image/jpg,image/svg+xml" 
-                           class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-navy-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary">
-                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Upload QR code for the wallet address (PNG, JPG, SVG)</p>
-                </div>
-            </div>
-        `;
-    } else if (paymentType === 'bank_transfer') {
-        formHtml = `
-            <div class="space-y-4">
-                <div>
-                    <label class="block text-sm font-semibold text-navy-900 dark:text-white mb-2">Bank Name *</label>
-                    <input type="text" name="bank_name" required 
-                           class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-navy-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary" 
-                           placeholder="e.g., Bank of America, Chase">
-                </div>
-                <div>
-                    <label class="block text-sm font-semibold text-navy-900 dark:text-white mb-2">Account Name *</label>
-                    <input type="text" name="account_name" required 
-                           class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-navy-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary" 
-                           placeholder="Account holder name">
-                </div>
-                <div>
-                    <label class="block text-sm font-semibold text-navy-900 dark:text-white mb-2">Account Number *</label>
-                    <input type="text" name="account_number" required 
-                           class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-navy-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary font-mono" 
-                           placeholder="Enter account number">
-                </div>
-                <div>
-                    <label class="block text-sm font-semibold text-navy-900 dark:text-white mb-2">Routing Number</label>
-                    <input type="text" name="routing_number" 
-                           class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-navy-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary font-mono" 
-                           placeholder="Enter routing number">
-                </div>
-                <div>
-                    <label class="block text-sm font-semibold text-navy-900 dark:text-white mb-2">SWIFT/BIC Code</label>
-                    <input type="text" name="swift_code" 
-                           class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-navy-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary font-mono" 
-                           placeholder="For international transfers">
-                </div>
-                <div>
-                    <label class="block text-sm font-semibold text-navy-900 dark:text-white mb-2">Additional Details</label>
-                    <textarea name="additional_details" rows="3" 
-                              class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-navy-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary" 
-                              placeholder="Any other important details..."></textarea>
-                </div>
-            </div>
-        `;
-    } else if (paymentType === 'paypal') {
-        formHtml = `
-            <div class="space-y-4">
-                <div>
-                    <label class="block text-sm font-semibold text-navy-900 dark:text-white mb-2">PayPal Email or Tag *</label>
-                    <input type="email" name="paypal_email" required 
-                           class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-navy-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary" 
-                           placeholder="your-paypal@email.com or @yourpaypaltag">
-                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Enter your PayPal email address or PayPal tag</p>
-                </div>
-            </div>
-        `;
-    }
-    
-    // Use a custom form submission that handles file uploads
-    const formElement = document.createElement('form');
-    formElement.id = 'paymentMethodForm';
-    formElement.enctype = 'multipart/form-data';
-    formElement.innerHTML = formHtml;
-    
-    // Create modal content with form
-    const content = formElement.outerHTML;
-    
-    // Store payment type
-    const originalShowFormModal = window.showFormModal;
-    
-    // Create a wrapper that handles file uploads
-    const modalActions = [
-        {
-            label: 'Cancel',
-            onclick: () => closeModal(),
-            class: 'px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold rounded-lg hover:opacity-90 transition-opacity'
-        },
-        {
-            label: 'Create Payment Method',
-            onclick: () => {
-                const form = document.getElementById('paymentMethodForm');
-                if (form && form.checkValidity()) {
-                    handlePaymentFormSubmit(paymentType, form);
-                } else {
-                    form.reportValidity();
-                }
-            },
-            class: 'px-4 py-2 bg-primary text-navy-900 font-semibold rounded-lg hover:opacity-90 transition-opacity',
-            icon: 'check'
-        }
-    ];
-    
-    showModal(
-        `Add ${paymentType === 'crypto' ? 'Cryptocurrency' : paymentType === 'bank_transfer' ? 'Bank Transfer' : 'PayPal'} Payment Method`,
-        content,
-        modalActions
-    );
-}
+// Step 2 handled by unified showPaymentTypeForm(paymentType, existingPayment)
 
 // Handle form submission with file upload support
 async function handlePaymentFormSubmit(paymentType, formElement) {
     const formData = new FormData(formElement);
     const configData = {};
     let methodName = '';
+    let walletAddressId = null;
     
     if (paymentType === 'crypto') {
-        methodName = formData.get('coin_name');
-        configData.coin_name = formData.get('coin_name');
-        configData.network_type = formData.get('network_type');
-        configData.wallet_address = formData.get('wallet_address');
-        
-        // Handle QR code file upload
-        const qrFile = formData.get('qr_code');
-        if (qrFile && qrFile.size > 0) {
-            // Will be handled by API via separate endpoint
-            configData.has_qr_code = true;
+        walletAddressId = parseInt(formElement.querySelector('#walletAddressSelect')?.value || formData.get('wallet_address_id') || '0', 10);
+        if (!walletAddressId) {
+            showToast('Please select a wallet address', 'error');
+            return;
         }
+        try {
+            const createResponse = await fetch('../../api/admin/payments.php', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    method_type: 'crypto',
+                    wallet_address_id: walletAddressId,
+                    is_active: 1
+                })
+            });
+            const createData = await createResponse.json();
+            if (!createData.success) {
+                showToast(createData.message || 'Failed to create payment method', 'error');
+                return;
+            }
+            showToast('Crypto payment method added. QR code generated automatically.', 'success');
+            closeModal();
+            loadPayments();
+        } catch (error) {
+            console.error('Error creating payment method:', error);
+            showToast('Error creating payment method', 'error');
+        }
+        return;
     } else if (paymentType === 'bank_transfer') {
         const bankName = formData.get('bank_name');
         methodName = `${bankName} Bank Transfer`;
@@ -355,7 +309,6 @@ async function handlePaymentFormSubmit(paymentType, formElement) {
         configData.paypal_tag = paypalEmail.startsWith('@') ? paypalEmail : null;
     }
     
-    // First create the payment method
     try {
         const createResponse = await fetch('../../api/admin/payments.php', {
             method: 'POST',
@@ -373,24 +326,6 @@ async function handlePaymentFormSubmit(paymentType, formElement) {
         if (!createData.success) {
             showToast(createData.message || 'Failed to create payment method', 'error');
             return;
-        }
-        
-        // If there's a QR code file, upload it separately
-        const qrFile = formElement.querySelector('input[name="qr_code"]')?.files[0];
-        if (qrFile && paymentType === 'crypto') {
-            const uploadFormData = new FormData();
-            uploadFormData.append('qr_code', qrFile);
-            uploadFormData.append('payment_method_id', createData.method.id);
-            
-            const uploadResponse = await fetch('../../api/admin/payments.php?action=upload_qr', {
-                method: 'POST',
-                body: uploadFormData
-            });
-            
-            const uploadData = await uploadResponse.json();
-            if (!uploadData.success) {
-                showToast('Payment method created but QR code upload failed: ' + uploadData.message, 'warning');
-            }
         }
         
         showToast('Payment method created successfully', 'success');
@@ -434,57 +369,69 @@ function editPayment(id) {
     showPaymentTypeForm(payment.method_type, payment);
 }
 
-// Modified to support editing
-function showPaymentTypeForm(paymentType, existingPayment = null) {
+// Unified create/edit form
+async function showPaymentTypeForm(paymentType, existingPayment = null) {
     const config = existingPayment?.config_data || {};
     const isEdit = !!existingPayment;
-    
     let formHtml = '';
-    
+
     if (paymentType === 'crypto') {
-        formHtml = `
-            <div class="space-y-4">
-                <div>
-                    <label class="block text-sm font-semibold text-navy-900 dark:text-white mb-2">Coin Name *</label>
-                    <input type="text" name="coin_name" value="${escapeHtml(config.coin_name || '')}" required 
-                           class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-navy-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary" 
-                           placeholder="e.g., Bitcoin, Ethereum, USDC">
+        await loadWalletAddresses();
+        if (isEdit) {
+            const qrSrc = config.qr_code
+                ? `../../${escapeHtml(config.qr_code)}`
+                : (config.wallet_address
+                    ? `https://api.qrserver.com/v1/create-qr-code/?size=160x160&margin=8&data=${encodeURIComponent(config.wallet_address)}`
+                    : '');
+            formHtml = `
+                <div class="space-y-4">
+                    <p class="text-xs text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-navy-900/40 border border-slate-200 dark:border-slate-600 rounded-lg p-3">Crypto payment methods are linked to Wallet Addresses. Address details cannot be reconfigured here — edit the wallet address instead, or delete and re-add this method.</p>
+                    <div class="rounded-xl border border-slate-200 dark:border-slate-600 p-4 space-y-2 text-sm">
+                        <p><span class="text-slate-500">Coin:</span> <strong>${escapeHtml(config.coin_name || existingPayment.method_name || '')}</strong> ${config.coin_symbol ? `(${escapeHtml(config.coin_symbol)})` : ''}</p>
+                        <p class="font-mono text-xs break-all"><span class="text-slate-500">Address:</span> ${escapeHtml(config.wallet_address || '—')}</p>
+                    </div>
+                    ${qrSrc ? `<div class="flex flex-col items-start gap-2"><p class="text-xs font-semibold text-slate-500">QR Code</p><img src="${qrSrc}" alt="QR Code" class="w-40 h-40 border border-slate-200 rounded-lg p-2 bg-white"></div>` : ''}
                 </div>
-                <div>
-                    <label class="block text-sm font-semibold text-navy-900 dark:text-white mb-2">Network Type *</label>
-                    <select name="network_type" required 
-                            class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-navy-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary">
-                        <option value="">Select network</option>
-                        <option value="Bitcoin" ${config.network_type === 'Bitcoin' ? 'selected' : ''}>Bitcoin</option>
-                        <option value="Ethereum" ${config.network_type === 'Ethereum' ? 'selected' : ''}>Ethereum (ERC-20)</option>
-                        <option value="BSC" ${config.network_type === 'BSC' ? 'selected' : ''}>Binance Smart Chain (BEP-20)</option>
-                        <option value="Polygon" ${config.network_type === 'Polygon' ? 'selected' : ''}>Polygon (MATIC)</option>
-                        <option value="Solana" ${config.network_type === 'Solana' ? 'selected' : ''}>Solana</option>
-                        <option value="TRON" ${config.network_type === 'TRON' ? 'selected' : ''}>TRON (TRC-20)</option>
-                        <option value="Litecoin" ${config.network_type === 'Litecoin' ? 'selected' : ''}>Litecoin</option>
-                        <option value="Other" ${config.network_type === 'Other' ? 'selected' : ''}>Other</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-sm font-semibold text-navy-900 dark:text-white mb-2">Wallet Address *</label>
-                    <input type="text" name="wallet_address" value="${escapeHtml(config.wallet_address || '')}" required 
-                           class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-navy-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary font-mono text-sm" 
-                           placeholder="Enter wallet address">
-                </div>
-                ${config.qr_code ? `
-                <div>
-                    <label class="block text-sm font-semibold text-navy-900 dark:text-white mb-2">Current QR Code</label>
-                    <img src="../../${config.qr_code}" alt="QR Code" class="max-w-32 max-h-32 border border-slate-300 rounded-lg p-2">
-                </div>
-                ` : ''}
-                <div>
-                    <label class="block text-sm font-semibold text-navy-900 dark:text-white mb-2">${isEdit ? 'Update' : ''} QR Code Image (Optional)</label>
-                    <input type="file" name="qr_code" accept="image/png,image/jpeg,image/jpg,image/svg+xml" 
-                           class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-navy-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary">
-                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Upload QR code for the wallet address (PNG, JPG, SVG)</p>
-                </div>
-            </div>
-        `;
+            `;
+        } else {
+            const available = getAvailableWalletAddresses();
+            if (!walletAddresses.length) {
+                formHtml = `
+                    <div class="space-y-3">
+                        <p class="text-sm text-slate-600 dark:text-slate-300">No wallet addresses configured yet.</p>
+                        <a href="addresses.php" class="inline-flex items-center gap-1 text-primary font-semibold text-sm hover:underline">Go to Wallet Addresses →</a>
+                    </div>
+                `;
+            } else if (!available.length) {
+                formHtml = `
+                    <div class="space-y-3">
+                        <p class="text-sm text-slate-600 dark:text-slate-300">All configured wallet addresses are already added as payment methods.</p>
+                        <a href="addresses.php" class="inline-flex items-center gap-1 text-primary font-semibold text-sm hover:underline">Add another wallet address →</a>
+                    </div>
+                `;
+            } else {
+                const options = available.map(a =>
+                    `<option value="${a.id}">${escapeHtml(a.display_name || '')} (${escapeHtml(a.symbol || '')}) — ${escapeHtml((a.address || '').slice(0, 10))}…${escapeHtml((a.address || '').slice(-6))}</option>`
+                ).join('');
+                formHtml = `
+                    <div class="space-y-4">
+                        <p class="text-xs text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-navy-900/40 border border-slate-200 dark:border-slate-600 rounded-lg p-3">Select a wallet address already configured under Wallet Addresses. Addresses already used as payment methods are hidden. The QR code is generated automatically.</p>
+                        <div>
+                            <label class="block text-sm font-semibold text-navy-900 dark:text-white mb-2">Wallet Address *</label>
+                            <select id="walletAddressSelect" name="wallet_address_id" required onchange="onWalletAddressSelected()"
+                                    class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-navy-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary">
+                                <option value="">Select wallet address</option>
+                                ${options}
+                            </select>
+                        </div>
+                        <div id="walletAddressPreview" class="rounded-xl border border-slate-200 dark:border-slate-600 p-4 bg-slate-50 dark:bg-navy-900/30">
+                            <p class="text-xs text-slate-500">Select a configured wallet address.</p>
+                        </div>
+                        <div id="walletQrPreview"></div>
+                    </div>
+                `;
+            }
+        }
     } else if (paymentType === 'bank_transfer') {
         formHtml = `
             <div class="space-y-4">
@@ -545,10 +492,13 @@ function showPaymentTypeForm(paymentType, existingPayment = null) {
     formElement.enctype = 'multipart/form-data';
     formElement.innerHTML = formHtml;
     
+    const hasWalletSelect = !!(formHtml && formHtml.includes('walletAddressSelect'));
+    const cryptoBlocked = paymentType === 'crypto' && !isEdit && !hasWalletSelect;
+
     const content = formElement.outerHTML + (isEdit ? `
         <div class="mt-4">
             <label class="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" name="is_active" ${existingPayment.is_active ? 'checked' : ''} 
+                <input type="checkbox" name="is_active" form="paymentMethodForm" ${existingPayment.is_active ? 'checked' : ''} 
                        class="w-4 h-4 text-primary border-slate-300 rounded focus:ring-primary">
                 <span class="text-sm font-semibold text-navy-900 dark:text-white">Active</span>
             </label>
@@ -557,15 +507,19 @@ function showPaymentTypeForm(paymentType, existingPayment = null) {
     
     const modalActions = [
         {
-            label: 'Cancel',
+            label: cryptoBlocked ? 'Close' : 'Cancel',
             onclick: () => closeModal(),
-            class: 'px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold rounded-lg hover:opacity-90 transition-opacity'
-        },
-        {
-            label: isEdit ? 'Update Payment Method' : 'Create Payment Method',
+            class: 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-600'
+        }
+    ];
+
+    if (!cryptoBlocked) {
+        modalActions.push({
+            label: isEdit ? 'Save' : (paymentType === 'crypto' ? 'Add Payment Method' : 'Create Payment Method'),
             onclick: () => {
                 const form = document.getElementById('paymentMethodForm');
-                if (form && form.checkValidity()) {
+                if (!form) return;
+                if (form.checkValidity()) {
                     if (isEdit) {
                         handlePaymentFormUpdate(paymentType, form, existingPayment.id);
                     } else {
@@ -575,10 +529,10 @@ function showPaymentTypeForm(paymentType, existingPayment = null) {
                     form.reportValidity();
                 }
             },
-            class: 'px-4 py-2 bg-primary text-navy-900 font-semibold rounded-lg hover:opacity-90 transition-opacity',
+            class: 'bg-primary text-navy-900 border border-primary',
             icon: 'check'
-        }
-    ];
+        });
+    }
     
     showModal(
         isEdit ? `Edit ${paymentType === 'crypto' ? 'Cryptocurrency' : paymentType === 'bank_transfer' ? 'Bank Transfer' : 'PayPal'} Payment Method` : `Add ${paymentType === 'crypto' ? 'Cryptocurrency' : paymentType === 'bank_transfer' ? 'Bank Transfer' : 'PayPal'} Payment Method`,
@@ -589,42 +543,38 @@ function showPaymentTypeForm(paymentType, existingPayment = null) {
 
 async function handlePaymentFormUpdate(paymentType, formElement, paymentId) {
     const formData = new FormData(formElement);
-    const configData = {};
-    let methodName = '';
-    
+    const existingPayment = allPayments.find(p => p.id == paymentId);
+    const activeEl = formElement.querySelector('input[name="is_active"]') || document.querySelector('input[name="is_active"]');
+    const isActive = activeEl ? (activeEl.checked ? 1 : 0) : (existingPayment?.is_active ? 1 : 0);
+
+    let methodName = existingPayment?.method_name || '';
+    let configData = existingPayment?.config_data || {};
+
     if (paymentType === 'crypto') {
-        methodName = formData.get('coin_name');
-        configData.coin_name = formData.get('coin_name');
-        configData.network_type = formData.get('network_type');
-        configData.wallet_address = formData.get('wallet_address');
-        
-        // Keep existing QR code if no new one uploaded
-        const existingPayment = allPayments.find(p => p.id == paymentId);
-        if (existingPayment?.config_data?.qr_code) {
-            configData.qr_code = existingPayment.config_data.qr_code;
-        }
-        
-        const qrFile = formData.get('qr_code');
-        if (qrFile && qrFile.size > 0) {
-            configData.has_qr_code = true;
+        // Keep linked wallet config; only status is editable here
+        methodName = existingPayment?.method_name || configData.coin_name || methodName;
+        if (!configData.qr_code && configData.wallet_address) {
+            // leave as-is; checkout can still show live QR
         }
     } else if (paymentType === 'bank_transfer') {
         const bankName = formData.get('bank_name');
         methodName = `${bankName} Bank Transfer`;
-        configData.bank_name = bankName;
-        configData.account_name = formData.get('account_name');
-        configData.account_number = formData.get('account_number');
-        configData.routing_number = formData.get('routing_number') || '';
-        configData.swift_code = formData.get('swift_code') || '';
-        configData.additional_details = formData.get('additional_details') || '';
+        configData = {
+            bank_name: bankName,
+            account_name: formData.get('account_name'),
+            account_number: formData.get('account_number'),
+            routing_number: formData.get('routing_number') || '',
+            swift_code: formData.get('swift_code') || '',
+            additional_details: formData.get('additional_details') || '',
+        };
     } else if (paymentType === 'paypal') {
         const paypalEmail = formData.get('paypal_email');
         methodName = 'PayPal';
-        configData.paypal_email = paypalEmail;
-        configData.paypal_tag = paypalEmail.startsWith('@') ? paypalEmail : null;
+        configData = {
+            paypal_email: paypalEmail,
+            paypal_tag: paypalEmail.startsWith('@') ? paypalEmail : null,
+        };
     }
-    
-    const isActive = formElement.querySelector('input[name="is_active"]')?.checked ? 1 : 0;
     
     try {
         const updateResponse = await fetch('../../api/admin/payments.php', {
@@ -635,7 +585,7 @@ async function handlePaymentFormUpdate(paymentType, formElement, paymentId) {
                 method_name: methodName,
                 method_type: paymentType,
                 config_data: configData,
-                is_active: isActive
+                is_active: isActive ? 1 : 0
             })
         });
         
@@ -644,24 +594,6 @@ async function handlePaymentFormUpdate(paymentType, formElement, paymentId) {
         if (!updateData.success) {
             showToast(updateData.message || 'Failed to update payment method', 'error');
             return;
-        }
-        
-        // Handle QR code upload if provided
-        const qrFile = formElement.querySelector('input[name="qr_code"]')?.files[0];
-        if (qrFile && paymentType === 'crypto' && qrFile.size > 0) {
-            const uploadFormData = new FormData();
-            uploadFormData.append('qr_code', qrFile);
-            uploadFormData.append('payment_method_id', paymentId);
-            
-            const uploadResponse = await fetch('../../api/admin/payments.php?action=upload_qr', {
-                method: 'POST',
-                body: uploadFormData
-            });
-            
-            const uploadData = await uploadResponse.json();
-            if (!uploadData.success) {
-                showToast('Payment method updated but QR code upload failed: ' + uploadData.message, 'warning');
-            }
         }
         
         showToast('Payment method updated successfully', 'success');

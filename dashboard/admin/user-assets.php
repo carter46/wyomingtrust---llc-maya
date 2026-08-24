@@ -49,7 +49,7 @@ function renderUserAssetsContent() {
         <div class="space-y-4">
             <div>
                 <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Coin</label>
-                <select id="selectedCoin" class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-navy-700 text-slate-900 dark:text-white">
+                <select id="selectedCoin" onchange="updateCoinAmountPreview()" class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-navy-700 text-slate-900 dark:text-white">
                     <option value="">-- Select User First --</option>
                 </select>
             </div>
@@ -61,8 +61,10 @@ function renderUserAssetsContent() {
                 </select>
             </div>
             <div>
-                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Amount</label>
-                <input type="number" id="amount" step="0.00000001" min="0" placeholder="0.00000000" class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-navy-700 text-slate-900 dark:text-white">
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Amount (USD)</label>
+                <input type="number" id="amountUsd" step="0.01" min="0" placeholder="0.00" oninput="updateCoinAmountPreview()" class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-navy-700 text-slate-900 dark:text-white">
+                <p id="coinAmountPreview" class="text-xs text-slate-500 mt-2">Select a coin and enter USD to see the coin amount.</p>
+                <input type="hidden" id="amount" value="">
             </div>
             <button onclick="processBalanceAdjustment()" class="w-full bg-primary text-navy-900 px-4 py-2.5 rounded-lg font-semibold hover:opacity-90">Process Transaction</button>
         </div>
@@ -81,10 +83,68 @@ function renderUserAssetsContent() {
 let allUsers = [];
 let userAssets = [];
 let userTrusts = [];
+let coinPriceCache = {};
 
 function onUserChanged() {
     document.getElementById('selectedTrust').value = '';
     loadUserAssets();
+}
+
+function getSelectedAsset() {
+    const coinId = document.getElementById('selectedCoin').value;
+    if (!coinId) return null;
+    return userAssets.find(a => String(a.coin_id) === String(coinId)) || null;
+}
+
+async function fetchCoinUsdPrice(coinKey) {
+    if (!coinKey) return 0;
+    if (coinPriceCache[coinKey] != null) return coinPriceCache[coinKey];
+    try {
+        const response = await fetch(
+            `../../api/coingecko.php?path=/simple/price&ids=${encodeURIComponent(coinKey)}&vs_currencies=usd`,
+            { credentials: 'same-origin' }
+        );
+        if (!response.ok) return 0;
+        const data = await response.json();
+        const price = parseFloat(data?.[coinKey]?.usd || 0) || 0;
+        if (price > 0) coinPriceCache[coinKey] = price;
+        return price;
+    } catch (e) {
+        console.error('Price fetch failed', e);
+        return 0;
+    }
+}
+
+async function updateCoinAmountPreview() {
+    const preview = document.getElementById('coinAmountPreview');
+    const amountHidden = document.getElementById('amount');
+    const usd = parseFloat(document.getElementById('amountUsd').value) || 0;
+    const asset = getSelectedAsset();
+
+    amountHidden.value = '';
+    if (!asset) {
+        preview.textContent = 'Select a coin and enter USD to see the coin amount.';
+        preview.className = 'text-xs text-slate-500 mt-2';
+        return;
+    }
+    if (usd <= 0) {
+        preview.textContent = `Enter a USD amount to convert to ${asset.symbol || asset.display_name}.`;
+        preview.className = 'text-xs text-slate-500 mt-2';
+        return;
+    }
+
+    preview.textContent = 'Fetching live rate…';
+    preview.className = 'text-xs text-slate-500 mt-2';
+    const price = await fetchCoinUsdPrice(asset.coin_key);
+    if (price <= 0) {
+        preview.textContent = 'Price unavailable for this coin. Try again or pick another coin.';
+        preview.className = 'text-xs text-red-500 mt-2';
+        return;
+    }
+    const coinAmount = usd / price;
+    amountHidden.value = coinAmount.toFixed(8);
+    preview.innerHTML = `≈ <strong>${coinAmount.toFixed(8)} ${escapeHtml(asset.symbol || '')}</strong> <span class="text-slate-400">(1 ${escapeHtml(asset.symbol || '')} = $${price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 6 })})</span>`;
+    preview.className = 'text-xs text-emerald-700 dark:text-emerald-400 mt-2';
 }
 
 async function loadUsers() {
@@ -204,6 +264,7 @@ function renderUserAssets(assets, trustId) {
 
 function quickSelectCoin(coinId) {
     document.getElementById('selectedCoin').value = coinId;
+    updateCoinAmountPreview();
 }
 
 let csrfToken = null;
@@ -227,14 +288,18 @@ async function processBalanceAdjustment() {
     const userId = document.getElementById('selectedUser').value;
     const coinId = document.getElementById('selectedCoin').value;
     const type = document.getElementById('transactionType').value;
+    const usd = parseFloat(document.getElementById('amountUsd').value) || 0;
+    const asset = getSelectedAsset();
+
+    await updateCoinAmountPreview();
     const amount = parseFloat(document.getElementById('amount').value);
     
-    if (!userId || !coinId || !amount || amount <= 0) {
-        showMessage('Please fill in all fields with valid values', 'error');
+    if (!userId || !coinId || !usd || usd <= 0 || !amount || amount <= 0) {
+        showMessage('Please select a coin and enter a valid USD amount', 'error');
         return;
     }
     
-    if (!confirm(`Are you sure you want to ${type} ${amount} from this user's balance?`)) {
+    if (!confirm(`Are you sure you want to ${type} $${usd.toFixed(2)} USD (≈ ${amount.toFixed(8)} ${asset?.symbol || ''}) ${type === 'credit' ? 'to' : 'from'} this user's balance?`)) {
         return;
     }
     
@@ -257,6 +322,7 @@ async function processBalanceAdjustment() {
                 coin_id: parseInt(coinId),
                 type: type,
                 amount: amount,
+                amount_usd: usd,
                 csrf_token: token
             })
         });
@@ -265,7 +331,9 @@ async function processBalanceAdjustment() {
         
         if (data.success) {
             showMessage(`Balance ${type === 'credit' ? 'credited' : 'debited'} successfully. New balance: ${parseFloat(data.balance).toFixed(8)}`, 'success');
+            document.getElementById('amountUsd').value = '';
             document.getElementById('amount').value = '';
+            document.getElementById('coinAmountPreview').textContent = 'Select a coin and enter USD to see the coin amount.';
             loadUserAssets();
         } else {
             showMessage(data.message || 'Failed to adjust balance', 'error');

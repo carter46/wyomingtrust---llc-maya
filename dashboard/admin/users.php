@@ -20,8 +20,8 @@ function renderUsersContent() {
     <button onclick="showCreateUserModal()" class="bg-primary text-navy-900 px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg font-semibold text-sm sm:text-base hover:opacity-90 w-full sm:w-auto">Create New User</button>
 </div>
 <div id="messageContainer" class="mb-3 sm:mb-4"></div>
-<div class="bg-white dark:bg-navy-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
-<div id="usersContainer" class="p-4 sm:p-6">
+<div class="bg-white dark:bg-navy-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-visible">
+<div id="usersContainer" class="p-4 sm:p-6 overflow-visible">
 <div class="text-center py-8 sm:py-10 text-slate-500 text-sm sm:text-base">Loading users...</div>
 </div>
 </div>
@@ -82,15 +82,15 @@ function renderUsers(users) {
             </table>
         </div>
         <!-- Mobile Card View -->
-        <div class="md:hidden space-y-4">
+        <div class="md:hidden space-y-4 overflow-visible">
             ${users.map(user => `
-                <div class="bg-slate-50 dark:bg-navy-700/50 rounded-lg p-4 border border-slate-200 dark:border-slate-600">
+                <div class="bg-slate-50 dark:bg-navy-700/50 rounded-lg p-4 border border-slate-200 dark:border-slate-600 overflow-visible relative z-0">
                     <div class="flex items-start justify-between gap-3 mb-3">
                         <div class="flex-1 min-w-0">
                             <h3 class="font-bold text-sm text-navy-900 dark:text-white truncate">${escapeHtml(user.full_name)}</h3>
                             <p class="text-xs text-slate-500 dark:text-slate-400 truncate mt-1">${escapeHtml(user.email)}</p>
                         </div>
-                        <div class="flex items-center gap-2 flex-shrink-0">
+                        <div class="flex items-center gap-2 flex-shrink-0 relative z-10">
                             ${llcStatusBadge(user.llc_status)}
                             ${renderUserActionsMenu(user)}
                         </div>
@@ -130,7 +130,7 @@ function renderUserActionsMenu(user) {
                 aria-haspopup="true">
                 <span class="material-icons-outlined text-xl leading-none">more_vert</span>
             </button>
-            <div class="user-actions-dropdown hidden absolute right-0 z-50 mt-1 w-44 origin-top-right rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-navy-800 shadow-lg py-1">
+            <div class="user-actions-dropdown hidden fixed z-[9999] w-44 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-navy-800 shadow-xl py-1">
                 ${hasTrusts ? `<button type="button" class="w-full text-left px-4 py-2.5 text-sm text-emerald-700 dark:text-emerald-400 hover:bg-slate-50 dark:hover:bg-navy-700" onclick="event.stopPropagation(); closeAllUserActionsMenus(); viewUserTrusts(${id})">View LLC</button>` : ''}
                 <button type="button" class="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-navy-700" onclick="event.stopPropagation(); closeAllUserActionsMenus(); editUser(${id})">Edit</button>
                 <button type="button" class="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-navy-700" onclick="event.stopPropagation(); closeAllUserActionsMenus(); resetPassword(${id})">Reset Password</button>
@@ -141,16 +141,36 @@ function renderUserActionsMenu(user) {
 }
 
 function closeAllUserActionsMenus() {
-    document.querySelectorAll('.user-actions-dropdown').forEach((el) => el.classList.add('hidden'));
+    document.querySelectorAll('.user-actions-dropdown').forEach((el) => {
+        el.classList.add('hidden');
+        el.style.top = '';
+        el.style.left = '';
+        el.style.right = '';
+    });
 }
 
 function toggleUserActionsMenu(event, userId) {
     event.stopPropagation();
-    const menu = document.querySelector(`.user-actions-menu[data-user-id="${userId}"] .user-actions-dropdown`);
-    if (!menu) return;
+    const wrap = document.querySelector(`.user-actions-menu[data-user-id="${userId}"]`);
+    const menu = wrap?.querySelector('.user-actions-dropdown');
+    const btn = wrap?.querySelector('button');
+    if (!menu || !btn) return;
     const wasOpen = !menu.classList.contains('hidden');
     closeAllUserActionsMenus();
-    if (!wasOpen) menu.classList.remove('hidden');
+    if (wasOpen) return;
+
+    menu.classList.remove('hidden');
+    const rect = btn.getBoundingClientRect();
+    const menuWidth = menu.offsetWidth || 176;
+    const menuHeight = menu.offsetHeight || 160;
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const openUp = spaceBelow < menuHeight + 12 && rect.top > menuHeight + 12;
+    const top = openUp ? (rect.top - menuHeight - 4) : (rect.bottom + 4);
+    let left = rect.right - menuWidth;
+    left = Math.max(8, Math.min(left, window.innerWidth - menuWidth - 8));
+    menu.style.top = `${Math.max(8, top)}px`;
+    menu.style.left = `${left}px`;
+    menu.style.right = 'auto';
 }
 
 document.addEventListener('click', function () {
@@ -418,11 +438,8 @@ let currentTrustViewUserId = null;
 let currentUserTrustsCache = [];
 
 function setAdminModalWidth(wide) {
-    const dialog = document.querySelector('#modalContainer .modal-dialog');
-    if (!dialog) return;
-    dialog.classList.toggle('max-w-md', !wide);
-    dialog.classList.toggle('max-w-3xl', false);
-    dialog.classList.toggle('max-w-4xl', !!wide);
+    // Width is applied via showModal(..., { wide: true })
+    window.__adminModalWide = !!wide;
 }
 
 async function viewUserTrusts(userId) {
@@ -453,10 +470,9 @@ async function viewUserTrusts(userId) {
 
 function showTrustPickerModal(user, trusts) {
     const html = TrustDetailRender.renderTrustPickerHtml(user, trusts);
-    setAdminModalWidth(true);
     showModal(`LLCs — ${user.full_name || user.email || 'User'}`, html, [
-        { label: 'Close', onclick: () => closeModal(), class: 'bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white min-w-[6.5rem]' }
-    ]);
+        { label: 'Close', onclick: () => closeModal(), class: 'bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white border border-slate-300 dark:border-slate-600 min-w-[6.5rem]' }
+    ], { wide: true });
 }
 
 async function openAdminTrustDetailModal(trustId, userId) {
@@ -482,7 +498,7 @@ function showAdminTrustDetailModal(trust, userId) {
         actions.push({
             label: '← Back to LLCs',
             onclick: () => backToTrustPicker(),
-            class: 'bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white',
+            class: 'bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white border border-slate-300 dark:border-slate-600',
         });
     }
 
@@ -490,13 +506,13 @@ function showAdminTrustDetailModal(trust, userId) {
         actions.push({
             label: 'Approve LLC',
             onclick: () => approveTrustRegistration(trust.id),
-            class: 'bg-green-600 text-white min-w-[8rem]',
+            class: 'bg-green-600 text-white border border-green-700 min-w-[8rem]',
             icon: 'check_circle',
         });
         actions.push({
             label: 'Disapprove LLC',
             onclick: () => disapproveTrustRegistration(trust.id),
-            class: 'bg-red-600 text-white min-w-[8rem]',
+            class: 'bg-red-600 text-white border border-red-700 min-w-[8rem]',
             icon: 'cancel',
         });
     }
@@ -504,11 +520,10 @@ function showAdminTrustDetailModal(trust, userId) {
     actions.push({
         label: 'Close',
         onclick: () => closeModal(),
-        class: 'bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white min-w-[6.5rem]',
+        class: 'bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white border border-slate-300 dark:border-slate-600 min-w-[6.5rem]',
     });
 
-    setAdminModalWidth(true);
-    showModal(`LLC Details — #${trust.id}`, html, actions);
+    showModal(`LLC Details — #${trust.id}`, html, actions, { wide: true });
 }
 
 function backToTrustPicker() {

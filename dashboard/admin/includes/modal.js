@@ -19,9 +19,9 @@ function initModalSystem() {
         <div class="modal-backdrop fixed inset-0 bg-black/50 transition-opacity" onclick="closeModal()"></div>
         <div class="modal-content fixed inset-0 flex items-center justify-center p-4 pointer-events-none">
             <div class="modal-dialog bg-white dark:bg-navy-800 rounded-xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto pointer-events-auto transform transition-all" style="opacity: 0; transform: scale(0.95);">
-                <div class="modal-header flex items-center justify-between p-6 border-b border-slate-200 dark:border-slate-700">
-                    <h3 class="modal-title text-xl font-bold text-navy-900 dark:text-white"></h3>
-                    <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
+                <div class="modal-header flex items-center justify-between p-5 sm:p-6 border-b border-slate-200 dark:border-slate-700">
+                    <h3 class="modal-title text-lg sm:text-xl font-bold text-navy-900 dark:text-white pr-2"></h3>
+                    <button type="button" onclick="closeModal()" class="inline-flex items-center justify-center w-10 h-10 rounded-lg border border-slate-200 dark:border-slate-600 text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-navy-700 transition-colors shrink-0" aria-label="Close">
                         <span class="material-icons-outlined">close</span>
                     </button>
                 </div>
@@ -46,39 +46,54 @@ function initModalSystem() {
  * @param {string} title - Modal title
  * @param {string} content - HTML content for modal body
  * @param {Array} actions - Array of action buttons [{label, onclick, class, icon}]
+ * @param {Object} options - Optional { wide: boolean }
  */
-function showModal(title, content, actions = []) {
+function showModal(title, content, actions = [], options = {}) {
     initModalSystem();
     
     const dialog = modalContainer.querySelector('.modal-dialog');
+    const wide = !!(options && options.wide);
+    dialog.classList.toggle('max-w-md', !wide);
+    dialog.classList.toggle('max-w-3xl', false);
+    dialog.classList.toggle('max-w-4xl', wide);
+    dialog.classList.toggle('max-w-2xl', false);
+
     modalContainer.querySelector('.modal-title').textContent = title;
     modalContainer.querySelector('.modal-body').innerHTML = content;
     
     const footer = modalContainer.querySelector('.modal-footer');
     footer.innerHTML = '';
-    footer.className = 'modal-footer flex flex-wrap items-center justify-end gap-3 p-5 sm:p-6 border-t border-slate-200 dark:border-slate-700 bg-slate-50/80 dark:bg-navy-900/40';
+    footer.className = 'modal-footer flex flex-col-reverse sm:flex-row sm:flex-wrap items-stretch sm:items-center justify-end gap-3 p-5 sm:p-6 border-t border-slate-200 dark:border-slate-700 bg-slate-50/80 dark:bg-navy-900/40';
     
-    const baseBtn = 'inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-lg text-sm font-semibold transition-opacity hover:opacity-90 shadow-sm';
+    const baseBtn = 'inline-flex w-full sm:w-auto items-center justify-center gap-1.5 px-5 py-3 rounded-lg text-sm font-semibold transition-opacity hover:opacity-90 shadow-sm border border-transparent';
+
+    const normalizeOnClick = (handler) => {
+        if (typeof handler === 'function') return handler;
+        // Legacy string handlers (e.g. "closeModal()")
+        if (typeof handler === 'string' && handler.indexOf('closeModal') !== -1) {
+            return () => closeModal();
+        }
+        return () => closeModal();
+    };
 
     if (actions.length === 0) {
-        // Default close button
         footer.innerHTML = `
-            <button onclick="closeModal()" class="${baseBtn} bg-primary text-navy-900 min-w-[6.5rem]">
+            <button type="button" onclick="closeModal()" class="${baseBtn} bg-primary text-navy-900 min-w-[6.5rem]">
                 Close
             </button>
         `;
     } else {
         actions.forEach(action => {
             const button = document.createElement('button');
+            button.type = 'button';
             const custom = (action.class || '').trim();
-            // Always keep padding/spacing; append custom color classes
             button.className = custom
                 ? `${baseBtn} ${custom}`
                 : `${baseBtn} bg-primary text-navy-900`;
             button.innerHTML = action.icon
                 ? `<span class="material-icons-outlined text-base leading-none">${action.icon}</span><span>${action.label}</span>`
                 : action.label;
-            button.onclick = action.onclick;
+            button.onclick = normalizeOnClick(action.onclick);
             footer.appendChild(button);
         });
     }
@@ -254,6 +269,9 @@ function closeModal() {
     setTimeout(() => {
         modalContainer.classList.add('hidden');
         document.body.style.overflow = '';
+        // Reset width for next open
+        dialog.classList.add('max-w-md');
+        dialog.classList.remove('max-w-4xl', 'max-w-3xl', 'max-w-2xl');
         
         // Clear callbacks
         delete modalContainer._onSubmit;

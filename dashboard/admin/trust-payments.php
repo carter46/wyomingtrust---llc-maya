@@ -20,12 +20,37 @@ function renderTrustPaymentsContent() {
     <p class="text-slate-600 dark:text-slate-400 text-sm sm:text-base mt-2">Review trust service payments and crypto deposit submissions</p>
 </div>
 
-<div class="flex gap-2 mb-4 border-b border-slate-200 dark:border-slate-700">
-    <button type="button" id="tabTrustPayments" onclick="switchTab('trust')" class="px-4 py-2 text-sm font-semibold border-b-2 border-primary text-primary">LLC Service Payments</button>
-    <button type="button" id="tabCryptoDeposits" onclick="switchTab('deposits')" class="px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-slate-500 hover:text-primary">Crypto Deposits</button>
-    <button type="button" id="tabLiquidationFees" onclick="switchTab('liquidation_fees')" class="px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-slate-500 hover:text-primary">Liquidation Fees</button>
-    <button type="button" id="tabAssetFundings" onclick="switchTab('asset_fundings')" class="px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-slate-500 hover:text-primary">Asset Deposits</button>
-    <button type="button" id="tabCryptoLiquidations" onclick="switchTab('liquidations')" class="px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-slate-500 hover:text-primary">Crypto Liquidations</button>
+<!-- Desktop tabs -->
+<div class="hidden md:flex gap-2 mb-4 border-b border-slate-200 dark:border-slate-700 overflow-x-auto">
+    <button type="button" id="tabTrustPayments" onclick="switchTab('trust')" class="px-4 py-2 text-sm font-semibold border-b-2 border-primary text-primary whitespace-nowrap">LLC Service Payments</button>
+    <button type="button" id="tabCryptoDeposits" onclick="switchTab('deposits')" class="px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-slate-500 hover:text-primary whitespace-nowrap">Crypto Deposits</button>
+    <button type="button" id="tabLiquidationFees" onclick="switchTab('liquidation_fees')" class="px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-slate-500 hover:text-primary whitespace-nowrap">Liquidation Fees</button>
+    <button type="button" id="tabAssetFundings" onclick="switchTab('asset_fundings')" class="px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-slate-500 hover:text-primary whitespace-nowrap">Asset Deposits</button>
+    <button type="button" id="tabCryptoLiquidations" onclick="switchTab('liquidations')" class="px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-slate-500 hover:text-primary whitespace-nowrap">Crypto Liquidations</button>
+</div>
+
+<!-- Mobile accordion nav -->
+<div class="md:hidden mb-4 space-y-2" id="paymentMobileAccordion">
+    <button type="button" class="payment-acc-btn w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-navy-800 text-left" data-tab="trust" onclick="switchTab('trust')">
+        <span class="text-sm font-semibold text-navy-900 dark:text-white">LLC Service Payments</span>
+        <span class="material-icons-outlined text-slate-400 payment-acc-icon">expand_more</span>
+    </button>
+    <button type="button" class="payment-acc-btn w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-navy-800 text-left" data-tab="deposits" onclick="switchTab('deposits')">
+        <span class="text-sm font-semibold text-navy-900 dark:text-white">Crypto Deposits</span>
+        <span class="material-icons-outlined text-slate-400 payment-acc-icon">expand_more</span>
+    </button>
+    <button type="button" class="payment-acc-btn w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-navy-800 text-left" data-tab="liquidation_fees" onclick="switchTab('liquidation_fees')">
+        <span class="text-sm font-semibold text-navy-900 dark:text-white">Liquidation Fees</span>
+        <span class="material-icons-outlined text-slate-400 payment-acc-icon">expand_more</span>
+    </button>
+    <button type="button" class="payment-acc-btn w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-navy-800 text-left" data-tab="asset_fundings" onclick="switchTab('asset_fundings')">
+        <span class="text-sm font-semibold text-navy-900 dark:text-white">Asset Deposits</span>
+        <span class="material-icons-outlined text-slate-400 payment-acc-icon">expand_more</span>
+    </button>
+    <button type="button" class="payment-acc-btn w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-navy-800 text-left" data-tab="liquidations" onclick="switchTab('liquidations')">
+        <span class="text-sm font-semibold text-navy-900 dark:text-white">Crypto Liquidations</span>
+        <span class="material-icons-outlined text-slate-400 payment-acc-icon">expand_more</span>
+    </button>
 </div>
 
 <div id="messageContainer" class="mb-3 sm:mb-4"></div>
@@ -73,18 +98,34 @@ let activeTab = 'trust';
 function switchTab(tab) {
     activeTab = tab;
     const tabClass = (name) => tab === name
-        ? 'px-4 py-2 text-sm font-semibold border-b-2 border-primary text-primary'
-        : 'px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-slate-500 hover:text-primary';
-    document.getElementById('tabTrustPayments').className = tabClass('trust');
-    document.getElementById('tabCryptoDeposits').className = tabClass('deposits');
-    document.getElementById('tabLiquidationFees').className = tabClass('liquidation_fees');
-    document.getElementById('tabAssetFundings').className = tabClass('asset_fundings');
-    document.getElementById('tabCryptoLiquidations').className = tabClass('liquidations');
+        ? 'px-4 py-2 text-sm font-semibold border-b-2 border-primary text-primary whitespace-nowrap'
+        : 'px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-slate-500 hover:text-primary whitespace-nowrap';
+    const trustTab = document.getElementById('tabTrustPayments');
+    const depositsTab = document.getElementById('tabCryptoDeposits');
+    const liqFeesTab = document.getElementById('tabLiquidationFees');
+    const assetTab = document.getElementById('tabAssetFundings');
+    const liqTab = document.getElementById('tabCryptoLiquidations');
+    if (trustTab) trustTab.className = tabClass('trust');
+    if (depositsTab) depositsTab.className = tabClass('deposits');
+    if (liqFeesTab) liqFeesTab.className = tabClass('liquidation_fees');
+    if (assetTab) assetTab.className = tabClass('asset_fundings');
+    if (liqTab) liqTab.className = tabClass('liquidations');
+
     document.getElementById('trustPaymentsPanel').classList.toggle('hidden', tab !== 'trust');
     document.getElementById('cryptoDepositsPanel').classList.toggle('hidden', tab !== 'deposits');
     document.getElementById('liquidationFeesPanel').classList.toggle('hidden', tab !== 'liquidation_fees');
     document.getElementById('assetFundingsPanel').classList.toggle('hidden', tab !== 'asset_fundings');
     document.getElementById('cryptoLiquidationsPanel').classList.toggle('hidden', tab !== 'liquidations');
+
+    // Mobile accordion active state
+    document.querySelectorAll('.payment-acc-btn').forEach((btn) => {
+        const active = btn.getAttribute('data-tab') === tab;
+        btn.classList.toggle('border-primary', active);
+        btn.classList.toggle('ring-1', active);
+        btn.classList.toggle('ring-primary', active);
+        const icon = btn.querySelector('.payment-acc-icon');
+        if (icon) icon.textContent = active ? 'expand_less' : 'expand_more';
+    });
 }
 
 async function loadPayments() {
@@ -212,7 +253,7 @@ function viewDepositDetails(depositId) {
         </div>
     `;
     showModal('Crypto Deposit Details', detailsHtml, [
-        { label: 'Close', onclick: 'closeModal()', class: 'bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white' }
+        { label: 'Close', onclick: () => closeModal(), class: 'bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white border border-slate-300 dark:border-slate-600' }
     ]);
 }
 
@@ -575,7 +616,7 @@ function viewLiquidationDetails(liquidationId) {
         </div>
     `;
     showModal('Crypto Liquidation Details', detailsHtml, [
-        { label: 'Close', onclick: 'closeModal()', class: 'bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white' }
+        { label: 'Close', onclick: () => closeModal(), class: 'bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white border border-slate-300 dark:border-slate-600' }
     ]);
 }
 
@@ -738,8 +779,8 @@ async function viewDetails(trustId) {
         });
 
         showModal('LLC Payment Details', detailsHtml, [
-            { label: 'Close', onclick: () => closeModal(), class: 'bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white' }
-        ]);
+            { label: 'Close', onclick: () => closeModal(), class: 'bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white border border-slate-300 dark:border-slate-600' }
+        ], { wide: true });
     } catch (error) {
         console.error('Error loading trust details:', error);
         showToast('Error loading trust details', 'error');
@@ -841,8 +882,12 @@ function escapeHtml(text) {
 
 // Load payments on page load
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', loadPayments);
+    document.addEventListener('DOMContentLoaded', () => {
+        switchTab('trust');
+        loadPayments();
+    });
 } else {
+    switchTab('trust');
     loadPayments();
 }
 </script>
