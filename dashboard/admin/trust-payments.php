@@ -29,59 +29,68 @@ function renderTrustPaymentsContent() {
     <button type="button" id="tabCryptoLiquidations" onclick="switchTab('liquidations')" class="px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-slate-500 hover:text-primary whitespace-nowrap">Crypto Liquidations</button>
 </div>
 
-<!-- Mobile accordion nav -->
-<div class="md:hidden mb-4 space-y-2" id="paymentMobileAccordion">
-    <button type="button" class="payment-acc-btn w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-navy-800 text-left" data-tab="trust" onclick="switchTab('trust')">
-        <span class="text-sm font-semibold text-navy-900 dark:text-white">LLC Service Payments</span>
-        <span class="material-icons-outlined text-slate-400 payment-acc-icon">expand_more</span>
-    </button>
-    <button type="button" class="payment-acc-btn w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-navy-800 text-left" data-tab="deposits" onclick="switchTab('deposits')">
-        <span class="text-sm font-semibold text-navy-900 dark:text-white">Crypto Deposits</span>
-        <span class="material-icons-outlined text-slate-400 payment-acc-icon">expand_more</span>
-    </button>
-    <button type="button" class="payment-acc-btn w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-navy-800 text-left" data-tab="liquidation_fees" onclick="switchTab('liquidation_fees')">
-        <span class="text-sm font-semibold text-navy-900 dark:text-white">Liquidation Fees</span>
-        <span class="material-icons-outlined text-slate-400 payment-acc-icon">expand_more</span>
-    </button>
-    <button type="button" class="payment-acc-btn w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-navy-800 text-left" data-tab="asset_fundings" onclick="switchTab('asset_fundings')">
-        <span class="text-sm font-semibold text-navy-900 dark:text-white">Asset Deposits</span>
-        <span class="material-icons-outlined text-slate-400 payment-acc-icon">expand_more</span>
-    </button>
-    <button type="button" class="payment-acc-btn w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-navy-800 text-left" data-tab="liquidations" onclick="switchTab('liquidations')">
-        <span class="text-sm font-semibold text-navy-900 dark:text-white">Crypto Liquidations</span>
-        <span class="material-icons-outlined text-slate-400 payment-acc-icon">expand_more</span>
-    </button>
-</div>
-
 <div id="messageContainer" class="mb-3 sm:mb-4"></div>
 
-<div id="trustPaymentsPanel" class="bg-white dark:bg-navy-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
-    <div id="paymentsContainer" class="p-4 sm:p-6">
-        <div class="text-center py-8 sm:py-10 text-slate-500 text-sm sm:text-base">Loading pending payments...</div>
+<!-- Panels: on mobile each expands directly under its accordion header -->
+<div class="space-y-2 md:space-y-4" id="paymentPanelsWrap">
+    <div class="payment-acc-item rounded-xl border border-slate-200 dark:border-slate-600 md:border-0 overflow-hidden bg-white dark:bg-navy-800 md:bg-transparent" data-tab="trust">
+        <button type="button" class="payment-acc-btn md:hidden w-full flex items-center justify-between gap-3 px-4 py-3 bg-white dark:bg-navy-800 text-left" data-tab="trust" onclick="switchTab('trust')">
+            <span class="text-sm font-semibold text-navy-900 dark:text-white">LLC Service Payments</span>
+            <span class="material-icons-outlined text-slate-400 payment-acc-icon">expand_less</span>
+        </button>
+        <div id="trustPaymentsPanel" class="bg-white dark:bg-navy-800 md:rounded-xl md:shadow-sm md:border md:border-slate-200 md:dark:border-slate-700 overflow-hidden border-t border-slate-200 dark:border-slate-600 md:border-t-0">
+            <div id="paymentsContainer" class="p-4 sm:p-6">
+                <div class="text-center py-8 sm:py-10 text-slate-500 text-sm sm:text-base">Loading pending payments...</div>
+            </div>
+        </div>
     </div>
-</div>
 
-<div id="cryptoDepositsPanel" class="hidden bg-white dark:bg-navy-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
-    <div id="depositsContainer" class="p-4 sm:p-6">
-        <div class="text-center py-8 sm:py-10 text-slate-500 text-sm sm:text-base">Loading crypto deposits...</div>
+    <div class="payment-acc-item rounded-xl border border-slate-200 dark:border-slate-600 md:border-0 overflow-hidden bg-white dark:bg-navy-800 md:bg-transparent" data-tab="deposits">
+        <button type="button" class="payment-acc-btn md:hidden w-full flex items-center justify-between gap-3 px-4 py-3 bg-white dark:bg-navy-800 text-left" data-tab="deposits" onclick="switchTab('deposits')">
+            <span class="text-sm font-semibold text-navy-900 dark:text-white">Crypto Deposits</span>
+            <span class="material-icons-outlined text-slate-400 payment-acc-icon">expand_more</span>
+        </button>
+        <div id="cryptoDepositsPanel" class="hidden bg-white dark:bg-navy-800 md:rounded-xl md:shadow-sm md:border md:border-slate-200 md:dark:border-slate-700 overflow-hidden border-t border-slate-200 dark:border-slate-600 md:border-t-0">
+            <div id="depositsContainer" class="p-4 sm:p-6">
+                <div class="text-center py-8 sm:py-10 text-slate-500 text-sm sm:text-base">Loading crypto deposits...</div>
+            </div>
+        </div>
     </div>
-</div>
 
-<div id="cryptoLiquidationsPanel" class="hidden bg-white dark:bg-navy-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
-    <div id="liquidationsContainer" class="p-4 sm:p-6">
-        <div class="text-center py-8 sm:py-10 text-slate-500 text-sm sm:text-base">Loading crypto liquidations...</div>
+    <div class="payment-acc-item rounded-xl border border-slate-200 dark:border-slate-600 md:border-0 overflow-hidden bg-white dark:bg-navy-800 md:bg-transparent" data-tab="liquidation_fees">
+        <button type="button" class="payment-acc-btn md:hidden w-full flex items-center justify-between gap-3 px-4 py-3 bg-white dark:bg-navy-800 text-left" data-tab="liquidation_fees" onclick="switchTab('liquidation_fees')">
+            <span class="text-sm font-semibold text-navy-900 dark:text-white">Liquidation Fees</span>
+            <span class="material-icons-outlined text-slate-400 payment-acc-icon">expand_more</span>
+        </button>
+        <div id="liquidationFeesPanel" class="hidden bg-white dark:bg-navy-800 md:rounded-xl md:shadow-sm md:border md:border-slate-200 md:dark:border-slate-700 overflow-hidden border-t border-slate-200 dark:border-slate-600 md:border-t-0">
+            <div id="liquidationFeesContainer" class="p-4 sm:p-6">
+                <div class="text-center py-8 sm:py-10 text-slate-500 text-sm sm:text-base">Loading liquidation fee payments...</div>
+            </div>
+        </div>
     </div>
-</div>
 
-<div id="liquidationFeesPanel" class="hidden bg-white dark:bg-navy-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
-    <div id="liquidationFeesContainer" class="p-4 sm:p-6">
-        <div class="text-center py-8 sm:py-10 text-slate-500 text-sm sm:text-base">Loading liquidation fee payments...</div>
+    <div class="payment-acc-item rounded-xl border border-slate-200 dark:border-slate-600 md:border-0 overflow-hidden bg-white dark:bg-navy-800 md:bg-transparent" data-tab="asset_fundings">
+        <button type="button" class="payment-acc-btn md:hidden w-full flex items-center justify-between gap-3 px-4 py-3 bg-white dark:bg-navy-800 text-left" data-tab="asset_fundings" onclick="switchTab('asset_fundings')">
+            <span class="text-sm font-semibold text-navy-900 dark:text-white">Asset Deposits</span>
+            <span class="material-icons-outlined text-slate-400 payment-acc-icon">expand_more</span>
+        </button>
+        <div id="assetFundingsPanel" class="hidden bg-white dark:bg-navy-800 md:rounded-xl md:shadow-sm md:border md:border-slate-200 md:dark:border-slate-700 overflow-hidden border-t border-slate-200 dark:border-slate-600 md:border-t-0">
+            <div id="assetFundingsContainer" class="p-4 sm:p-6">
+                <div class="text-center py-8 sm:py-10 text-slate-500 text-sm sm:text-base">Loading asset deposit payments...</div>
+            </div>
+        </div>
     </div>
-</div>
 
-<div id="assetFundingsPanel" class="hidden bg-white dark:bg-navy-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
-    <div id="assetFundingsContainer" class="p-4 sm:p-6">
-        <div class="text-center py-8 sm:py-10 text-slate-500 text-sm sm:text-base">Loading asset deposit payments...</div>
+    <div class="payment-acc-item rounded-xl border border-slate-200 dark:border-slate-600 md:border-0 overflow-hidden bg-white dark:bg-navy-800 md:bg-transparent" data-tab="liquidations">
+        <button type="button" class="payment-acc-btn md:hidden w-full flex items-center justify-between gap-3 px-4 py-3 bg-white dark:bg-navy-800 text-left" data-tab="liquidations" onclick="switchTab('liquidations')">
+            <span class="text-sm font-semibold text-navy-900 dark:text-white">Crypto Liquidations</span>
+            <span class="material-icons-outlined text-slate-400 payment-acc-icon">expand_more</span>
+        </button>
+        <div id="cryptoLiquidationsPanel" class="hidden bg-white dark:bg-navy-800 md:rounded-xl md:shadow-sm md:border md:border-slate-200 md:dark:border-slate-700 overflow-hidden border-t border-slate-200 dark:border-slate-600 md:border-t-0">
+            <div id="liquidationsContainer" class="p-4 sm:p-6">
+                <div class="text-center py-8 sm:py-10 text-slate-500 text-sm sm:text-base">Loading crypto liquidations...</div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -117,15 +126,34 @@ function switchTab(tab) {
     document.getElementById('assetFundingsPanel').classList.toggle('hidden', tab !== 'asset_fundings');
     document.getElementById('cryptoLiquidationsPanel').classList.toggle('hidden', tab !== 'liquidations');
 
-    // Mobile accordion active state
-    document.querySelectorAll('.payment-acc-btn').forEach((btn) => {
-        const active = btn.getAttribute('data-tab') === tab;
-        btn.classList.toggle('border-primary', active);
-        btn.classList.toggle('ring-1', active);
-        btn.classList.toggle('ring-primary', active);
-        const icon = btn.querySelector('.payment-acc-icon');
+    // Mobile accordion: highlight header + expand panel directly under it
+    // Desktop: only show the active section wrapper (avoids empty gaps)
+    const isMobile = window.matchMedia('(max-width: 767px)').matches;
+    document.querySelectorAll('.payment-acc-item').forEach((item) => {
+        const active = item.getAttribute('data-tab') === tab;
+        if (isMobile) {
+            item.classList.remove('hidden');
+        } else {
+            item.classList.toggle('hidden', !active);
+        }
+        item.classList.toggle('ring-1', active && isMobile);
+        item.classList.toggle('ring-primary', active && isMobile);
+        item.classList.toggle('border-primary', active && isMobile);
+        const btn = item.querySelector('.payment-acc-btn');
+        const icon = item.querySelector('.payment-acc-icon');
+        if (btn) btn.classList.toggle('bg-primary/5', active);
         if (icon) icon.textContent = active ? 'expand_less' : 'expand_more';
     });
+
+    // Keep the opened section in view on mobile
+    if (isMobile) {
+        const activeItem = document.querySelector(`.payment-acc-item[data-tab="${tab}"]`);
+        if (activeItem) {
+            setTimeout(() => {
+                activeItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }, 50);
+        }
+    }
 }
 
 async function loadPayments() {
