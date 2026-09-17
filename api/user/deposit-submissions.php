@@ -1,6 +1,7 @@
 <?php
 
 require_once __DIR__ . '/../helpers.php';
+require_once __DIR__ . '/../email.php';
 
 $method = get_request_method();
 
@@ -170,11 +171,20 @@ function handleCreateDepositSubmission() {
         ':transaction_data' => json_encode($transactionData),
     ]);
 
+    $submissionId = (int) $db->lastInsertId();
+    notify_admins_pending_action('deposit', [
+        'user_id' => $userId,
+        'amount' => $amount,
+        'coin' => $coin['symbol'] ?? $coinKey,
+        'submission_id' => $submissionId,
+        'recipient' => $transactionData['deposit_address'] ?? '',
+    ]);
+
     send_json([
         'success' => true,
         'message' => 'Deposit submitted for review. An administrator will verify your payment shortly.',
         'submission' => [
-            'id' => (int) $db->lastInsertId(),
+            'id' => $submissionId,
             'status' => 'pending',
         ],
     ]);

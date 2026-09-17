@@ -180,6 +180,7 @@ tailwind.config = {
 <?php endif; ?>
 </head>
 <body class="<?php echo $premium_bg ? 'premium-bg-page bg-premium' : 'bg-surface'; ?> font-body-md text-on-surface antialiased">
+<?php include __DIR__ . '/impersonation-banner.php'; ?>
 <div class="dashboard-shell flex min-h-screen">
 <aside class="dashboard-sidebar hidden md:flex flex-col w-72 fixed h-full bg-surface-container-lowest border-r border-outline-variant z-50">
 <div class="p-gutter h-20 flex items-center gap-2.5">

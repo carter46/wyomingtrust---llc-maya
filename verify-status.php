@@ -6,7 +6,7 @@ $page_title = 'Verify Your Email | ' . $site_name;
 include 'includes/header.php';
 $email = $_GET['email'] ?? $_SESSION['user_email'] ?? '';
 ?>
-<section class="min-h-[calc(100vh-5rem)] flex items-center justify-center py-section-gap-md px-6 lg:px-12 bg-surface">
+<section class="min-h-[calc(100vh-7.5rem)] flex items-start sm:items-center justify-center py-10 sm:py-section-gap-md px-6 lg:px-12 bg-surface">
 <div class="max-w-md w-full bg-surface-pure rounded-xl p-8 md:p-10 shadow-sm border border-outline-variant/30">
 <div class="flex justify-center mb-6">
 <div class="bg-secondary-fixed p-4 rounded-full">

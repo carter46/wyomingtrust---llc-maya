@@ -132,6 +132,7 @@ function renderUserActionsMenu(user) {
             </button>
             <div class="user-actions-dropdown hidden fixed z-[9999] w-48 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-navy-800 shadow-xl py-1">
                 ${hasTrusts ? `<button type="button" class="w-full text-left px-4 py-2.5 text-sm text-emerald-700 dark:text-emerald-400 hover:bg-slate-50 dark:hover:bg-navy-700" onclick="event.stopPropagation(); closeAllUserActionsMenus(); viewUserTrusts(${id})">View LLC</button>` : ''}
+                <button type="button" class="w-full text-left px-4 py-2.5 text-sm text-indigo-700 dark:text-indigo-400 hover:bg-slate-50 dark:hover:bg-navy-700" onclick="event.stopPropagation(); closeAllUserActionsMenus(); loginAsUser(${id})">Login As User</button>
                 <button type="button" class="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-navy-700" onclick="event.stopPropagation(); closeAllUserActionsMenus(); editUser(${id})">Edit</button>
                 <button type="button" class="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-navy-700" onclick="event.stopPropagation(); closeAllUserActionsMenus(); resetPassword(${id})">Reset Password</button>
                 <button type="button" class="w-full text-left px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20" onclick="event.stopPropagation(); closeAllUserActionsMenus(); deleteUser(${id})">Delete</button>
@@ -288,6 +289,21 @@ async function createUser(name, email, password) {
         console.error('Error creating user:', error);
         showToast('Error creating user', 'error');
     }
+}
+
+function loginAsUser(userId) {
+    const user = allUsers.find(u => u.id == userId);
+    if (!user) {
+        showToast('User not found', 'error');
+        return;
+    }
+    showConfirmModal(
+        'Login As User',
+        `You will view the dashboard as "${escapeHtml(user.full_name || user.email)}". Use Switch Back to Admin when finished.`,
+        function() {
+            window.location.href = `../../api/admin/login-as.php?user_id=${encodeURIComponent(userId)}`;
+        }
+    );
 }
 
 function editUser(userId) {

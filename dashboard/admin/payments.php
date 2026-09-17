@@ -613,12 +613,16 @@ async function deletePayment(id) {
         return;
     }
     
-    showConfirmModal(
+                showConfirmModal(
         'Delete Payment Method',
         `Are you sure you want to delete "${escapeHtml(payment.method_name)}"? This action cannot be undone.`,
         async function() {
             try {
-                const response = await fetch(`../../api/admin/payments.php?id=${id}`, { method: 'DELETE' });
+                const response = await fetch(`../../api/admin/payments.php?action=delete&id=${id}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: id })
+                });
                 const data = await response.json();
                 if (data.success) {
                     showToast('Payment method deleted successfully', 'success');

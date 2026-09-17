@@ -100,6 +100,12 @@ function logout_current_session() {
         return;
     }
 
+    // Impersonation: restore admin instead of wiping the whole session
+    if (!empty($_SESSION['admin_impersonating'])) {
+        restore_admin_from_impersonation();
+        return;
+    }
+
     // Clear session data
     $_SESSION = [];
 
@@ -118,6 +124,36 @@ function logout_current_session() {
     }
 
     @session_destroy();
+}
+
+/**
+ * End Login As User and restore the original admin session keys.
+ */
+function restore_admin_from_impersonation(): bool {
+    if (empty($_SESSION['admin_impersonating'])) {
+        return false;
+    }
+
+    $originalId = (int) ($_SESSION['admin_original_id'] ?? $_SESSION['admin_id'] ?? 0);
+    $originalEmail = $_SESSION['admin_original_email'] ?? ($_SESSION['admin_email'] ?? '');
+
+    unset(
+        $_SESSION['user_id'],
+        $_SESSION['user_name'],
+        $_SESSION['user_email'],
+        $_SESSION['admin_impersonating'],
+        $_SESSION['admin_original_id'],
+        $_SESSION['admin_original_email'],
+        $_SESSION['admin_original_name']
+    );
+
+    if ($originalId > 0) {
+        $_SESSION['admin_id'] = $originalId;
+        $_SESSION['admin_email'] = $originalEmail;
+        return true;
+    }
+
+    return false;
 }
 
 /**
@@ -1299,6 +1335,249 @@ function decode_asset_types(?string $json): array {
     return array_values(array_filter(array_map(function ($item) {
         return $item['key'] ?? '';
     }, $config)));
+}
+
+/**
+ * Sum of pending outbound crypto (send + liquidation) not yet debited.
+ */
+function get_pending_outbound_amount(PDO $db, int $userId, int $coinId): float {
+    if ($userId <= 0 || $coinId <= 0) {
+        return 0.0;
+    }
+    $stmt = $db->prepare(
+        'SELECT COALESCE(SUM(amount + COALESCE(fee, 0)), 0)
+         FROM transactions
+         WHERE user_id = :user_id
+           AND coin_id = :coin_id
+           AND status = "pending"
+           AND type IN ("send", "liquidation")'
+    );
+    $stmt->execute([
+        ':user_id' => $userId,
+        ':coin_id' => $coinId,
+    ]);
+    return (float) $stmt->fetchColumn();
+}
+
+/**
+ * Download/generate a QR PNG for a wallet address and store under uploads/payment_methods.
+ */
+function generate_payment_method_qr(string $address, int $paymentMethodId): ?string {
+    $address = trim($address);
+    if ($address === '' || $paymentMethodId <= 0) {
+        return null;
+    }
+
+    $uploadDir = dirname(__DIR__) . '/uploads/payment_methods/';
+    if (!is_dir($uploadDir)) {
+        @mkdir($uploadDir, 0755, true);
+    }
+    if (!is_dir($uploadDir) || !is_writable($uploadDir)) {
+        return null;
+    }
+
+    $png = null;
+    $url = 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&margin=12&data=' . rawurlencode($address);
+    if (function_exists('curl_init')) {
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_TIMEOUT => 12,
+            CURLOPT_CONNECTTIMEOUT => 6,
+        ]);
+        $png = curl_exec($ch);
+        $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        if ($code < 200 || $code >= 300 || $png === false || strlen($png) < 64) {
+            $png = null;
+        }
+    }
+    if ($png === null && ini_get('allow_url_fopen')) {
+        $ctx = stream_context_create(['http' => ['timeout' => 12]]);
+        $png = @file_get_contents($url, false, $ctx);
+        if ($png === false || strlen($png) < 64) {
+            $png = null;
+        }
+    }
+    if ($png === null) {
+        return null;
+    }
+
+    $filename = 'qr_' . $paymentMethodId . '_' . time() . '.png';
+    $filepath = $uploadDir . $filename;
+    if (@file_put_contents($filepath, $png) === false) {
+        return null;
+    }
+    return 'uploads/payment_methods/' . $filename;
+}
+
+/**
+ * Resolve crypto payment method config against live wallet_addresses.
+ * Optionally persist backfill when $persistMethodId is provided.
+ */
+function resolve_crypto_payment_config(PDO $db, array $config, ?int $persistMethodId = null): array {
+    $walletAddressId = isset($config['wallet_address_id']) ? (int) $config['wallet_address_id'] : 0;
+    $coinId = isset($config['coin_id']) ? (int) $config['coin_id'] : 0;
+    $coinKey = strtolower(trim((string) ($config['coin_key'] ?? '')));
+    $coinName = strtolower(trim((string) ($config['coin_name'] ?? '')));
+    $coinSymbol = strtoupper(trim((string) ($config['coin_symbol'] ?? '')));
+    $live = null;
+
+    if ($walletAddressId > 0) {
+        $liveStmt = $db->prepare(
+            'SELECT wa.id, wa.address, wa.coin_id, c.coin_key, c.display_name, c.symbol
+             FROM wallet_addresses wa
+             INNER JOIN coins c ON c.id = wa.coin_id
+             WHERE wa.id = :id
+             LIMIT 1'
+        );
+        $liveStmt->execute([':id' => $walletAddressId]);
+        $live = $liveStmt->fetch(PDO::FETCH_ASSOC) ?: null;
+    }
+
+    if (!$live && $coinId > 0) {
+        $liveStmt = $db->prepare(
+            'SELECT wa.id, wa.address, wa.coin_id, c.coin_key, c.display_name, c.symbol
+             FROM wallet_addresses wa
+             INNER JOIN coins c ON c.id = wa.coin_id
+             WHERE wa.coin_id = :coin_id
+             ORDER BY wa.id ASC
+             LIMIT 1'
+        );
+        $liveStmt->execute([':coin_id' => $coinId]);
+        $live = $liveStmt->fetch(PDO::FETCH_ASSOC) ?: null;
+    }
+
+    if (!$live && ($coinKey !== '' || $coinName !== '' || $coinSymbol !== '')) {
+        $clauses = [];
+        $params = [];
+        if ($coinKey !== '') {
+            $clauses[] = 'LOWER(c.coin_key) = :coin_key';
+            $params[':coin_key'] = $coinKey;
+        }
+        if ($coinName !== '') {
+            $clauses[] = 'LOWER(c.display_name) = :coin_name';
+            $params[':coin_name'] = $coinName;
+        }
+        if ($coinSymbol !== '') {
+            $clauses[] = 'UPPER(c.symbol) = :coin_symbol';
+            $params[':coin_symbol'] = $coinSymbol;
+        }
+        if ($clauses) {
+            $liveStmt = $db->prepare(
+                'SELECT wa.id, wa.address, wa.coin_id, c.coin_key, c.display_name, c.symbol
+                 FROM wallet_addresses wa
+                 INNER JOIN coins c ON c.id = wa.coin_id
+                 WHERE ' . implode(' OR ', $clauses) . '
+                 ORDER BY wa.id ASC
+                 LIMIT 1'
+            );
+            $liveStmt->execute($params);
+            $live = $liveStmt->fetch(PDO::FETCH_ASSOC) ?: null;
+        }
+    }
+
+    if (!$live) {
+        return $config;
+    }
+
+    $prevAddress = trim((string) ($config['wallet_address'] ?? ''));
+    $config['wallet_address_id'] = (int) $live['id'];
+    $config['coin_id'] = (int) $live['coin_id'];
+    $config['coin_key'] = $live['coin_key'];
+    $config['coin_name'] = $live['display_name'];
+    $config['coin_symbol'] = $live['symbol'];
+    $config['wallet_address'] = $live['address'];
+    if (empty($config['network_type'])) {
+        $config['network_type'] = $live['symbol'] ?: $live['display_name'];
+    }
+
+    $needsPersist = $persistMethodId !== null && (
+        $walletAddressId !== (int) $live['id']
+        || $prevAddress !== trim((string) $live['address'])
+        || empty($config['qr_code'])
+    );
+
+    if ($needsPersist && $persistMethodId > 0) {
+        if ($prevAddress !== trim((string) $live['address']) || empty($config['qr_code'])) {
+            $qrPath = generate_payment_method_qr((string) $live['address'], $persistMethodId);
+            if ($qrPath) {
+                $config['qr_code'] = $qrPath;
+            }
+        }
+        try {
+            $upd = $db->prepare('UPDATE payment_methods SET config_data = :config_data, method_name = :method_name WHERE id = :id');
+            $upd->execute([
+                ':config_data' => json_encode($config),
+                ':method_name' => $live['display_name'] ?: ($live['symbol'] ?: 'Crypto'),
+                ':id' => $persistMethodId,
+            ]);
+        } catch (Exception $e) {
+            error_log('resolve_crypto_payment_config persist failed: ' . $e->getMessage());
+        }
+    }
+
+    return $config;
+}
+
+/**
+ * Sync all payment methods linked to a wallet address after address update.
+ */
+function sync_payment_methods_for_wallet_address(PDO $db, int $walletAddressId, string $address, ?array $coinMeta = null): int {
+    if ($walletAddressId <= 0) {
+        return 0;
+    }
+    $address = trim($address);
+    $methods = $db->query("SELECT id, method_name, config_data FROM payment_methods WHERE method_type = 'crypto'")->fetchAll(PDO::FETCH_ASSOC);
+    $updated = 0;
+    foreach ($methods as $m) {
+        $cfg = json_decode($m['config_data'] ?? '{}', true) ?: [];
+        if ((int) ($cfg['wallet_address_id'] ?? 0) !== $walletAddressId) {
+            continue;
+        }
+        $cfg['wallet_address'] = $address;
+        if ($coinMeta) {
+            if (isset($coinMeta['coin_id'])) $cfg['coin_id'] = (int) $coinMeta['coin_id'];
+            if (isset($coinMeta['coin_key'])) $cfg['coin_key'] = $coinMeta['coin_key'];
+            if (isset($coinMeta['display_name'])) $cfg['coin_name'] = $coinMeta['display_name'];
+            if (isset($coinMeta['symbol'])) {
+                $cfg['coin_symbol'] = $coinMeta['symbol'];
+                $cfg['network_type'] = $coinMeta['symbol'];
+            }
+        }
+        $qrPath = generate_payment_method_qr($address, (int) $m['id']);
+        if ($qrPath) {
+            $cfg['qr_code'] = $qrPath;
+        }
+        $name = $cfg['coin_name'] ?? $m['method_name'];
+        $upd = $db->prepare('UPDATE payment_methods SET config_data = :config_data, method_name = :method_name WHERE id = :id');
+        $upd->execute([
+            ':config_data' => json_encode($cfg),
+            ':method_name' => $name,
+            ':id' => (int) $m['id'],
+        ]);
+        $updated++;
+    }
+    return $updated;
+}
+
+/**
+ * Count crypto payment methods linked to a wallet address id.
+ */
+function count_payment_methods_for_wallet_address(PDO $db, int $walletAddressId): int {
+    if ($walletAddressId <= 0) {
+        return 0;
+    }
+    $methods = $db->query("SELECT config_data FROM payment_methods WHERE method_type = 'crypto'")->fetchAll(PDO::FETCH_ASSOC);
+    $count = 0;
+    foreach ($methods as $m) {
+        $cfg = json_decode($m['config_data'] ?? '{}', true) ?: [];
+        if ((int) ($cfg['wallet_address_id'] ?? 0) === $walletAddressId) {
+            $count++;
+        }
+    }
+    return $count;
 }
 
 require_once __DIR__ . '/../includes/icons.php';

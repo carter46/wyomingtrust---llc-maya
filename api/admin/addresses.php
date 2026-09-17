@@ -25,7 +25,7 @@ function handleListAddresses() {
     require_admin_auth();
     $db = getDatabase();
     $stmt = $db->query(
-        'SELECT wa.id, wa.address, wa.coin_id, c.coin_key, c.display_name, c.symbol
+        'SELECT wa.id, wa.address, wa.coin_id, wa.created_at, c.coin_key, c.display_name, c.symbol
          FROM wallet_addresses wa
          INNER JOIN coins c ON c.id = wa.coin_id
          ORDER BY c.display_name'
@@ -110,6 +110,25 @@ function handleUpdateAddress() {
         send_json(['success' => false, 'message' => 'Unable to update address'], 400);
     }
 
+    // Sync linked crypto payment methods + regenerate QR
+    $rowStmt = $db->prepare(
+        'SELECT wa.id, wa.address, wa.coin_id, c.coin_key, c.display_name, c.symbol
+         FROM wallet_addresses wa
+         INNER JOIN coins c ON c.id = wa.coin_id
+         WHERE wa.id = :id
+         LIMIT 1'
+    );
+    $rowStmt->execute([':id' => $id]);
+    $row = $rowStmt->fetch(PDO::FETCH_ASSOC);
+    if ($row) {
+        sync_payment_methods_for_wallet_address($db, $id, (string) $row['address'], [
+            'coin_id' => (int) $row['coin_id'],
+            'coin_key' => $row['coin_key'],
+            'display_name' => $row['display_name'],
+            'symbol' => $row['symbol'],
+        ]);
+    }
+
     send_json(['success' => true, 'message' => 'Address updated']);
 }
 
@@ -122,6 +141,14 @@ function handleDeleteAddress() {
     }
 
     $db = getDatabase();
+    $linked = count_payment_methods_for_wallet_address($db, $id);
+    if ($linked > 0) {
+        send_json([
+            'success' => false,
+            'message' => 'Cannot delete: this wallet address is linked to ' . $linked . ' crypto payment method(s). Remove those payment methods first.',
+        ], 400);
+    }
+
     $stmt = $db->prepare('DELETE FROM wallet_addresses WHERE id = :id');
     $stmt->execute([':id' => $id]);
 

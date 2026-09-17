@@ -33,11 +33,19 @@ function handleListAssets() {
         
         // Add price data to each asset
         foreach ($assets as &$asset) {
+            $pendingOut = get_pending_outbound_amount($db, $userId, (int) $asset['coin_id']);
+            $ledgerBalance = (float) ($asset['balance'] ?? 0);
+            $asset['ledger_balance'] = $ledgerBalance;
+            $asset['pending_outbound'] = $pendingOut;
+            $asset['available_balance'] = max(0, $ledgerBalance - $pendingOut);
+            // Keep balance as available for send/swap UIs that read .balance
+            $asset['balance'] = $asset['available_balance'];
+
             $coinKey = $asset['coin_key'];
             if (isset($prices[$coinKey])) {
                 $asset['price_usd'] = $prices[$coinKey]['usd'] ?? 0;
                 $asset['price_change_24h'] = $prices[$coinKey]['usd_24h_change'] ?? 0;
-                $asset['value_usd'] = (float)($asset['balance'] ?? 0) * (float)($asset['price_usd'] ?? 0);
+                $asset['value_usd'] = $asset['available_balance'] * (float)($asset['price_usd'] ?? 0);
             } else {
                 $asset['price_usd'] = 0;
                 $asset['price_change_24h'] = 0;

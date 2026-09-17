@@ -91,7 +91,7 @@ function renderAddresses(addresses) {
                                 </div>
                             </td>
                             <td class="px-4 sm:px-6 py-3 sm:py-4 text-sm font-mono text-xs break-all">${escapeHtml(addr.address)}</td>
-                            <td class="px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-slate-500">${new Date(addr.created_at).toLocaleDateString()}</td>
+                            <td class="px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-slate-500">${formatAddressDate(addr.created_at)}</td>
                             <td class="px-4 sm:px-6 py-3 sm:py-4">
                                 <div class="flex flex-wrap gap-2">
                                     <button onclick="editAddress(${addr.id})" class="text-primary hover:underline text-xs sm:text-sm">Edit</button>
@@ -298,6 +298,13 @@ async function deleteAddress(addressId) {
         console.error('Error deleting address:', error);
         showMessage('Error deleting address', 'error');
     }
+}
+
+function formatAddressDate(value) {
+    if (!value) return '—';
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) return '—';
+    return d.toLocaleDateString();
 }
 
 function escapeHtml(text) {

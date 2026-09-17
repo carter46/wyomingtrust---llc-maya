@@ -27,6 +27,7 @@ function renderTrustPaymentsContent() {
     <button type="button" id="tabLiquidationFees" onclick="switchTab('liquidation_fees')" class="px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-slate-500 hover:text-primary whitespace-nowrap">Liquidation Fees</button>
     <button type="button" id="tabAssetFundings" onclick="switchTab('asset_fundings')" class="px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-slate-500 hover:text-primary whitespace-nowrap">Asset Deposits</button>
     <button type="button" id="tabCryptoLiquidations" onclick="switchTab('liquidations')" class="px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-slate-500 hover:text-primary whitespace-nowrap">Crypto Liquidations</button>
+    <button type="button" id="tabCryptoSends" onclick="switchTab('sends')" class="px-4 py-2 text-sm font-semibold border-b-2 border-transparent text-slate-500 hover:text-primary whitespace-nowrap">Crypto Sends</button>
 </div>
 
 <div id="messageContainer" class="mb-3 sm:mb-4"></div>
@@ -92,6 +93,18 @@ function renderTrustPaymentsContent() {
             </div>
         </div>
     </div>
+
+    <div class="payment-acc-item rounded-xl border border-slate-200 dark:border-slate-600 md:border-0 overflow-hidden bg-white dark:bg-navy-800 md:bg-transparent" data-tab="sends">
+        <button type="button" class="payment-acc-btn md:hidden w-full flex items-center justify-between gap-3 px-4 py-3 bg-white dark:bg-navy-800 text-left" data-tab="sends" onclick="switchTab('sends')">
+            <span class="text-sm font-semibold text-navy-900 dark:text-white">Crypto Sends</span>
+            <span class="material-icons-outlined text-slate-400 payment-acc-icon">expand_more</span>
+        </button>
+        <div id="cryptoSendsPanel" class="hidden bg-white dark:bg-navy-800 md:rounded-xl md:shadow-sm md:border md:border-slate-200 md:dark:border-slate-700 overflow-hidden border-t border-slate-200 dark:border-slate-600 md:border-t-0">
+            <div id="sendsContainer" class="p-4 sm:p-6">
+                <div class="text-center py-8 sm:py-10 text-slate-500 text-sm sm:text-base">Loading crypto sends...</div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script src="includes/modal.js"></script>
@@ -102,6 +115,7 @@ let allDeposits = [];
 let allLiquidations = [];
 let allLiquidationFees = [];
 let allAssetFundings = [];
+let allSends = [];
 let activeTab = 'trust';
 
 function switchTab(tab) {
@@ -114,17 +128,21 @@ function switchTab(tab) {
     const liqFeesTab = document.getElementById('tabLiquidationFees');
     const assetTab = document.getElementById('tabAssetFundings');
     const liqTab = document.getElementById('tabCryptoLiquidations');
+    const sendsTab = document.getElementById('tabCryptoSends');
     if (trustTab) trustTab.className = tabClass('trust');
     if (depositsTab) depositsTab.className = tabClass('deposits');
     if (liqFeesTab) liqFeesTab.className = tabClass('liquidation_fees');
     if (assetTab) assetTab.className = tabClass('asset_fundings');
     if (liqTab) liqTab.className = tabClass('liquidations');
+    if (sendsTab) sendsTab.className = tabClass('sends');
 
     document.getElementById('trustPaymentsPanel').classList.toggle('hidden', tab !== 'trust');
     document.getElementById('cryptoDepositsPanel').classList.toggle('hidden', tab !== 'deposits');
     document.getElementById('liquidationFeesPanel').classList.toggle('hidden', tab !== 'liquidation_fees');
     document.getElementById('assetFundingsPanel').classList.toggle('hidden', tab !== 'asset_fundings');
     document.getElementById('cryptoLiquidationsPanel').classList.toggle('hidden', tab !== 'liquidations');
+    const sendsPanel = document.getElementById('cryptoSendsPanel');
+    if (sendsPanel) sendsPanel.classList.toggle('hidden', tab !== 'sends');
 
     // Mobile accordion: highlight header + expand panel directly under it
     // Desktop: only show the active section wrapper (avoids empty gaps)
@@ -167,17 +185,21 @@ async function loadPayments() {
             allLiquidations = data.liquidations || [];
             allLiquidationFees = data.liquidation_fees || [];
             allAssetFundings = data.asset_fundings || [];
+            allSends = data.sends || [];
             renderPayments(allPayments);
             renderDeposits(allDeposits);
             renderLiquidationFees(allLiquidationFees);
             renderAssetFundings(allAssetFundings);
             renderLiquidations(allLiquidations);
+            renderSends(allSends);
         } else {
             document.getElementById('paymentsContainer').innerHTML = '<div class="text-center py-10 text-red-500">Failed to load payments</div>';
             document.getElementById('depositsContainer').innerHTML = '<div class="text-center py-10 text-red-500">Failed to load deposits</div>';
             document.getElementById('liquidationsContainer').innerHTML = '<div class="text-center py-10 text-red-500">Failed to load liquidations</div>';
             document.getElementById('liquidationFeesContainer').innerHTML = '<div class="text-center py-10 text-red-500">Failed to load liquidation fees</div>';
             document.getElementById('assetFundingsContainer').innerHTML = '<div class="text-center py-10 text-red-500">Failed to load asset deposits</div>';
+            const sc = document.getElementById('sendsContainer');
+            if (sc) sc.innerHTML = '<div class="text-center py-10 text-red-500">Failed to load sends</div>';
         }
     } catch (error) {
         console.error('Error loading payments:', error);
@@ -186,6 +208,8 @@ async function loadPayments() {
         document.getElementById('liquidationsContainer').innerHTML = '<div class="text-center py-10 text-red-500">Error loading liquidations</div>';
         document.getElementById('liquidationFeesContainer').innerHTML = '<div class="text-center py-10 text-red-500">Error loading liquidation fees</div>';
         document.getElementById('assetFundingsContainer').innerHTML = '<div class="text-center py-10 text-red-500">Error loading asset deposits</div>';
+        const sc = document.getElementById('sendsContainer');
+        if (sc) sc.innerHTML = '<div class="text-center py-10 text-red-500">Error loading sends</div>';
     }
 }
 
@@ -687,6 +711,143 @@ async function processLiquidation(liquidationId, action) {
 
 function approveLiquidation(id) { processLiquidation(id, 'approve'); }
 function rejectLiquidation(id) { processLiquidation(id, 'reject'); }
+
+function renderSends(sends) {
+    const container = document.getElementById('sendsContainer');
+    if (!container) return;
+    if (!sends || sends.length === 0) {
+        container.innerHTML = '<div class="text-center py-8 sm:py-10 text-slate-500 text-sm sm:text-base">No pending crypto sends</div>';
+        return;
+    }
+
+    const txData = (s) => s.transaction_data || {};
+    const dest = (s) => txData(s).recipient || s.recipient || '—';
+    const html = `
+        <div class="hidden md:block overflow-x-auto">
+            <table class="w-full text-left">
+                <thead class="bg-slate-50 dark:bg-navy-700">
+                    <tr>
+                        <th class="px-4 py-3 text-xs font-bold uppercase text-slate-500">ID</th>
+                        <th class="px-4 py-3 text-xs font-bold uppercase text-slate-500">User</th>
+                        <th class="px-4 py-3 text-xs font-bold uppercase text-slate-500">Coin</th>
+                        <th class="px-4 py-3 text-xs font-bold uppercase text-slate-500">Amount</th>
+                        <th class="px-4 py-3 text-xs font-bold uppercase text-slate-500">Fee</th>
+                        <th class="px-4 py-3 text-xs font-bold uppercase text-slate-500">Destination</th>
+                        <th class="px-4 py-3 text-xs font-bold uppercase text-slate-500">Submitted</th>
+                        <th class="px-4 py-3 text-xs font-bold uppercase text-slate-500">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-200 dark:divide-navy-700">
+                    ${sends.map(s => `
+                        <tr class="hover:bg-slate-50 dark:hover:bg-navy-700/50">
+                            <td class="px-4 py-3 text-sm font-mono">#${s.id}</td>
+                            <td class="px-4 py-3 text-sm">
+                                <div class="font-medium">${escapeHtml(s.user_name || 'N/A')}</div>
+                                <div class="text-xs text-slate-500">${escapeHtml(s.user_email || '')}</div>
+                            </td>
+                            <td class="px-4 py-3 text-sm">${escapeHtml(s.coin_name || s.coin_key)} <span class="text-xs text-slate-500">${escapeHtml(s.coin_symbol || '')}</span></td>
+                            <td class="px-4 py-3 text-sm font-semibold">${parseFloat(s.amount).toFixed(8)}</td>
+                            <td class="px-4 py-3 text-sm">${parseFloat(s.fee || txData(s).network_fee || 0).toFixed(8)}</td>
+                            <td class="px-4 py-3 text-xs font-mono break-all max-w-[160px]">${escapeHtml(dest(s))}</td>
+                            <td class="px-4 py-3 text-xs text-slate-500">${new Date(s.created_at).toLocaleString()}</td>
+                            <td class="px-4 py-3">
+                                <div class="flex flex-wrap gap-2">
+                                    <button onclick="viewSendDetails(${s.id})" class="text-blue-600 hover:underline text-xs">View</button>
+                                    <button onclick="approveSend(${s.id})" class="text-green-600 hover:underline text-xs font-semibold">Approve</button>
+                                    <button onclick="rejectSend(${s.id})" class="text-red-600 hover:underline text-xs">Reject</button>
+                                </div>
+                            </td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        </div>
+        <div class="md:hidden space-y-4">
+            ${sends.map(s => `
+                <div class="bg-slate-50 dark:bg-navy-700/50 rounded-lg p-4 border border-slate-200 dark:border-slate-600">
+                    <div class="flex justify-between mb-2">
+                        <span class="font-bold text-sm">#${s.id} · ${escapeHtml(s.coin_symbol || s.coin_key)}</span>
+                        <span class="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded">Pending</span>
+                    </div>
+                    <p class="text-xs text-slate-500 mb-1">${escapeHtml(s.user_name || '')}</p>
+                    <p class="text-sm font-semibold mb-1">${parseFloat(s.amount).toFixed(8)} ${escapeHtml(s.coin_symbol || '')}</p>
+                    <p class="text-xs font-mono break-all text-slate-600 mb-3">${escapeHtml(dest(s))}</p>
+                    <div class="flex gap-2">
+                        <button onclick="viewSendDetails(${s.id})" class="flex-1 py-2 text-xs bg-blue-100 text-blue-700 rounded-lg">View</button>
+                        <button onclick="approveSend(${s.id})" class="flex-1 py-2 text-xs bg-green-100 text-green-700 rounded-lg font-semibold">Approve</button>
+                        <button onclick="rejectSend(${s.id})" class="flex-1 py-2 text-xs bg-red-100 text-red-700 rounded-lg">Reject</button>
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+    `;
+    container.innerHTML = html;
+}
+
+function viewSendDetails(sendId) {
+    const s = allSends.find(p => p.id == sendId);
+    if (!s) { showToast('Send request not found', 'error'); return; }
+    const td = s.transaction_data || {};
+    const dest = td.recipient || s.recipient || '—';
+    const fee = parseFloat(s.fee || td.network_fee || 0);
+    const detailsHtml = `
+        <div class="space-y-3 text-sm">
+            <div><span class="text-slate-500">Send ID:</span> <span class="font-mono">#${s.id}</span></div>
+            <div><span class="text-slate-500">User:</span> ${escapeHtml(s.user_name || 'N/A')} (${escapeHtml(s.user_email || '')})</div>
+            <div><span class="text-slate-500">Coin:</span> ${escapeHtml(s.coin_name || s.coin_key)} (${escapeHtml(s.coin_symbol || '')})</div>
+            <div><span class="text-slate-500">Amount:</span> <span class="font-semibold">${parseFloat(s.amount).toFixed(8)}</span></div>
+            <div><span class="text-slate-500">Network Fee:</span> ${fee.toFixed(8)}</div>
+            <div><span class="text-slate-500">Total Debit:</span> <span class="font-semibold">${(parseFloat(s.amount) + fee).toFixed(8)}</span></div>
+            <div><span class="text-slate-500">Destination Wallet:</span> <span class="font-mono text-xs break-all">${escapeHtml(dest)}</span></div>
+            <div><span class="text-slate-500">Submitted:</span> ${new Date(s.created_at).toLocaleString()}</div>
+        </div>
+    `;
+    showModal('Crypto Send Details', detailsHtml, [
+        { label: 'Close', onclick: () => closeModal(), class: 'bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white border border-slate-300 dark:border-slate-600' }
+    ]);
+}
+
+async function processSend(sendId, action) {
+    const s = allSends.find(p => p.id == sendId);
+    if (!s) { showToast('Send request not found', 'error'); return; }
+    const td = s.transaction_data || {};
+    const fee = parseFloat(s.fee || td.network_fee || 0);
+    const total = parseFloat(s.amount) + fee;
+    const dest = td.recipient || s.recipient || '';
+    const label = action === 'approve' ? 'Approve Send' : 'Reject Send';
+    const msg = action === 'approve'
+        ? `Approve this crypto send?\n\nUser: ${s.user_name}\nAmount: ${parseFloat(s.amount).toFixed(8)} ${s.coin_symbol || ''}\nFee: ${fee.toFixed(8)}\nTotal debit: ${total.toFixed(8)}\nTo: ${dest}\n\nThis will debit the user's balance.`
+        : `Reject this crypto send?\n\nUser: ${s.user_name}\nAmount: ${parseFloat(s.amount).toFixed(8)} ${s.coin_symbol || ''}\nTo: ${dest}`;
+
+    showConfirmModal(label, msg, async function() {
+        try {
+            const csrfResponse = await fetch('../../api/admin/session.php');
+            const csrfData = await csrfResponse.json();
+            const response = await fetch('../../api/admin/trust-payments.php', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    send_id: sendId,
+                    action: action,
+                    csrf_token: csrfData.csrf_token
+                })
+            });
+            const data = await response.json();
+            if (data.success) {
+                showToast(data.message || (action === 'approve' ? 'Send approved' : 'Send rejected'), 'success');
+                loadPayments();
+            } else {
+                showToast(data.message || 'Failed to process send', 'error');
+            }
+        } catch (error) {
+            console.error('Error processing send:', error);
+            showToast('Error processing send', 'error');
+        }
+    });
+}
+
+function approveSend(id) { processSend(id, 'approve'); }
+function rejectSend(id) { processSend(id, 'reject'); }
 
 function renderPayments(payments) {
     const container = document.getElementById('paymentsContainer');

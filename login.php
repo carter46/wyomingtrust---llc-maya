@@ -34,7 +34,7 @@ $home_href = asset_url('index.php');
 <?php endif; ?>
 <style>
 @layer base {
-    html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; }
+    html, body { margin: 0; padding: 0; min-height: 100%; }
     body { overscroll-behavior: none; }
 }
 ::-webkit-scrollbar { display: none; }
@@ -153,9 +153,9 @@ tailwind.config = {
 <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@300;400;600;700&amp;family=Inter:wght@300;400;500;600&amp;display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
 </head>
-<body class="bg-premium bg-premium-auth font-body-md text-white h-dvh max-h-dvh overflow-hidden flex flex-col antialiased">
-<main class="flex-1 min-h-0 flex items-center justify-center px-4 py-3 sm:px-6 w-full overflow-y-auto">
-<div class="w-full max-w-5xl mx-auto flex flex-col lg:flex-row items-center justify-between gap-6 lg:gap-12">
+<body class="bg-premium bg-premium-auth font-body-md text-white min-h-dvh flex flex-col antialiased">
+<main class="flex-1 w-full overflow-y-auto px-4 py-6 sm:px-6 sm:py-8">
+<div class="w-full max-w-5xl mx-auto min-h-[min(100%,calc(100dvh-3rem))] flex flex-col lg:flex-row items-start lg:items-center justify-center lg:justify-between gap-6 lg:gap-12 py-2">
 
 <div class="hidden lg:flex w-full lg:w-5/12 flex-col justify-center space-y-5 animate-[fade-in-up_1s_ease-out_forwards] opacity-0" style="animation-delay: 0.1s;">
 <div class="space-y-4">

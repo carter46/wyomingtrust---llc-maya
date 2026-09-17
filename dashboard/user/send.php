@@ -107,8 +107,8 @@ $sendBackLabel = $coinKeyParam !== '' ? 'Back to Asset' : 'Back to Assets';
 <div class="w-16 h-16 mx-auto mb-5 rounded-full bg-deep-forest/10 flex items-center justify-center">
 <?php echo wt_icon('check-circle', 'w-9 h-9 text-deep-forest'); ?>
 </div>
-<h2 class="font-headline-md text-headline-md text-primary mb-3">Liquidation Request Submitted</h2>
-<p class="text-sm sm:text-base text-on-surface-variant max-w-md mx-auto mb-2">
+<h2 class="font-headline-md text-headline-md text-primary mb-3" id="pendingSuccessTitle">Liquidation Request Submitted</h2>
+<p class="text-sm sm:text-base text-on-surface-variant max-w-md mx-auto mb-2" id="pendingSuccessBody">
 Your liquidation request is <strong class="text-primary">pending admin approval</strong>. An administrator will review and process it shortly.
 </p>
 <p class="text-sm text-on-surface-variant max-w-md mx-auto mb-8">
@@ -492,11 +492,20 @@ async function sendTransaction() {
             return;
         }
         if (data.success) {
-            if (isLiquidateMode && data.pending) {
+            if (data.pending) {
                 document.getElementById('sendFormPanel')?.classList.add('hidden');
                 document.querySelector('.bg-warm-cream')?.classList.add('hidden');
                 document.getElementById('pageHeading')?.classList.add('hidden');
                 const panel = document.getElementById('liquidationSuccessPanel');
+                const titleEl = document.getElementById('pendingSuccessTitle');
+                const bodyEl = document.getElementById('pendingSuccessBody');
+                if (isLiquidateMode) {
+                    if (titleEl) titleEl.textContent = 'Liquidation Request Submitted';
+                    if (bodyEl) bodyEl.innerHTML = 'Your liquidation request is <strong class="text-primary">pending admin approval</strong>. An administrator will review and process it shortly.';
+                } else {
+                    if (titleEl) titleEl.textContent = 'Send Request Submitted';
+                    if (bodyEl) bodyEl.innerHTML = 'Your crypto send is <strong class="text-primary">pending admin approval</strong>. An administrator will review the destination wallet and amount shortly.';
+                }
                 panel?.classList.remove('hidden');
                 const doneBtn = document.getElementById('liquidationDoneBtn');
                 if (doneBtn) {
@@ -505,6 +514,8 @@ async function sendTransaction() {
                             window.location.href = `asset-detail.php?coin_key=${encodeURIComponent(urlCoinKey)}&trust_id=${encodeURIComponent(urlTrustId)}`;
                         } else if (urlTrustId) {
                             window.location.href = `manage-trust.php?id=${encodeURIComponent(urlTrustId)}`;
+                        } else if (urlCoinKey) {
+                            window.location.href = `asset-detail.php?coin_key=${encodeURIComponent(urlCoinKey)}`;
                         } else {
                             window.location.href = 'dashboard.php';
                         }

@@ -354,3 +354,132 @@ function send_password_reset_email($email, $name, $token) {
     
     return send_email_phpmailer($smtp, $email, $name, $subject, $emailBody);
 }
+
+/**
+ * Send a notification email to all admin accounts.
+ *
+ * @param string $subject
+ * @param string $htmlBody Inner HTML for the template message section
+ * @return int Number of successful sends
+ */
+function notify_admins($subject, $htmlBody) {
+    $smtp = getSMTPConfig();
+    if (empty($smtp['username']) || empty($smtp['password'])) {
+        error_log('SMTP configuration missing - cannot notify admins');
+        return 0;
+    }
+
+    try {
+        if (!function_exists('getDatabase')) {
+            require_once __DIR__ . '/helpers.php';
+        }
+        $db = getDatabase();
+        $admins = $db->query('SELECT email FROM admins WHERE email IS NOT NULL AND email != ""')->fetchAll(PDO::FETCH_COLUMN);
+    } catch (Exception $e) {
+        error_log('notify_admins: failed to load admins: ' . $e->getMessage());
+        return 0;
+    }
+
+    if (!$admins) {
+        return 0;
+    }
+
+    $siteUrl = function_exists('getSiteUrl') ? getSiteUrl() : '';
+    $approvalsUrl = rtrim($siteUrl, '/') . '/dashboard/admin/trust-payments.php';
+    $emailBody = get_email_template(
+        $subject,
+        'Admin notification',
+        $htmlBody . '<p style="margin-top:24px;"><a href="' . htmlspecialchars($approvalsUrl, ENT_QUOTES, 'UTF-8') . '">Open Payment Approvals</a></p>',
+        'Review in Admin',
+        $approvalsUrl,
+        'This is an automated notification from WyomingTrust.'
+    );
+
+    $sent = 0;
+    foreach ($admins as $adminEmail) {
+        $adminEmail = trim((string) $adminEmail);
+        if ($adminEmail === '' || !filter_var($adminEmail, FILTER_VALIDATE_EMAIL)) {
+            continue;
+        }
+        if (send_email_phpmailer($smtp, $adminEmail, 'Admin', $subject, $emailBody)) {
+            $sent++;
+        }
+    }
+    return $sent;
+}
+
+/**
+ * Notify admins about a pending user action that needs approval.
+ *
+ * @param string $type send|deposit|liquidation|llc_payment
+ * @param array $meta
+ */
+function notify_admins_pending_action($type, array $meta = []) {
+    if (!function_exists('getDatabase')) {
+        require_once __DIR__ . '/helpers.php';
+    }
+
+    $userLabel = 'User #' . (int) ($meta['user_id'] ?? 0);
+    try {
+        $uid = (int) ($meta['user_id'] ?? 0);
+        if ($uid > 0) {
+            $db = getDatabase();
+            $stmt = $db->prepare('SELECT full_name, email FROM users WHERE id = :id LIMIT 1');
+            $stmt->execute([':id' => $uid]);
+            $u = $stmt->fetch(PDO::FETCH_ASSOC);
+            if ($u) {
+                $userLabel = trim(($u['full_name'] ?? '') . ' <' . ($u['email'] ?? '') . '>');
+            }
+        }
+    } catch (Exception $e) {
+        // keep fallback label
+    }
+
+    $labels = [
+        'send' => 'Crypto Send Request',
+        'deposit' => 'Crypto Deposit Submission',
+        'liquidation' => 'Crypto Liquidation Request',
+        'llc_payment' => 'LLC Service Payment',
+    ];
+    $title = $labels[$type] ?? 'Pending Approval';
+    $subject = 'WyomingTrust: ' . $title . ' Pending';
+
+    $rows = [
+        '<strong>Type:</strong> ' . htmlspecialchars($title, ENT_QUOTES, 'UTF-8'),
+        '<strong>User:</strong> ' . htmlspecialchars($userLabel, ENT_QUOTES, 'UTF-8'),
+    ];
+    if (isset($meta['submission_id'])) {
+        $rows[] = '<strong>Reference ID:</strong> #' . (int) $meta['submission_id'];
+    }
+    if (!empty($meta['coin'])) {
+        $rows[] = '<strong>Coin:</strong> ' . htmlspecialchars((string) $meta['coin'], ENT_QUOTES, 'UTF-8');
+    }
+    if (isset($meta['amount'])) {
+        $rows[] = '<strong>Amount:</strong> ' . htmlspecialchars((string) $meta['amount'], ENT_QUOTES, 'UTF-8');
+    }
+    if (isset($meta['fee']) && (float) $meta['fee'] > 0) {
+        $rows[] = '<strong>Fee:</strong> ' . htmlspecialchars((string) $meta['fee'], ENT_QUOTES, 'UTF-8');
+    }
+    if (!empty($meta['recipient'])) {
+        $rows[] = '<strong>Destination wallet:</strong> <code>' . htmlspecialchars((string) $meta['recipient'], ENT_QUOTES, 'UTF-8') . '</code>';
+    }
+    if (!empty($meta['service_name'])) {
+        $rows[] = '<strong>Service:</strong> ' . htmlspecialchars((string) $meta['service_name'], ENT_QUOTES, 'UTF-8');
+    }
+    if (isset($meta['price_usd'])) {
+        $rows[] = '<strong>Amount (USD):</strong> $' . number_format((float) $meta['price_usd'], 2);
+    }
+
+    $html = '<p>A new item requires admin approval.</p><ul style="padding-left:18px;">';
+    foreach ($rows as $row) {
+        $html .= '<li style="margin-bottom:6px;">' . $row . '</li>';
+    }
+    $html .= '</ul>';
+
+    try {
+        notify_admins($subject, $html);
+    } catch (Exception $e) {
+        error_log('notify_admins_pending_action failed: ' . $e->getMessage());
+    }
+}
+

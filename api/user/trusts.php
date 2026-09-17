@@ -1,6 +1,7 @@
 <?php
 
 require_once __DIR__ . '/../helpers.php';
+require_once __DIR__ . '/../email.php';
 
 $method = get_request_method();
 
@@ -541,6 +542,15 @@ function handleCreateUserTrust() {
         }
         
         $trustId = (int) $db->lastInsertId();
+
+        if ($paymentStatus === 'pending' && !(int) ($trustService['is_free'] ?? 0)) {
+            notify_admins_pending_action('llc_payment', [
+                'user_id' => $userId,
+                'submission_id' => $trustId,
+                'service_name' => $trustService['service_name'] ?? '',
+                'price_usd' => (float) ($trustService['price'] ?? 0),
+            ]);
+        }
         
         send_json([
             'success' => true,

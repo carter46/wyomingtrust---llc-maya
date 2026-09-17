@@ -14,6 +14,8 @@ switch ($method) {
     case 'POST':
         if ($action === 'upload_qr') {
             handleUploadQRCode();
+        } elseif ($action === 'delete') {
+            handleDeletePaymentMethod();
         } else {
             handleCreatePaymentMethod();
         }
@@ -40,13 +42,19 @@ function handleListPaymentMethods() {
     );
     $methods = $stmt->fetchAll();
     
-    // Decode JSON config_data
     foreach ($methods as &$method) {
         if (!empty($method['config_data'])) {
-            $method['config_data'] = json_decode($method['config_data'], true) ?? [];
+            $config = json_decode($method['config_data'], true) ?? [];
         } else {
-            $method['config_data'] = [];
+            $config = [];
         }
+        if (($method['method_type'] ?? '') === 'crypto') {
+            $config = resolve_crypto_payment_config($db, $config, (int) $method['id']);
+            if (!empty($config['coin_name'])) {
+                $method['method_name'] = $config['coin_name'];
+            }
+        }
+        $method['config_data'] = $config;
     }
     
     send_json(['success' => true, 'methods' => $methods]);
@@ -151,57 +159,8 @@ function handleCreatePaymentMethod() {
 }
 
 /**
- * Download/generate a QR PNG for a wallet address and store under uploads/payment_methods.
+ * QR helper lives in api/helpers.php (generate_payment_method_qr).
  */
-function generate_payment_method_qr(string $address, int $paymentMethodId): ?string {
-    $address = trim($address);
-    if ($address === '' || $paymentMethodId <= 0) {
-        return null;
-    }
-
-    $uploadDir = __DIR__ . '/../../uploads/payment_methods/';
-    if (!is_dir($uploadDir)) {
-        @mkdir($uploadDir, 0755, true);
-    }
-    if (!is_dir($uploadDir) || !is_writable($uploadDir)) {
-        return null;
-    }
-
-    $png = null;
-    $url = 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&margin=12&data=' . rawurlencode($address);
-    if (function_exists('curl_init')) {
-        $ch = curl_init($url);
-        curl_setopt_array($ch, [
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_FOLLOWLOCATION => true,
-            CURLOPT_TIMEOUT => 12,
-            CURLOPT_CONNECTTIMEOUT => 6,
-        ]);
-        $png = curl_exec($ch);
-        $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
-        if ($code < 200 || $code >= 300 || $png === false || strlen($png) < 64) {
-            $png = null;
-        }
-    }
-    if ($png === null && ini_get('allow_url_fopen')) {
-        $ctx = stream_context_create(['http' => ['timeout' => 12]]);
-        $png = @file_get_contents($url, false, $ctx);
-        if ($png === false || strlen($png) < 64) {
-            $png = null;
-        }
-    }
-    if ($png === null) {
-        return null;
-    }
-
-    $filename = 'qr_' . $paymentMethodId . '_' . time() . '.png';
-    $filepath = $uploadDir . $filename;
-    if (@file_put_contents($filepath, $png) === false) {
-        return null;
-    }
-    return 'uploads/payment_methods/' . $filename;
-}
 
 function handleUpdatePaymentMethod() {
     require_admin_auth();
@@ -255,7 +214,11 @@ function handleUpdatePaymentMethod() {
 
 function handleDeletePaymentMethod() {
     require_admin_auth();
-    $methodId = isset($_GET['id']) ? (int) $_GET['id'] : 0;
+    $payload = [];
+    if (strtoupper($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
+        $payload = get_json_input();
+    }
+    $methodId = isset($_GET['id']) ? (int) $_GET['id'] : (int) ($payload['id'] ?? 0);
     
     if ($methodId <= 0) {
         send_json(['success' => false, 'message' => 'Invalid method ID'], 400);
@@ -263,13 +226,7 @@ function handleDeletePaymentMethod() {
     
     $db = getDatabase();
     
-    // Check if payment method is in use
-    $inUse = $db->prepare('SELECT COUNT(*) FROM transactions WHERE payment_method_id = :id');
-    $inUse->execute([':id' => $methodId]);
-    if ((int) $inUse->fetchColumn() > 0) {
-        send_json(['success' => false, 'message' => 'Cannot delete payment method that is in use'], 400);
-    }
-    
+    // FKs use ON DELETE SET NULL — allow hard delete
     try {
         $stmt = $db->prepare('DELETE FROM payment_methods WHERE id = :id');
         $stmt->execute([':id' => $methodId]);

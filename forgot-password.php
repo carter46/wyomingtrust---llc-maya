@@ -5,7 +5,7 @@ $site_name = $site_settings['site_name'] ?? 'WyomingTrust';
 $page_title = 'Forgot Password | ' . $site_name;
 include 'includes/header.php';
 ?>
-<section class="min-h-[calc(100vh-5rem)] flex items-center justify-center py-section-gap-md px-6 lg:px-12 bg-surface">
+<section class="min-h-[calc(100vh-7.5rem)] flex items-start sm:items-center justify-center py-10 sm:py-section-gap-md px-6 lg:px-12 bg-surface">
 <div class="max-w-md w-full bg-surface-pure rounded-xl p-8 md:p-10 shadow-sm border border-outline-variant/30">
 <div class="text-center mb-8">
 <h1 class="font-headline-lg text-headline-lg text-primary mb-3">Forgot Password?</h1>

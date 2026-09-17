@@ -1,6 +1,7 @@
 <?php
 
 require_once __DIR__ . '/../helpers.php';
+require_once __DIR__ . '/../email.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     send_json(['success' => false, 'message' => 'Method not allowed'], 405);
@@ -24,8 +25,8 @@ if ($coinKey === '' || $amount <= 0) {
     send_json(['success' => false, 'message' => 'Invalid request payload'], 400);
 }
 
-if ($isLiquidation && $recipient === '') {
-    send_json(['success' => false, 'message' => 'Recipient address is required for liquidation'], 400);
+if ($recipient === '') {
+    send_json(['success' => false, 'message' => 'Recipient address is required'], 400);
 }
 
 // Validate recipient address format
@@ -61,10 +62,17 @@ try {
 
     $coinId = (int) $coin['coin_id'];
     $currentBalance = isset($coin['balance']) ? (float) $coin['balance'] : 0.0;
+    $reservedPending = get_pending_outbound_amount($db, $userId, $coinId);
+    $availableBalance = $currentBalance - $reservedPending;
 
-    if ($currentBalance < $total) {
+    if ($availableBalance < $total) {
         $db->rollBack();
-        send_json(['success' => false, 'message' => 'Insufficient balance'], 400);
+        send_json([
+            'success' => false,
+            'message' => $reservedPending > 0
+                ? 'Insufficient available balance (funds reserved by a pending send or liquidation).'
+                : 'Insufficient balance',
+        ], 400);
     }
 
     if ($isLiquidation) {
@@ -131,38 +139,49 @@ try {
             ':transaction_data' => json_encode($transactionData),
         ]);
 
+        $submissionId = (int) $db->lastInsertId();
         $db->commit();
+
+        if (function_exists('notify_admins_pending_action')) {
+            notify_admins_pending_action('liquidation', [
+                'user_id' => $userId,
+                'amount' => $amount,
+                'coin' => $coin['symbol'] ?? $coinKey,
+                'recipient' => $recipient,
+                'submission_id' => $submissionId,
+            ]);
+        }
 
         send_json([
             'success' => true,
             'message' => 'Liquidation request submitted for admin approval.',
             'pending' => true,
-            'submission_id' => (int) $db->lastInsertId(),
+            'submission_id' => $submissionId,
         ]);
     }
 
-    $newBalance = $currentBalance - $total;
-
-    $update = $db->prepare('UPDATE user_assets SET balance = :balance, updated_at = CURRENT_TIMESTAMP WHERE user_id = :user AND coin_id = :coin');
-    $update->execute([
-        ':balance' => $newBalance,
-        ':user' => $userId,
-        ':coin' => $coinId,
-    ]);
-
-    if ($update->rowCount() === 0) {
-        $insertAsset = $db->prepare('INSERT INTO user_assets (user_id, coin_id, balance) VALUES (:user, :coin, :balance)');
-        $insertAsset->execute([
-            ':user' => $userId,
-            ':coin' => $coinId,
-            ':balance' => $newBalance,
-        ]);
+    // Regular crypto send: pending admin approval (do not debit until approved)
+    $pendingSendStmt = $db->prepare(
+        'SELECT t.id FROM transactions t
+         WHERE t.user_id = :user_id AND t.type = "send" AND t.status = "pending" AND t.coin_id = :coin_id
+         LIMIT 1'
+    );
+    $pendingSendStmt->execute([':user_id' => $userId, ':coin_id' => $coinId]);
+    if ($pendingSendStmt->fetch()) {
+        $db->rollBack();
+        send_json(['success' => false, 'message' => 'A pending send for this asset already exists'], 400);
     }
 
-    // Create transaction record (using the transactions table structure from node spacedebugger)
+    $transactionData = [
+        'recipient' => $recipient,
+        'submitted_at' => date('c'),
+        'network_fee' => $fee,
+        'total_debit' => $total,
+    ];
+
     $insertTx = $db->prepare(
-        'INSERT INTO transactions (user_id, coin_id, asset_symbol, amount, fee, recipient, status, type)
-         VALUES (:user, :coin, :symbol, :amount, :fee, :recipient, :status, :type)'
+        'INSERT INTO transactions (user_id, coin_id, asset_symbol, amount, fee, recipient, status, type, transaction_data)
+         VALUES (:user, :coin, :symbol, :amount, :fee, :recipient, "pending", "send", :transaction_data)'
     );
     $insertTx->execute([
         ':user' => $userId,
@@ -171,19 +190,33 @@ try {
         ':amount' => $amount,
         ':fee' => $fee,
         ':recipient' => $recipient,
-        ':status' => 'completed',
-        ':type' => 'send',
+        ':transaction_data' => json_encode($transactionData),
     ]);
 
+    $submissionId = (int) $db->lastInsertId();
     $db->commit();
+
+    if (function_exists('notify_admins_pending_action')) {
+        notify_admins_pending_action('send', [
+            'user_id' => $userId,
+            'amount' => $amount,
+            'fee' => $fee,
+            'coin' => $coin['symbol'] ?? $coinKey,
+            'recipient' => $recipient,
+            'submission_id' => $submissionId,
+        ]);
+    }
 
     send_json([
         'success' => true,
-        'message' => 'Transaction processed successfully',
-        'balance' => $newBalance,
+        'message' => 'Send request submitted for admin approval.',
+        'pending' => true,
+        'submission_id' => $submissionId,
     ]);
 } catch (Exception $exception) {
-    $db->rollBack();
+    if ($db->inTransaction()) {
+        $db->rollBack();
+    }
     error_log('Send transaction failed: ' . $exception->getMessage());
     send_json(['success' => false, 'message' => 'Failed to process transaction'], 500);
 }

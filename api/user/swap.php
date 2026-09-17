@@ -70,11 +70,18 @@ try {
     $fromCoinId = (int) $fromCoin['coin_id'];
     $toCoinId = (int) $toCoin['coin_id'];
     $currentFromBalance = isset($fromCoin['balance']) ? (float) $fromCoin['balance'] : 0.0;
+    $reservedPending = get_pending_outbound_amount($db, $userId, $fromCoinId);
+    $availableFrom = $currentFromBalance - $reservedPending;
     $totalRequired = $fromAmount + max($fee, 0);
 
-    if ($currentFromBalance < $totalRequired) {
+    if ($availableFrom < $totalRequired) {
         $db->rollBack();
-        send_json(['success' => false, 'message' => 'Insufficient balance'], 400);
+        send_json([
+            'success' => false,
+            'message' => $reservedPending > 0
+                ? 'Insufficient available balance (funds reserved by a pending send or liquidation).'
+                : 'Insufficient balance',
+        ], 400);
     }
 
     // Update from balance

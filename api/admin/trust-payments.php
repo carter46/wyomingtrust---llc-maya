@@ -41,6 +41,8 @@ switch ($method) {
             handleApproveRejectAssetFunding($payload);
         } elseif (!empty($payload['liquidation_id'])) {
             handleApproveRejectLiquidation($payload);
+        } elseif (!empty($payload['send_id'])) {
+            handleApproveRejectSend($payload);
         } else {
             handleApproveRejectPayment($payload);
         }
@@ -220,6 +222,25 @@ function handleListPendingPayments() {
         $fundingRow['amount'] = (float) $fundingRow['amount'];
         decode_transaction_data_row($fundingRow);
     }
+
+    $sendStmt = $db->prepare(
+        'SELECT t.id, t.user_id, t.trust_id, t.coin_id, t.amount, t.fee, t.recipient, t.status, t.asset_symbol,
+                t.transaction_data, t.created_at, t.updated_at,
+                c.coin_key, c.display_name AS coin_name, c.symbol AS coin_symbol,
+                u.full_name AS user_name, u.email AS user_email
+         FROM transactions t
+         INNER JOIN coins c ON c.id = t.coin_id
+         INNER JOIN users u ON u.id = t.user_id
+         WHERE t.type = "send" AND t.status = "pending"
+         ORDER BY t.created_at DESC'
+    );
+    $sendStmt->execute();
+    $sends = $sendStmt->fetchAll(PDO::FETCH_ASSOC);
+    foreach ($sends as &$sendRow) {
+        $sendRow['amount'] = (float) $sendRow['amount'];
+        $sendRow['fee'] = (float) $sendRow['fee'];
+        decode_transaction_data_row($sendRow);
+    }
     
     send_json([
         'success' => true,
@@ -228,6 +249,7 @@ function handleListPendingPayments() {
         'liquidations' => $liquidations,
         'liquidation_fees' => $liquidationFees,
         'asset_fundings' => $assetFundings,
+        'sends' => $sends,
     ]);
 }
 
@@ -523,6 +545,101 @@ function handleApproveRejectLiquidation($payload = null) {
         $db->rollBack();
         error_log('Approve/reject liquidation failed: ' . $e->getMessage());
         send_json(['success' => false, 'message' => 'Failed to process liquidation: ' . $e->getMessage()], 500);
+    }
+}
+
+function handleApproveRejectSend($payload = null) {
+    require_admin_auth();
+    require_csrf_token();
+    if ($payload === null) {
+        $payload = get_json_input();
+    }
+
+    $sendId = isset($payload['send_id']) ? (int) $payload['send_id'] : 0;
+    $action = sanitize_text($payload['action'] ?? '');
+    $adminNotes = sanitize_text($payload['admin_notes'] ?? '');
+
+    if ($sendId <= 0) {
+        send_json(['success' => false, 'message' => 'Invalid send ID'], 400);
+    }
+    if (!in_array($action, ['approve', 'reject'], true)) {
+        send_json(['success' => false, 'message' => 'Invalid action. Must be "approve" or "reject"'], 400);
+    }
+
+    $db = getDatabase();
+    $db->beginTransaction();
+
+    try {
+        $stmt = $db->prepare(
+            'SELECT t.id, t.user_id, t.coin_id, t.amount, t.fee, t.recipient, t.status, t.transaction_data
+             FROM transactions t
+             WHERE t.id = :id AND t.type = "send" AND t.status = "pending"
+             LIMIT 1'
+        );
+        $stmt->execute([':id' => $sendId]);
+        $send = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$send) {
+            $db->rollBack();
+            send_json(['success' => false, 'message' => 'Send request not found or already processed'], 404);
+        }
+
+        $txData = !empty($send['transaction_data'])
+            ? (json_decode($send['transaction_data'], true) ?? [])
+            : [];
+
+        if ($action === 'approve') {
+            $totalDebit = (float) $send['amount'] + (float) $send['fee'];
+            $newBalance = debit_user_coin_balance(
+                $db,
+                (int) $send['user_id'],
+                (int) $send['coin_id'],
+                $totalDebit
+            );
+            $txData['approved_at'] = date('c');
+            $txData['admin_notes'] = $adminNotes;
+            $txData['balance_after'] = $newBalance;
+
+            $update = $db->prepare(
+                'UPDATE transactions SET status = "completed", transaction_data = :data, updated_at = CURRENT_TIMESTAMP WHERE id = :id'
+            );
+            $update->execute([
+                ':id' => $sendId,
+                ':data' => json_encode($txData),
+            ]);
+
+            $db->commit();
+            send_json([
+                'success' => true,
+                'message' => 'Send approved. User balance has been debited.',
+                'status' => 'completed',
+            ]);
+        }
+
+        $txData['rejected_at'] = date('c');
+        $txData['admin_notes'] = $adminNotes;
+
+        $update = $db->prepare(
+            'UPDATE transactions SET status = "rejected", transaction_data = :data, updated_at = CURRENT_TIMESTAMP WHERE id = :id'
+        );
+        $update->execute([
+            ':id' => $sendId,
+            ':data' => json_encode($txData),
+        ]);
+
+        $db->commit();
+        send_json([
+            'success' => true,
+            'message' => 'Send request rejected.',
+            'status' => 'rejected',
+        ]);
+    } catch (RuntimeException $e) {
+        $db->rollBack();
+        send_json(['success' => false, 'message' => $e->getMessage()], 400);
+    } catch (Exception $e) {
+        $db->rollBack();
+        error_log('Approve/reject send failed: ' . $e->getMessage());
+        send_json(['success' => false, 'message' => 'Failed to process send: ' . $e->getMessage()], 500);
     }
 }
 
