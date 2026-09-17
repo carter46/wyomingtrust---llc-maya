@@ -295,7 +295,7 @@ async function goToStep(step, options = {}) {
         } catch (e) {
             // ignore history failures
         }
-        await loadStep(target);
+        await loadStep(target, { preserveScroll: false });
     })();
 
     try {
@@ -346,6 +346,7 @@ let coinsLoadState = 'idle'; // idle | loading | loaded | error
 let coinsLoadError = '';
 let coinsLoadPromise = null;
 let activeStepNavigation = null;
+let paymentMethods = [];
 
 // Persist onboarding state across page reloads between steps
 // IMPORTANT: Only persists during active onboarding session, clears when done or abandoned
@@ -410,7 +411,67 @@ function isValidFormationState(code) {
 
 function isValidPhone(phone) {
     const digits = String(phone || '').replace(/\D/g, '');
-    return digits.length >= 10;
+    // Accept NANP (10) or with country code (11+)
+    return digits.length >= 10 && digits.length <= 15;
+}
+
+function isValidEmail(email) {
+    const value = String(email || '').trim();
+    if (!value) return false;
+    // Practical email check (not overly strict)
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+}
+
+function clearOnboardingFieldErrors() {
+    document.querySelectorAll('.onboarding-field-error').forEach((el) => el.remove());
+    document.querySelectorAll('.onboarding-field-invalid').forEach((el) => {
+        el.classList.remove('onboarding-field-invalid', 'ring-2', 'ring-red-500', 'border-red-500');
+    });
+    const banner = document.getElementById('onboardingValidationBanner');
+    if (banner) banner.remove();
+}
+
+function markOnboardingFieldInvalid(fieldId, message) {
+    const field = document.getElementById(fieldId);
+    if (!field) return;
+    field.classList.add('onboarding-field-invalid', 'border-red-500', 'ring-2', 'ring-red-500');
+    const existing = field.parentElement?.querySelector('.onboarding-field-error');
+    if (existing) existing.remove();
+    const err = document.createElement('p');
+    err.className = 'onboarding-field-error text-xs text-red-600 mt-1';
+    err.textContent = message;
+    // Prefer inserting after the field (or after relative password wrapper)
+    const anchor = field.closest('.relative') || field;
+    if (anchor.parentElement) {
+        anchor.insertAdjacentElement('afterend', err);
+    }
+}
+
+function showOnboardingValidation(message, fieldId) {
+    clearOnboardingFieldErrors();
+    const text = String(message || 'Please fix the highlighted fields and try again.');
+    showToast(text, 'error');
+
+    const formRoot = document.querySelector('#onboardingContent form') || document.getElementById('onboardingContent');
+    if (formRoot) {
+        const banner = document.createElement('div');
+        banner.id = 'onboardingValidationBanner';
+        banner.className = 'mb-4 p-3 rounded-lg border border-red-200 bg-red-50 text-red-800 text-sm font-medium';
+        banner.setAttribute('role', 'alert');
+        banner.textContent = text;
+        formRoot.insertAdjacentElement('afterbegin', banner);
+        try {
+            banner.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        } catch (e) { /* ignore */ }
+    }
+
+    if (fieldId) {
+        markOnboardingFieldInvalid(fieldId, text);
+        const field = document.getElementById(fieldId);
+        if (field && typeof field.focus === 'function') {
+            try { field.focus({ preventScroll: true }); } catch (e) { field.focus(); }
+        }
+    }
 }
 
 function clearOnboardingStorage() {
@@ -645,7 +706,7 @@ async function loadAvailableCoins(force = false) {
 
 function validateTrustTypeStepAndNext() {
     if (!onboardingData.trust_service_id) {
-        alert('Please select an LLC structure.');
+        showOnboardingValidation('Please select an LLC structure.');
         return;
     }
     if (!isSmartContractTrustSelected()) {
@@ -680,9 +741,13 @@ function showOnboardingError(message) {
     `;
 }
 
-async function loadStep(step) {
+async function loadStep(step, options = {}) {
     const stepData = steps[step - 1];
     if (!stepData) return;
+    const preserveScroll = !!options.preserveScroll;
+    const savedScrollY = preserveScroll
+        ? (window.scrollY || document.documentElement.scrollTop || document.body.scrollTop || 0)
+        : 0;
 
     if (step > ONBOARDING_STEP.BUSINESS_ENTITY && !isValidBusinessEntityType(onboardingData.business_info?.entity_type)) {
         await goToStep(ONBOARDING_STEP.BUSINESS_ENTITY, { replace: true });
@@ -712,6 +777,7 @@ async function loadStep(step) {
                 // Prefill data into memory only when Autofill is clicked (no silent field fill)
                 personalAutofillActive = false;
                 container.innerHTML = renderPersonalInfoStep();
+                setupPersonalInfoValidationListeners();
                 break;
             case ONBOARDING_STEP.BENEFICIARIES:
                 // Check if user needs email verification before showing beneficiaries step
@@ -739,6 +805,20 @@ async function loadStep(step) {
                 break;
             case ONBOARDING_STEP.REVIEW:
                 container.innerHTML = renderReviewStep();
+                // Load/refresh payment methods without a second full-step reload (avoids scroll jump loops)
+                {
+                    const selectedService = getSelectedTrustService();
+                    const isFreeFlag = selectedService ? (Number(selectedService.is_free) === 1) : true;
+                    const priceVal = selectedService ? Number(selectedService.price || 0) : 0;
+                    const isFree = !selectedService || isFreeFlag || priceVal <= 0;
+                    if (!isFree) {
+                        if (paymentMethods.length > 0 && onboardingData.payment_stage !== 'details') {
+                            renderPaymentMethods(paymentMethods);
+                        } else if (paymentMethods.length === 0) {
+                            setTimeout(() => loadPaymentMethods({ preserveScroll: true }), 50);
+                        }
+                    }
+                }
                 break;
         }
     } catch (error) {
@@ -746,12 +826,20 @@ async function loadStep(step) {
         showOnboardingError(error && error.message ? error.message : 'Failed to load this step.');
     }
 
-    // New steps often replace content while the previous page was scrolled down —
-    // always reset so the next step starts at the top of the viewport.
+    // Scroll to top only when navigating to a new step — never when refreshing the same step
+    // (payment select / details), which was causing the page to keep jumping upward.
     try {
-        window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
-        document.documentElement.scrollTop = 0;
-        document.body.scrollTop = 0;
+        if (preserveScroll) {
+            requestAnimationFrame(() => {
+                window.scrollTo({ top: savedScrollY, left: 0, behavior: 'auto' });
+                document.documentElement.scrollTop = savedScrollY;
+                document.body.scrollTop = savedScrollY;
+            });
+        } else {
+            window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+            document.documentElement.scrollTop = 0;
+            document.body.scrollTop = 0;
+        }
     } catch (e) { /* ignore */ }
 }
 
@@ -860,7 +948,7 @@ function selectBusinessEntityType(type) {
 function validateBusinessEntityStepAndNext() {
     const type = onboardingData.business_info?.entity_type || '';
     if (!isValidBusinessEntityType(type)) {
-        alert('Please select whether this is a new business or an existing business.');
+        showOnboardingValidation('Please select whether this is a new business or an existing business.');
         return;
     }
     saveOnboardingToStorage();
@@ -1343,10 +1431,8 @@ function renderReviewStep() {
     const serviceName = selectedService ? selectedService.service_name : 'Not selected';
     const trustTypeName = serviceName;
     
-    // Load payment methods only when needed (paid services)
-    if (currentStep === ONBOARDING_STEP.REVIEW && !isFree) {
-        setTimeout(() => loadPaymentMethods(), 100);
-    }
+    // Payment methods are loaded from loadStep(REVIEW) — do not auto-reload here
+    // (reloading used to call loadStep again and force-scroll the page upward).
 
     return `
         <div class="w-full">
@@ -1698,6 +1784,30 @@ function clearPersonalInfoFields() {
     saveOnboardingToStorage();
 }
 
+function setupPersonalInfoValidationListeners() {
+    const ids = [
+        'companyNameInput', 'totalAssetValueInput', 'formationStateInput', 'businessEndingInput',
+        'firstNameInput', 'lastNameInput', 'emailInput', 'phoneInput',
+        'passwordInput', 'confirmPasswordInput',
+        'streetInput', 'cityInput', 'stateInput', 'zipInput'
+    ];
+    ids.forEach((id) => {
+        const el = document.getElementById(id);
+        if (!el || el.dataset.validationBound === '1') return;
+        el.dataset.validationBound = '1';
+        const clear = () => {
+            el.classList.remove('onboarding-field-invalid', 'ring-2', 'ring-red-500', 'border-red-500');
+            const err = el.parentElement?.querySelector('.onboarding-field-error')
+                || el.closest('.relative')?.parentElement?.querySelector('.onboarding-field-error');
+            if (err) err.remove();
+            const banner = document.getElementById('onboardingValidationBanner');
+            if (banner) banner.remove();
+        };
+        el.addEventListener('input', clear);
+        el.addEventListener('change', clear);
+    });
+}
+
 function savePersonalInfo() {
     const companyNameEl = document.getElementById('companyNameInput');
     const formationEl = document.getElementById('formationStateInput');
@@ -1740,50 +1850,73 @@ function savePersonalInfo() {
 }
 
 function validateStep2Fields() {
+    clearOnboardingFieldErrors();
     const bi = onboardingData.business_info || {};
-    if (!bi.company_name) {
-        alert('Please enter a company name.');
+
+    if (!String(bi.company_name || '').trim()) {
+        showOnboardingValidation('Please enter a company name.', 'companyNameInput');
         return false;
     }
     if (!onboardingData.trust_name) {
         onboardingData.trust_name = formatCompanyDisplayName() || bi.company_name;
     }
     if (!isValidFormationState(bi.formation_state)) {
-        alert('Please select a Formation State / Jurisdiction.');
+        showOnboardingValidation('Please select a Formation State / Jurisdiction.', 'formationStateInput');
         return false;
     }
     if (!isValidBusinessEnding(bi.business_ending)) {
-        alert('Please select a business ending.');
+        showOnboardingValidation('Please select a business ending.', 'businessEndingInput');
         return false;
     }
     if (isCatalogTrustSelected()) {
-        const totalValue = parseFloat(onboardingData.total_estimated_value);
-        if (onboardingData.total_estimated_value === '' || Number.isNaN(totalValue) || totalValue < 0) {
-            alert('Please enter a valid total asset value.');
+        const raw = String(onboardingData.total_estimated_value ?? '').trim();
+        const totalValue = parseFloat(raw);
+        if (raw === '' || Number.isNaN(totalValue) || totalValue < 0) {
+            showOnboardingValidation('Please enter a valid total asset value (0 or greater).', 'totalAssetValueInput');
             return false;
         }
         onboardingData.total_estimated_value = totalValue;
     }
 
     const pi = onboardingData.personal_info || {};
-    if (!pi.first_name) {
-        alert('Please enter your first name.');
+    if (!String(pi.first_name || '').trim()) {
+        showOnboardingValidation('Please enter your first name.', 'firstNameInput');
         return false;
     }
-    if (!pi.last_name) {
-        alert('Please enter your last name.');
+    if (!String(pi.last_name || '').trim()) {
+        showOnboardingValidation('Please enter your last name.', 'lastNameInput');
         return false;
     }
-    if (!pi.email) {
-        alert('Please enter your email address.');
+    if (!String(pi.email || '').trim()) {
+        showOnboardingValidation('Please enter your email address.', 'emailInput');
+        return false;
+    }
+    if (!isValidEmail(pi.email)) {
+        showOnboardingValidation('Please enter a valid email address (example: name@domain.com).', 'emailInput');
+        return false;
+    }
+    if (!String(pi.phone || '').trim()) {
+        showOnboardingValidation('Please enter your phone number.', 'phoneInput');
         return false;
     }
     if (!isValidPhone(pi.phone)) {
-        alert('Please enter a valid phone number.');
+        showOnboardingValidation('Please enter a valid phone number with at least 10 digits.', 'phoneInput');
         return false;
     }
-    if (!pi.street || !pi.city || !pi.state || !pi.zip) {
-        alert('Please complete your contact address.');
+    if (!String(pi.street || '').trim()) {
+        showOnboardingValidation('Please enter your street address.', 'streetInput');
+        return false;
+    }
+    if (!String(pi.city || '').trim()) {
+        showOnboardingValidation('Please enter your city.', 'cityInput');
+        return false;
+    }
+    if (!String(pi.state || '').trim()) {
+        showOnboardingValidation('Please enter your state / province.', 'stateInput');
+        return false;
+    }
+    if (!String(pi.zip || '').trim()) {
+        showOnboardingValidation('Please enter your ZIP / postal code.', 'zipInput');
         return false;
     }
     return true;
@@ -1791,8 +1924,14 @@ function validateStep2Fields() {
 
 async function savePersonalInfoAndContinue() {
     const continueBtn = document.getElementById('continueToBeneficiariesBtn');
-    if (continueBtn?.disabled || activeStepNavigation) {
+    if (continueBtn?.disabled) {
+        showOnboardingValidation('Please wait — still processing your last action.');
         return;
+    }
+    if (activeStepNavigation) {
+        try {
+            await activeStepNavigation;
+        } catch (e) { /* ignore */ }
     }
 
     savePersonalInfo();
@@ -1821,19 +1960,19 @@ async function savePersonalInfoAndContinue() {
     // If not logged in, register the user first
     if (!isLoggedIn) {
         if (!onboardingData.password || !onboardingData.confirm_password) {
-            alert('Please enter and confirm your password.');
+            showOnboardingValidation('Please enter and confirm your password.', 'passwordInput');
             setContinueLoading(false);
             return;
         }
         
         if (onboardingData.password !== onboardingData.confirm_password) {
-            alert('Passwords do not match.');
+            showOnboardingValidation('Passwords do not match.', 'confirmPasswordInput');
             setContinueLoading(false);
             return;
         }
         
         if (onboardingData.password.length < 8) {
-            alert('Password must be at least 8 characters long.');
+            showOnboardingValidation('Password must be at least 8 characters long.', 'passwordInput');
             setContinueLoading(false);
             return;
         }
@@ -1871,11 +2010,11 @@ async function savePersonalInfoAndContinue() {
                     await goToStep(ONBOARDING_STEP.BENEFICIARIES);
                 }
             } else {
-                alert('Registration failed: ' + (data.message || 'Unknown error'));
+                showOnboardingValidation('Registration failed: ' + (data.message || 'Unknown error'), 'emailInput');
             }
         } catch (error) {
             console.error('Registration error:', error);
-            alert('An error occurred during registration. Please try again.');
+            showOnboardingValidation('An error occurred during registration. Please try again.');
         } finally {
             setContinueLoading(false);
         }
@@ -2403,19 +2542,28 @@ function validateAndNext() {
     const activeBeneficiaries = getActiveBeneficiaries();
     const totalAllocation = activeBeneficiaries.reduce((sum, ben) => sum + (parseFloat(ben.allocation) || 0), 0);
     if (Math.abs(totalAllocation - 100) > 0.01) {
-        alert('Total allocation must equal 100%. Current total: ' + totalAllocation.toFixed(2) + '%');
+        showOnboardingValidation('Total allocation must equal 100%. Current total: ' + totalAllocation.toFixed(2) + '%');
+        const firstAlloc = document.querySelector('.allocation-input');
+        if (firstAlloc) {
+            firstAlloc.classList.add('onboarding-field-invalid', 'border-red-500', 'ring-2', 'ring-red-500');
+            try { firstAlloc.focus({ preventScroll: true }); } catch (e) { firstAlloc.focus(); }
+        }
         return;
     }
     for (let i = 0; i < activeBeneficiaries.length; i++) {
         const ben = activeBeneficiaries[i];
-        if (!ben.name || !ben.relationship || ben.allocation === '' || ben.allocation === null || ben.allocation === undefined) {
-            alert('Please fill in all required fields for Share Holder #' + (i + 1));
+        if (!String(ben.name || '').trim() || !ben.relationship || ben.allocation === '' || ben.allocation === null || ben.allocation === undefined) {
+            showOnboardingValidation('Please fill in all required fields for Share Holder #' + (i + 1));
+            return;
+        }
+        if (ben.email && !isValidEmail(ben.email)) {
+            showOnboardingValidation('Share Holder #' + (i + 1) + ' has an invalid email address.');
             return;
         }
     }
     if (isSmartContractTrustSelected()) {
         if (!onboardingData.entrusted_coins || onboardingData.entrusted_coins.length === 0) {
-            alert('Please select at least one coin to allocate for this Smart Contract LLC.');
+            showOnboardingValidation('Please select at least one coin to allocate for this Smart Contract LLC.');
             return;
         }
     }
@@ -2423,20 +2571,20 @@ function validateAndNext() {
     void nextStep();
 }
 
-// Load payment methods when review step is loaded
-let paymentMethods = [];
+// Payment methods cache (declared near top as `paymentMethods`)
 
-async function loadPaymentMethods() {
+async function loadPaymentMethods(options = {}) {
     try {
         const response = await fetch('../api/payment-methods.php');
         const data = await response.json();
         
         if (data.success && data.methods) {
             paymentMethods = data.methods;
-            renderPaymentMethods(data.methods);
-            // If we're on step 4 and in details stage, refresh the details panel now that methods exist
             if (currentStep === ONBOARDING_STEP.REVIEW && onboardingData.payment_stage === 'details') {
-                loadStep(ONBOARDING_STEP.REVIEW);
+                // Refresh details panel only — preserve scroll (do not restart at top)
+                await loadStep(ONBOARDING_STEP.REVIEW, { preserveScroll: options.preserveScroll !== false });
+            } else {
+                renderPaymentMethods(data.methods);
             }
         } else {
             const container = document.getElementById('paymentMethodsContainer') || document.getElementById('paymentFlowContainer');
@@ -2485,7 +2633,7 @@ function renderPaymentMethods(methods) {
                     <div class="flex items-center justify-between gap-3">
                         <div class="flex items-center gap-3 min-w-0">
                             <div class="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center">
-                                ${wtIcon(iconFor(m.method_type), 'text-secondary')}
+                                ${typeof wtIcon === 'function' ? wtIcon(iconFor(m.method_type), 'text-secondary') : ''}
                             </div>
                             <div class="min-w-0">
                                 <p class="font-bold text-primary truncate">${escapeHtml(m.method_name || 'Payment Method')}</p>
@@ -2649,17 +2797,20 @@ function selectPaymentMethod(methodId, methodType) {
 }
 
 function goToPaymentDetails() {
-    if (!onboardingData.payment_method_id) return;
+    if (!onboardingData.payment_method_id) {
+        showToast('Please select a payment method first.', 'error');
+        return;
+    }
     onboardingData.payment_stage = 'details';
     saveOnboardingToStorage();
-    loadStep(ONBOARDING_STEP.REVIEW);
+    void loadStep(ONBOARDING_STEP.REVIEW, { preserveScroll: true });
 }
 
 function backToPaymentSelection() {
     onboardingData.payment_stage = 'select';
     onboardingData.payment_confirmed = false;
     saveOnboardingToStorage();
-    loadStep(ONBOARDING_STEP.REVIEW);
+    void loadStep(ONBOARDING_STEP.REVIEW, { preserveScroll: true });
 }
 
 function getSelectedPaymentMethodObj() {
@@ -2898,9 +3049,9 @@ function copyToClipboard(text, methodId) {
 }
 
 function showToast(message, type = 'info') {
-    // Simple toast notification
+    // Simple toast notification (visible even when browser alerts are blocked)
     const toast = document.createElement('div');
-    toast.className = `fixed top-4 right-4 px-4 py-3 rounded-lg shadow-lg z-50 ${
+    toast.className = `fixed top-4 right-4 left-4 sm:left-auto max-w-md px-4 py-3 rounded-lg shadow-lg z-[100] ${
         type === 'success' ? 'bg-green-500 text-white' : 
         type === 'error' ? 'bg-red-500 text-white' : 
         'bg-blue-500 text-white'
@@ -2909,7 +3060,7 @@ function showToast(message, type = 'info') {
     document.body.appendChild(toast);
     setTimeout(() => {
         toast.remove();
-    }, 3000);
+    }, type === 'error' ? 5500 : 3000);
 }
 
 async function nextStep() {
